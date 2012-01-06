@@ -67,19 +67,37 @@ static void list_del_worker(struct fuse_worker *w)
 
 static int fuse_start_thread(struct fuse_mt *mt);
 
+/* ADDED by seth 
+ * SIGUSR1 handler.
+ * */
+void thread_exit_handler(int sig)
+{ 
+    pthread_exit(0);
+}
+
 static void *fuse_do_work(void *data)
 {
 	struct fuse_worker *w = (struct fuse_worker *) data;
 	struct fuse_mt *mt = w->mt;
+	/* added by seth */
+	struct sigaction actions;
+	int rc;
+	
+	memset(&actions, 0, sizeof(actions)); 
+	sigemptyset(&actions.sa_mask);
+	actions.sa_flags = 0; 
+	actions.sa_handler = thread_exit_handler;
+	rc = sigaction(SIGUSR1,&actions,NULL);
+	/**/
 
 	while (!fuse_session_exited(mt->se)) {
 		int isforget = 0;
 		struct fuse_chan *ch = mt->prevch;
 		int res;
 
-		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+		//pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 		res = fuse_chan_recv(&ch, w->buf, w->bufsize);
-		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+		//pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 		if (res == -EINTR)
 			continue;
 		if (res <= 0) {
@@ -133,7 +151,7 @@ static void *fuse_do_work(void *data)
 	}
 
 	sem_post(&mt->finish);
-	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+	//pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 	pause();
 
 	return NULL;
@@ -226,8 +244,13 @@ int fuse_session_loop_mt(struct fuse_session *se)
 		while (!fuse_session_exited(se))
 			sem_wait(&mt.finish);
 
+#if 0
 		for (w = mt.main.next; w != &mt.main; w = w->next)
 			pthread_cancel(w->thread_id);
+#else
+		for (w = mt.main.next; w != &mt.main; w = w->next)
+			pthread_kill(w->thread_id, SIGUSR1);
+#endif
 		mt.exit = 1;
 		pthread_mutex_unlock(&mt.lock);
 
