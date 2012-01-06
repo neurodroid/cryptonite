@@ -1,0 +1,4 @@
+Fuse library for Android
+
+Multi-threading is supported by replacing phtread_cancel() with SIGUSR1 as suggested here:
+http://stackoverflow.com/questions/4610086/pthread-cancel-alternatives-in-android-ndk
