@@ -1,0 +1,12 @@
+#! /bin/bash
+if [ ! -f encfs-1.7.4.tgz ]
+then
+    wget http://encfs.googlecode.com/files/encfs-1.7.4.tgz
+fi
+if [ ! -d encfs-1.7.4 ]
+then
+    tar -xzf encfs-1.7.4.tgz
+    cd encfs-1.7.4
+    patch -p1 < ../encfs-android.patch
+    cd ..
+fi

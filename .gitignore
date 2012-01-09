@@ -1,0 +1,94 @@
+# binaries, backups
+
+*~
+*.o
+*.a
+*.la
+*.lai
+*.so*
+*.obj
+*.ncb
+*.aux
+*.log
+*.bak
+*.old
+*.dvi
+*.dmg
+*.backup
+*.lo
+*.pyc
+*.bbl
+*.blg
+*.idx
+*.ilg
+*.ind
+*.out
+*.log
+*.exe
+*.swp
+*.orig
+
+# autotools noise
+
+config.status
+autom4te.cache/*
+*Makefile.in
+aclocal.m4
+config.guess
+config.sub
+config.h
+config.log
+configure
+depcomp
+install-sh
+ltmain.sh
+missing
+Makefile
+libtool
+stamp-h1
+nmodlconf.h
+nrnconf.h
+nrnrpm.spec
+stamp-h*
+
+# fuse source
+
+fuse/fuse-android
+
+# rlog source
+
+rlog/rlog-*
+
+# boost source
+
+boost/boost_*
+
+# openssl source
+
+openssl/openssl-*
+
+# encfs source
+
+encfs/encfs-*
+
+# build output directories
+
+encfs-app/assets
+encfs-app/assets/*
+encfs-app/bin
+encfs-app/bin/*
+encfs-app/gen
+encfs-app/gen/*
+encfs-app/libs
+encfs-app/libs/*
+encfs-app/obj
+encfs-app/obj/*
+encfs-app/tests/bin
+encfs-app/tests/bin/*
+
+.DS_Store
+.AppleDouble
+
+.classpath
+local.properties
+commit.sh

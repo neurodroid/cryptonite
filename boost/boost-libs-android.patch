@@ -1,0 +1,42 @@
+diff -ur ./libs/filesystem/v2/src/v2_operations.cpp ./libs/filesystem/v2/src/v2_operations.cpp
+--- ./libs/filesystem/v2/src/v2_operations.cpp	2011-01-11 21:39:33.000000000 +0000
++++ ./libs/filesystem/v2/src/v2_operations.cpp	2012-01-08 14:57:10.000000000 +0000
+@@ -58,14 +58,16 @@
+ 
+ # else // BOOST_POSIX_API
+ #   include <sys/types.h>
+-#   if !defined(__APPLE__) && !defined(__OpenBSD__)
++#   if !defined(__APPLE__) && !defined(__OpenBSD__) && !defined(ANDROID)
+ #     include <sys/statvfs.h>
+ #     define BOOST_STATVFS statvfs
+ #     define BOOST_STATVFS_F_FRSIZE vfs.f_frsize
+ #   else
+-#ifdef __OpenBSD__
+-#     include <sys/param.h>
+-#endif
++#     ifdef __OpenBSD__
++#       include <sys/param.h>
++#     elif defined (ANDROID)
++#       include <sys/vfs.h>
++#     endif
+ #     include <sys/mount.h>
+ #     define BOOST_STATVFS statfs
+ #     define BOOST_STATVFS_F_FRSIZE static_cast<boost::uintmax_t>( vfs.f_bsize )
+diff -ur ./libs/serialization/src/extended_type_info_typeid.cpp ./libs/serialization/src/extended_type_info_typeid.cpp
+--- ./libs/serialization/src/extended_type_info_typeid.cpp	2011-01-19 18:31:02.000000000 +0000
++++ ./libs/serialization/src/extended_type_info_typeid.cpp	2012-01-09 12:27:08.000000000 +0000
+@@ -51,9 +51,13 @@
+     // shortcut for common case
+     if(this == & rhs)
+         return false;
++#ifdef ANDROID
++    return 0 != (m_ti->name() < (*(static_cast<const extended_type_info_typeid_0 &>(rhs).m_ti)).name());
++#else
+     return 0 != m_ti->before(
+         *(static_cast<const extended_type_info_typeid_0 &>(rhs).m_ti)
+-    );
++                             );
++#endif
+ }
+ 
+ BOOST_SERIALIZATION_DECL(bool) 
