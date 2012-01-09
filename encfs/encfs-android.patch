@@ -1,0 +1,183 @@
+diff -ur ./encfs/DirNode.cpp /Users/cs/encfs/encfs/DirNode.cpp
+--- ./encfs/DirNode.cpp	2010-08-30 07:27:49.000000000 +0100
++++ /Users/cs/encfs/encfs/DirNode.cpp	2012-01-08 13:22:02.000000000 +0000
+@@ -27,7 +27,7 @@
+ #include <cstdlib>
+ #include <pthread.h>
+ #include <unistd.h>
+-#ifdef linux
++#if defined (linux) || defined (ANDROID)
+ #include <sys/fsuid.h>
+ #endif
+ 
+@@ -580,20 +580,23 @@
+     rLog( Info, "mkdir on %s", cyName.c_str() );
+ 
+     // if uid or gid are set, then that should be the directory owner
++#ifndef ANDROID
+     int olduid = -1;
+     int oldgid = -1;
+     if(uid != 0)
+ 	olduid = setfsuid( uid );
+     if(gid != 0)
+ 	oldgid = setfsgid( gid );
+-
++#endif
+     int res = ::mkdir( cyName.c_str(), mode );
+ 
++#ifndef ANDROID
+     if(olduid >= 0)
+ 	setfsuid( olduid );
+     if(oldgid >= 0)
+ 	setfsgid( oldgid );
+-
++#endif
++    
+     if(res == -1)
+     {
+ 	int eno = errno;
+diff -ur ./encfs/FileNode.cpp /Users/cs/encfs/encfs/FileNode.cpp
+--- ./encfs/FileNode.cpp	2010-09-06 04:52:12.000000000 +0100
++++ /Users/cs/encfs/encfs/FileNode.cpp	2012-01-08 13:20:51.000000000 +0000
+@@ -169,6 +169,7 @@
+     int res;
+     int olduid = -1;
+     int oldgid = -1;
++#ifndef ANDROID
+     if(uid != 0)
+     {
+ 	olduid = setfsuid( uid );
+@@ -187,7 +188,8 @@
+             return -EPERM;
+         }
+     }
+-
++#endif
++    
+     /*
+      * cf. xmp_mknod() in fusexmp.c
+      * The regular file stuff could be stripped off if there
+@@ -202,11 +204,13 @@
+     else
+         res = ::mknod( _cname.c_str(), mode, rdev );
+ 
++#ifndef ANDROID
+     if(olduid >= 0)
+ 	setfsuid( olduid );
+     if(oldgid >= 0)
+ 	setfsgid( oldgid );
+-
++#endif
++    
+     if(res == -1)
+     {
+ 	int eno = errno;
+@@ -283,7 +287,7 @@
+     if(fh >= 0)
+     {
+ 	int res = -EIO;
+-#ifdef linux
++#if defined(linux) && !defined (ANDROID)
+ 	if(datasync)
+ 	    res = fdatasync( fh );
+ 	else
+diff -ur ./encfs/RawFileIO.cpp /Users/cs/encfs/encfs/RawFileIO.cpp
+--- ./encfs/RawFileIO.cpp	2009-11-29 22:04:12.000000000 +0000
++++ /Users/cs/encfs/encfs/RawFileIO.cpp	2012-01-08 13:26:43.000000000 +0000
+@@ -293,7 +293,7 @@
+     if(fd >= 0 && canWrite)
+     {
+ 	res = ::ftruncate( fd, size );
+-#ifndef __FreeBSD__
++#if !defined (__FreeBSD__) && !defined (ANDROID)
+ 	::fdatasync( fd );
+ #endif
+     } else
+diff -ur ./encfs/encfs.cpp /Users/cs/encfs/encfs/encfs.cpp
+--- ./encfs/encfs.cpp	2010-11-18 02:50:51.000000000 +0000
++++ /Users/cs/encfs/encfs/encfs.cpp	2012-01-09 11:56:01.000000000 +0000
+@@ -421,6 +421,7 @@
+ 
+ 	// use setfsuid / setfsgid so that the new link will be owned by the
+ 	// uid/gid provided by the fuse_context.
++#ifndef ANDROID
+ 	int olduid = -1;
+ 	int oldgid = -1;
+ 	if(ctx->publicFilesystem)
+@@ -429,12 +430,15 @@
+ 	    olduid = setfsuid( context->uid );
+ 	    oldgid = setfsgid( context->gid );
+ 	}
++#endif
+ 	res = ::symlink( fromCName.c_str(), toCName.c_str() );
++#ifndef ANDROID
+ 	if(olduid >= 0)
+ 	    setfsuid( olduid );
+ 	if(oldgid >= 0)
+ 	    setfsgid( oldgid );
+-
++#endif
++        
+ 	if(res == -1)
+ 	    res = -errno;
+ 	else
+@@ -544,7 +548,11 @@
+     tv[1].tv_sec = ts[1].tv_sec;
+     tv[1].tv_usec = ts[1].tv_nsec / 1000;
+ 
++#ifndef ANDROID
+     int res = lutimes( cyName.c_str(), tv);
++#else
++    int res = utimes( cyName.c_str(), tv);
++#endif    
+     return (res == -1) ? -errno : ESUCCESS;
+ }
+ 
+@@ -675,7 +683,10 @@
+ {
+     EncFS_Context *ctx = context();
+ 
++    
+     int res = -EIO;
++    return res;
++#if 0    
+     try
+     {
+ 	(void)path; // path should always be '/' for now..
+@@ -697,6 +708,7 @@
+ 	err.log( _RLWarningChannel );
+     }
+     return res;
++#endif
+ }
+ 
+ #ifdef HAVE_XATTR
+diff -ur ./encfs/encfsctl.cpp /Users/cs/encfs/encfs/encfsctl.cpp
+--- ./encfs/encfsctl.cpp	2010-08-30 07:27:49.000000000 +0100
++++ /Users/cs/encfs/encfs/encfsctl.cpp	2012-01-08 13:28:50.000000000 +0000
+@@ -384,7 +384,11 @@
+ 		fnode->getAttr( &stbuf );
+ 
+ 		struct tm stm;
++#ifdef ANDROID
++		localtime_r( (const time_t*)&stbuf.st_mtime, &stm );
++#else
+ 		localtime_r( &stbuf.st_mtime, &stm );
++#endif
+ 		stm.tm_year += 1900;
+ 		// TODO: when I add "%s" to the end and name.c_str(), I get a
+ 		// seg fault from within strlen.  Why ???
+@@ -686,10 +690,12 @@
+ 
+     int filesFound = showcruft( rootInfo, "/" );
+ 
++#ifndef ANDROID
+     cerr << autosprintf(
+ 	    ngettext("Found %i invalid file.", "Found %i invalid files.", 
+ 		filesFound), filesFound) << "\n";
+-
++#endif
++    
+     return EXIT_SUCCESS;
+ }
+ 
