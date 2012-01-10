@@ -15,7 +15,9 @@ import java.util.Scanner;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -25,15 +27,20 @@ import android.os.Environment;
 
 import android.util.Log;
 
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
 
 public class EncFSAndroid extends Activity
 {
 
     private static final int REQUEST_SAVE=0, REQUEST_LOAD=1, REQUEST_PREFS=2;
+    private static final int MY_PASSWORD_DIALOG_ID = 0;
     public static final String MNTDIR = "/data/data/csh.encfsandroid/mnt";
     public static final String BINDIR = "/data/data/csh.encfsandroid";
     public static final String ENCFSBIN = BINDIR + "/encfs";
@@ -115,7 +122,9 @@ public class EncFSAndroid extends Activity
                      
                  currentPath = data.getStringExtra(FileDialog.RESULT_PATH);
                  Log.v(TAG, currentPath);
-                     
+
+                 showDialog(MY_PASSWORD_DIALOG_ID);
+                 
              } else if (resultCode == Activity.RESULT_CANCELED) {
                  Log.v(TAG, "file not selected");
              }
@@ -237,4 +246,35 @@ public class EncFSAndroid extends Activity
         return chmod;
     }
 
+    @Override protected Dialog onCreateDialog(int id) {
+        switch (id) {
+         case MY_PASSWORD_DIALOG_ID:
+             LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+
+             final View layout = inflater.inflate(R.layout.password_dialog, (ViewGroup) findViewById(R.id.root));
+             final EditText password = (EditText) layout.findViewById(R.id.EditText_Pwd);
+
+             AlertDialog.Builder builder = new AlertDialog.Builder(this);
+             builder.setTitle(R.string.title_password);
+             builder.setView(layout);
+             builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                     public void onClick(DialogInterface dialog, int whichButton) {
+                         removeDialog(MY_PASSWORD_DIALOG_ID);
+                     }
+                 });
+             builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                     public void onClick(DialogInterface dialog, int which) {
+                         String strPassword = password.getText().toString();
+                         Toast.makeText(EncFSAndroid.this,
+                                        "password="+strPassword, Toast.LENGTH_SHORT).show();
+                         removeDialog(MY_PASSWORD_DIALOG_ID);
+                     }
+                 });
+             return builder.create();
+
+             
+        }
+
+        return null;
+    }
 }
