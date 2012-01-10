@@ -4,4 +4,5 @@ cd rlog-1.4
 cp ../config-arm-rlog.sh ./
 ./config-arm-rlog.sh
 make -j4
+make install
 cd ..

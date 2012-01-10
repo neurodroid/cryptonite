@@ -8,5 +8,6 @@ then
     tar -xzf encfs-1.7.4.tgz
     cd encfs-1.7.4
     patch -p1 < ../encfs-android.patch
+    autoreconf --force
     cd ..
 fi
