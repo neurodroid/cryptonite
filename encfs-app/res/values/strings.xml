@@ -11,6 +11,8 @@
     <string name="sdcard_not_writable">Can\'t write to SD card</string>
     <string name="title_password">EncFS password</string>
     <string name="settings_password">Enter password:</string>
+    <string name="running_encfs">Running EncFS&#8230;</string>
+    <string name="no_fuse">FUSE is not supported on your device</string>
 
     <!-- File Browser -->
     <string name="fb_name">Choose xml file</string>

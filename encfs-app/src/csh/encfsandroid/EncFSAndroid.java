@@ -6,7 +6,9 @@
 
 package csh.encfsandroid;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
@@ -16,6 +18,7 @@ import java.util.Scanner;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.ProgressDialog;
 
 import android.content.Context;
 import android.content.DialogInterface;
@@ -34,6 +37,7 @@ import android.view.View.OnClickListener;
 
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class EncFSAndroid extends Activity
@@ -41,65 +45,77 @@ public class EncFSAndroid extends Activity
 
     private static final int REQUEST_SAVE=0, REQUEST_LOAD=1, REQUEST_PREFS=2;
     private static final int MY_PASSWORD_DIALOG_ID = 0;
-    public static final String MNTDIR = "/data/data/csh.encfsandroid/mnt";
+    public static final String MNTPNT = "csh.encfsandroid/mnt";
     public static final String BINDIR = "/data/data/csh.encfsandroid";
     public static final String ENCFSBIN = BINDIR + "/encfs";
     public static final String TAG = "encfs-android";
     private String currentPath = "/";
-    private boolean mExternalStorageAvailable = false;
-    private boolean mExternalStorageWriteable = false;
+    private ProgressDialog pd;
+    private AlertDialog.Builder ad;
+    private TextView tv;
+    private String encfsversion, encfsoutput, cursrcdir;
 
     /** Called when the activity is first created. */
     @Override public void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
+
+        ad = new AlertDialog.Builder(this);
+        if (!supportsFuse()) {
+            ad.setIcon(R.drawable.ic_launcher_encfsandroid);
+            ad.setTitle(R.string.no_fuse);
+            ad.setPositiveButton("OK",
+                                 new DialogInterface.OnClickListener() {
+                                     @Override
+                                         public void onClick(DialogInterface dialog,
+                                                             int which) {
+                                         
+                                         finish();
+                                     }
+                                 });
+            ad.show();
+        }
+        
         setContentView(R.layout.main);
 
         getResources();
-
-        /* Check sd card state */
-        String state = Environment.getExternalStorageState();
-
-        if (Environment.MEDIA_MOUNTED.equals(state)) {
-            // We can read and write the media
-            mExternalStorageAvailable = mExternalStorageWriteable = true;
-        } else if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
-            // We can only read the media
-            mExternalStorageAvailable = true;
-            mExternalStorageWriteable = false;
-        } else {
-            // Something else is wrong. It may be one of many other states, but all we need
-            //  to know is we can neither read nor write
-            mExternalStorageAvailable = mExternalStorageWriteable = false;
-        }
-
-        if (!mExternalStorageAvailable || !mExternalStorageWriteable) {
-            new AlertDialog.Builder(this)
-                .setIcon(R.drawable.ic_launcher_encfsandroid)
-                .setTitle(R.string.sdcard_not_writable)
-                .setPositiveButton("OK",
-                                   new DialogInterface.OnClickListener() {
-                                       @Override
-                                           public void onClick(DialogInterface dialog,
-                                                               int which) {
-                                           
-                                       }
-                                   }).show();
-            finish();
-        }
 
         /* Copy the encfs binary to binDir and make executable.
          */
         cpEncFSBin();
 
-        /* Load hoc file using a simple file dialog */
+        /* Get version information from EncFS (goes to stderr) */
+        String[] cmdlist = {ENCFSBIN, "--version"};
+        encfsversion = runBinary(cmdlist, BINDIR, true);
+        Log.v(TAG, "EncFS version: " + encfsversion);
+
+        tv = (TextView)findViewById(R.id.txtOutput);
+        tv.setText(encfsversion);
+        
+        
+        /* Select source directory using a simple file dialog */
         Button buttonLoadFile = (Button)findViewById(R.id.btnLoadFile);
         buttonLoadFile.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-                    Intent intent = new Intent(getBaseContext(),
-                                               FileDialog.class);
-                    intent.putExtra(FileDialog.START_PATH, "/");
-                    startActivityForResult(intent, SelectionMode.MODE_OPEN);
+                    if (!externalStorageIsWritable()) {
+                        ad.setIcon(R.drawable.ic_launcher_encfsandroid);
+                        ad.setTitle(R.string.sdcard_not_writable);
+                        ad.setPositiveButton("OK",
+                                                  new DialogInterface.OnClickListener() {
+                                                      @Override
+                                                          public void onClick(DialogInterface dialog,
+                                                                              int which) {
+                                                          
+                                                      }
+                                                  });
+                        ad.show();
+                    } else {
+
+                        Intent intent = new Intent(getBaseContext(),
+                                                   FileDialog.class);
+                        intent.putExtra(FileDialog.START_PATH, "/");
+                        startActivityForResult(intent, SelectionMode.MODE_OPEN);
+                    }
                 }});
 
     }
@@ -157,7 +173,7 @@ public class EncFSAndroid extends Activity
             File newf = new File(ENCFSBIN);
             FileOutputStream os = new FileOutputStream(newf);
             for (String assetsFile : assetsFiles) {
-                Log.v(TAG, "Found NEURON binary part: " + assetsFile);
+                Log.v(TAG, "Found EncFS binary part: " + assetsFile);
                 InputStream is = getAssets().open(arch + "/" + assetsFile);
 
                 byte[] buffer = new byte[is.available()]; 
@@ -178,14 +194,14 @@ public class EncFSAndroid extends Activity
         runBinary(chmodlist, BINDIR);
     }
 
-    public static String runBinary(String[] binName, String nrnHome) {
-        return runBinary(binName, nrnHome, false);
+    public static String runBinary(String[] binName, String encfsHome) {
+        return runBinary(binName, encfsHome, false);
     }
 
     /** Run a binary using binDir as the wd. Return stdout
      *  and optinally stderr
      */
-    public static String runBinary(String[] binName, String nrnHome, boolean stderr) {
+    public static String runBinary(String[] binName, String encfsHome, boolean stderr) {
         try {
             File binDir = new File(BINDIR);
             if (!binDir.exists()) {
@@ -195,27 +211,16 @@ public class EncFSAndroid extends Activity
             /* Can't set the environment on Android <= 2.2 with
              * ProcessBuilder. Resorting back to old-school exec.
              */
-            String[] envp = {"NEURONHOME="+nrnHome};
+            String[] envp = {"NEURONHOME="+encfsHome};
             Process process = Runtime.getRuntime().exec(binName, envp, binDir);
             process.waitFor();
             
-            Scanner outscanner = new Scanner(process.getInputStream());
-            Scanner errscanner = new Scanner(process.getErrorStream());
             String NL = System.getProperty("line.separator");
             
             String output = "";
             
-            try {
-                while (outscanner.hasNextLine()) {
-                    output += outscanner.nextLine();
-                    output += NL;
-                }
-            }
-            finally {
-                outscanner.close();
-            }
             if (stderr) {
-                output += NL + "stderr:" + NL;
+                Scanner errscanner = new Scanner(new BufferedInputStream(process.getErrorStream()));
                 try {
                     while (errscanner.hasNextLine()) {
                         output += errscanner.nextLine() + NL;
@@ -224,8 +229,18 @@ public class EncFSAndroid extends Activity
                 finally {
                     errscanner.close();
                 }
+            } else {
+                Scanner outscanner = new Scanner(new BufferedInputStream(process.getInputStream()));
+                try {
+                    while (outscanner.hasNextLine()) {
+                        output += outscanner.nextLine();
+                        output += NL;
+                    }
+                }
+                finally {
+                    outscanner.close();
+                }
             }
-
             return output;
 
         } catch (IOException e) {
@@ -244,6 +259,28 @@ public class EncFSAndroid extends Activity
             }
         }
         return chmod;
+    }
+
+    public void runEncfs(String[] options, String srcdir, String pwd) {
+        tv.setText(encfsversion + "\n");
+        tv.invalidate();
+        pd = ProgressDialog.show(this,
+                                 this.getString(R.string.wait_msg), this.getString(R.string.running_encfs), true);
+        cursrcdir = srcdir;
+        new Thread(new Runnable(){
+                public void run(){
+                    String[] cmdlist = {ENCFSBIN, cursrcdir};
+                    encfsoutput = runBinary(cmdlist, BINDIR, false);
+                    runOnUiThread(new Runnable(){
+                            @Override public void run() {
+                                if (pd.isShowing())
+                                    pd.dismiss();
+                                tv.setText(encfsversion + "\n" + encfsoutput);
+                            }
+                        });
+                }
+            }).start();
+            
     }
 
     @Override protected Dialog onCreateDialog(int id) {
@@ -277,4 +314,55 @@ public class EncFSAndroid extends Activity
 
         return null;
     }
+
+    private boolean externalStorageIsWritable() {
+        /* Check sd card state */
+        String state = Environment.getExternalStorageState();
+
+        boolean extStorAvailable = false;
+        boolean extStorWriteable = false;
+
+        if (Environment.MEDIA_MOUNTED.equals(state)) {
+            // We can read and write the media
+            extStorAvailable = extStorWriteable = true;
+        } else if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+            // We can only read the media
+            extStorAvailable = true;
+            extStorWriteable = false;
+        } else {
+            // Something else is wrong. It may be one of many other states, but all we need
+            //  to know is we can neither read nor write
+            extStorAvailable = extStorWriteable = false;
+        }
+
+        return extStorAvailable && extStorWriteable;
+    }
+    
+    public static boolean supportsFuse() {
+        return (new File("/dev/fuse")).exists();
+    }
+
+    public static boolean isMounted() throws IOException {
+        /* Read mounted info */
+        FileInputStream fis = new FileInputStream("/proc/mounts");
+        Scanner scanner = new Scanner(fis);
+        System.getProperty("line.separator");
+
+        try {
+            Log.v(TAG, "Parsing /proc/mounts for mounted encfs devices");
+            while (scanner.hasNextLine()) {
+                if (scanner.findInLine("fuse.encfs")!=null) {
+                    scanner.close();
+                    return true;
+                }
+                Log.v(TAG, scanner.nextLine());
+            }
+        }
+        finally {
+            scanner.close();
+        }
+        
+        return false;
+    }
+    
 }

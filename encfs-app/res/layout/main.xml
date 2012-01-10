@@ -14,4 +14,11 @@
         android:typeface="normal">
     </Button>
 
+    <TextView
+       android:id="@+id/txtOutput" 
+       android:layout_width="fill_parent" 
+       android:layout_height="wrap_content" 
+       android:typeface="normal">
+    </TextView>
+
 </TableLayout>
