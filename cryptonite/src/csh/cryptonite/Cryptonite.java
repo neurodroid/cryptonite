@@ -48,6 +48,7 @@ public class Cryptonite extends Activity
     public static final String MNTPNT = "csh.cryptonite/mnt";
     public static final String BINDIR = "/data/data/csh.cryptonite";
     public static final String ENCFSBIN = BINDIR + "/encfs";
+    public static final String ENCFSCTLBIN = BINDIR + "/encfsctl";
     public static final String TAG = "cryptonite";
     private String currentPath = "/";
     private ProgressDialog pd;
@@ -80,18 +81,30 @@ public class Cryptonite extends Activity
 
         getResources();
 
-        /* Copy the encfs binary to binDir and make executable.
+        /* Copy the encfs binaries to binDir and make executable.
          */
-        cpEncFSBin();
-
-        /* Get version information from EncFS (goes to stderr) */
-        String[] cmdlist = {ENCFSBIN, "--version"};
-        encfsversion = runBinary(cmdlist, BINDIR, true);
-        Log.v(TAG, "EncFS version: " + encfsversion);
-
-        tv = (TextView)findViewById(R.id.txtOutput);
-        tv.setText(encfsversion);
-        
+        pd = ProgressDialog.show(this,
+                                 this.getString(R.string.wait_msg),
+                                 this.getString(R.string.copying_bins), true);
+        new Thread(new Runnable(){
+                public void run(){
+                    cpEncFSBin();
+                    cpEncFSBin("encfsctl");
+                    runOnUiThread(new Runnable(){
+                            @Override public void run() {
+                                if (pd.isShowing())
+                                    pd.dismiss();
+                                /* Get version information from EncFS (goes to stderr) */
+                                String[] cmdlist = {ENCFSBIN, "--version"};
+                                encfsversion = runBinary(cmdlist, BINDIR, true);
+                                Log.v(TAG, "EncFS version: " + encfsversion);
+                                
+                                tv = (TextView)findViewById(R.id.txtOutput);
+                                tv.setText(encfsversion);
+                            }
+                        });
+                }
+            }).start();
         
         /* Select source directory using a simple file dialog */
         Button buttonLoadFile = (Button)findViewById(R.id.btnLoadFile);
@@ -155,6 +168,11 @@ public class Cryptonite extends Activity
 
     /** Copy encfs to binDir and make executable */
     public void cpEncFSBin() {
+        cpEncFSBin("encfs");
+    }
+    
+    /** Copy encfs to binDir and make executable */
+    public void cpEncFSBin(String trunk) {
         String arch = "armeabi";
         /* if (withVfp) {
             arch += "-v7a";
@@ -164,25 +182,27 @@ public class Cryptonite extends Activity
         if (!binDir.exists()) {
             throw new RuntimeException("Couldn't find binary directory");
         }
+        String binName = BINDIR + "/" + trunk;
 
         /* Catenate split files */
         Log.v(TAG, "Looking for assets in " + arch);
         try {
             String[] assetsFiles = getAssets().list(arch);
-
-            File newf = new File(ENCFSBIN);
+            File newf = new File(binName);
             FileOutputStream os = new FileOutputStream(newf);
             for (String assetsFile : assetsFiles) {
-                Log.v(TAG, "Found EncFS binary part: " + assetsFile);
-                InputStream is = getAssets().open(arch + "/" + assetsFile);
+                if (assetsFile.substring(0, assetsFile.indexOf(".")).compareTo(trunk) == 0) {
+                    Log.v(TAG, "Found EncFS binary part: " + assetsFile);
+                    InputStream is = getAssets().open(arch + "/" + assetsFile);
 
-                byte[] buffer = new byte[is.available()]; 
+                    byte[] buffer = new byte[is.available()]; 
 
-                is.read(buffer);
+                    is.read(buffer);
 
-                os.write(buffer);
+                    os.write(buffer);
 
-                is.close();
+                    is.close();
+                }
             }
             os.close();
         }
@@ -190,7 +210,7 @@ public class Cryptonite extends Activity
             throw new RuntimeException(e);
         }
 
-        String[] chmodlist = {getChmod(), "755", ENCFSBIN};
+        String[] chmodlist = {getChmod(), "755", binName};
         runBinary(chmodlist, BINDIR);
     }
 
