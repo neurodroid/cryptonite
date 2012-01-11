@@ -1,4 +1,4 @@
-package csh.encfsandroid;
+package csh.cryptonite;
 
 public class SelectionMode {
 	public static final int MODE_CREATE = 0;

@@ -5,7 +5,7 @@
   New BSD License
 */
 
-package csh.encfsandroid;
+package csh.cryptonite;
 
 import java.io.File;
 import java.util.ArrayList;

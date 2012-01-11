@@ -4,7 +4,7 @@
  * See the LICENSE file that accompanies this code.
  */
 
-package csh.encfsandroid;
+package csh.cryptonite;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -40,15 +40,15 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class EncFSAndroid extends Activity
+public class Cryptonite extends Activity
 {
 
     private static final int REQUEST_SAVE=0, REQUEST_LOAD=1, REQUEST_PREFS=2;
     private static final int MY_PASSWORD_DIALOG_ID = 0;
-    public static final String MNTPNT = "csh.encfsandroid/mnt";
-    public static final String BINDIR = "/data/data/csh.encfsandroid";
+    public static final String MNTPNT = "csh.cryptonite/mnt";
+    public static final String BINDIR = "/data/data/csh.cryptonite";
     public static final String ENCFSBIN = BINDIR + "/encfs";
-    public static final String TAG = "encfs-android";
+    public static final String TAG = "cryptonite";
     private String currentPath = "/";
     private ProgressDialog pd;
     private AlertDialog.Builder ad;
@@ -62,7 +62,7 @@ public class EncFSAndroid extends Activity
 
         ad = new AlertDialog.Builder(this);
         if (!supportsFuse()) {
-            ad.setIcon(R.drawable.ic_launcher_encfsandroid);
+            ad.setIcon(R.drawable.ic_launcher_cryptonite);
             ad.setTitle(R.string.no_fuse);
             ad.setPositiveButton("OK",
                                  new DialogInterface.OnClickListener() {
@@ -98,7 +98,7 @@ public class EncFSAndroid extends Activity
         buttonLoadFile.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     if (!externalStorageIsWritable()) {
-                        ad.setIcon(R.drawable.ic_launcher_encfsandroid);
+                        ad.setIcon(R.drawable.ic_launcher_cryptonite);
                         ad.setTitle(R.string.sdcard_not_writable);
                         ad.setPositiveButton("OK",
                                                   new DialogInterface.OnClickListener() {
@@ -146,7 +146,7 @@ public class EncFSAndroid extends Activity
              }
              break;
          case REQUEST_PREFS:
-             SharedPreferences prefs = getBaseContext().getSharedPreferences("csh.encfsandroid_preferences", 0);
+             SharedPreferences prefs = getBaseContext().getSharedPreferences("csh.cryptonite_preferences", 0);
              break;
          default:
              Log.e(TAG, "Unknown request code");
@@ -261,11 +261,12 @@ public class EncFSAndroid extends Activity
         return chmod;
     }
 
-    public void runEncfs(String[] options, String srcdir, String pwd) {
+    public void runEncFS(String[] options, String srcdir, String pwd) {
         tv.setText(encfsversion + "\n");
         tv.invalidate();
         pd = ProgressDialog.show(this,
-                                 this.getString(R.string.wait_msg), this.getString(R.string.running_encfs), true);
+                                 this.getString(R.string.wait_msg),
+                                 this.getString(R.string.running_encfs), true);
         cursrcdir = srcdir;
         new Thread(new Runnable(){
                 public void run(){
@@ -302,7 +303,7 @@ public class EncFSAndroid extends Activity
              builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                      public void onClick(DialogInterface dialog, int which) {
                          String strPassword = password.getText().toString();
-                         Toast.makeText(EncFSAndroid.this,
+                         Toast.makeText(Cryptonite.this,
                                         "password="+strPassword, Toast.LENGTH_SHORT).show();
                          removeDialog(MY_PASSWORD_DIALOG_ID);
                      }
