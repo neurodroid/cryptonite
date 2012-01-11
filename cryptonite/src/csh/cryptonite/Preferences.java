@@ -4,7 +4,7 @@
  * See the LICENSE file that accompanies this code.
  */
 
-package csh.encfsandroid;
+package csh.cryptonite;
 
 import java.io.IOException;
 

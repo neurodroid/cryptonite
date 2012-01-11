@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">EncFS</string>
-    <string name="about">EncFS for Android\nhttp://code.google.com/p/encfs-android\n\nBased on EncFS\nhttp://www.arg0.net/encfs</string>
+    <string name="app_name">Cryptonite</string>
+    <string name="about">Cryptonite\nhttp://code.google.com/p/cryptonite\n\nBased on EncFS\nhttp://www.arg0.net/encfs</string>
 
     <!-- Options Menu -->
-    <string name="pref_name">EncFS preferences</string>
+    <string name="pref_name">Cryptonite preferences</string>
     <string name="preferences">Preferences</string>
     <string name="about_menu">About</string>
 
@@ -12,6 +12,7 @@
     <string name="title_password">EncFS password</string>
     <string name="settings_password">Enter password:</string>
     <string name="running_encfs">Running EncFS&#8230;</string>
+    <string name="copying_bins">Copying binaries&#8230;</string>
     <string name="no_fuse">FUSE is not supported on your device</string>
 
     <!-- File Browser -->

@@ -73,18 +73,18 @@ encfs/encfs-1*
 
 # build output directories
 
-encfs-app/assets
-encfs-app/assets/*
-encfs-app/bin
-encfs-app/bin/*
-encfs-app/gen
-encfs-app/gen/*
-encfs-app/libs
-encfs-app/libs/*
-encfs-app/obj
-encfs-app/obj/*
-encfs-app/tests/bin
-encfs-app/tests/bin/*
+cryptonite/assets
+cryptonite/assets/*
+cryptonite/bin
+cryptonite/bin/*
+cryptonite/gen
+cryptonite/gen/*
+cryptonite/libs
+cryptonite/libs/*
+cryptonite/obj
+cryptonite/obj/*
+cryptonite/tests/bin
+cryptonite/tests/bin/*
 
 .DS_Store
 .AppleDouble
