@@ -37,6 +37,7 @@ public class FileDialog extends ListActivity {
     public static final String START_PATH = "START_PATH";
     public static final String RESULT_PATH = "RESULT_PATH";
     public static final String SELECTION_MODE = "SELECTION_MODE";
+    public static final String LABEL = "LABEL";
 
     private List<String> path = null;
     private TextView myPath;
@@ -50,7 +51,7 @@ public class FileDialog extends ListActivity {
     private InputMethodManager inputManager;
     private String parentPath;
     private String currentPath = ROOT;
-
+    
     private int selectionMode = SelectionMode.MODE_CREATE;
 
     private File selectedFile;
@@ -142,6 +143,8 @@ public class FileDialog extends ListActivity {
         } else {
             getDir(ROOT);
         }
+        String label = getIntent().getStringExtra(LABEL);
+        this.setTitle(label);
     }
 
     private void getDir(String dirPath) {

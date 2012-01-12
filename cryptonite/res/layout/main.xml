@@ -6,14 +6,22 @@
     android:layout_height="wrap_content"
     android:stretchColumns="*">
 
+  <TableRow>
     <Button
-        android:id="@+id/btnLoadFile" 
-        android:text="@string/load_dir" 
+        android:id="@+id/btnMount" 
+        android:text="@string/mount" 
         android:layout_width="fill_parent" 
         android:layout_height="wrap_content" 
         android:typeface="normal">
     </Button>
-
+    <Button
+        android:id="@+id/btnUnmount" 
+        android:text="@string/unmount" 
+        android:layout_width="fill_parent" 
+        android:layout_height="wrap_content" 
+        android:typeface="normal">
+    </Button>
+  </TableRow>
     <TextView
        android:id="@+id/txtOutput" 
        android:layout_width="fill_parent" 
