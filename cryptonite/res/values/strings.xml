@@ -14,6 +14,7 @@
     <string name="running_encfs">Running EncFS&#8230;</string>
     <string name="copying_bins">Copying binaries&#8230;</string>
     <string name="no_fuse">FUSE is not supported on your device</string>
+    <string name="browse_info">Browse EncFS volume</string>
     <string name="mount_info">Mount EncFS volume</string>
     <string name="mount_info_unsupported">Mounting is not supported on this phone</string>
 
@@ -31,9 +32,11 @@
     <string name="cant_read_folder">folder can\'t be read!</string>
 
     <!-- Button labels -->
-    <string name="browse">Browse encrypted volume</string>
-    <string name="mount">Mount EncFS volume</string>
-    <string name="unmount">Unmount EncFS volume</string>
+    <string name="browse">Browse local volume</string>
+    <string name="dropbox">Browse Dropbox volume</string>
+    <string name="mount">Mount</string>
+    <string name="unmount">Unmount</string>
+    <string name="viewmount">View mounted</string>
     
     <!-- Misc -->
     <string name="wait_msg">Please wait&#8230;</string>

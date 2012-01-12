@@ -52,8 +52,10 @@ public class FileDialog extends ListActivity {
     private String parentPath;
     private String currentPath = ROOT;
     
+    @SuppressWarnings("unused")
     private int selectionMode = SelectionMode.MODE_CREATE;
 
+    @SuppressWarnings("unused")
     private File selectedFile;
     private HashMap<String, Integer> lastPositions = new HashMap<String, Integer>();
 
@@ -73,8 +75,7 @@ public class FileDialog extends ListActivity {
         selectButton.setEnabled(true);
         selectButton.setOnClickListener(new OnClickListener() {
 
-                @Override
-                    public void onClick(View v) {
+                public void onClick(View v) {
                     /*
                       if (selectedFile != null) {
                       getIntent().putExtra(RESULT_PATH, selectedFile.getPath());
@@ -117,8 +118,7 @@ public class FileDialog extends ListActivity {
         final Button cancelButton = (Button) findViewById(R.id.fdButtonCancel);
         cancelButton.setOnClickListener(new OnClickListener() {
 
-                @Override
-                    public void onClick(View v) {
+                public void onClick(View v) {
                     setSelectVisible(v);
                 }
 
@@ -126,8 +126,7 @@ public class FileDialog extends ListActivity {
         final Button createButton = (Button) findViewById(R.id.fdButtonCreate);
         createButton.setOnClickListener(new OnClickListener() {
 
-                @Override
-                    public void onClick(View v) {
+                public void onClick(View v) {
                     if (mFileName.getText().length() > 0) {
                         getIntent().putExtra(RESULT_PATH,
                                              currentPath + "/" + mFileName.getText());
@@ -257,8 +256,7 @@ public class FileDialog extends ListActivity {
                     .setPositiveButton("OK",
                                        new DialogInterface.OnClickListener() {
 
-                                           @Override
-                                               public void onClick(DialogInterface dialog,
+                                           public void onClick(DialogInterface dialog,
                                                                    int which) {
 
                                            }
@@ -293,13 +291,13 @@ public class FileDialog extends ListActivity {
         }
     }
 
-    private void setCreateVisible(View v) {
-        layoutCreate.setVisibility(View.VISIBLE);
-        layoutSelect.setVisibility(View.GONE);
-
-        inputManager.hideSoftInputFromWindow(v.getWindowToken(), 0);
-        selectButton.setEnabled(false);
-    }
+//    private void setCreateVisible(View v) {
+//        layoutCreate.setVisibility(View.VISIBLE);
+//        layoutSelect.setVisibility(View.GONE);
+//
+//        inputManager.hideSoftInputFromWindow(v.getWindowToken(), 0);
+//        selectButton.setEnabled(false);
+//    }
 
     private void setSelectVisible(View v) {
         layoutCreate.setVisibility(View.GONE);

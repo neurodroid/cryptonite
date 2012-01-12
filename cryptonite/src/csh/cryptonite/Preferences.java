@@ -6,18 +6,9 @@
 
 package csh.cryptonite;
 
-import java.io.IOException;
-
-import android.content.SharedPreferences;
-
 import android.os.Bundle;
 
-import android.preference.Preference;
 import android.preference.PreferenceActivity;
-import android.preference.CheckBoxPreference;
-import android.preference.Preference.OnPreferenceClickListener;
-
-import android.widget.Toast;
 
 public class Preferences extends PreferenceActivity {
     

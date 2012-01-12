@@ -1,26 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TableLayout 
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:layout_width="fill_parent"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:stretchColumns="*">
+    android:orientation="vertical" >
 
   <TextView
-      android:id="@+id/tvVersion" 
+      android:id="@+id/tvBrowse" 
+      android:text="@string/browse_info"
       android:layout_width="fill_parent" 
       android:layout_height="wrap_content" 
       android:typeface="normal"
       android:textStyle="bold">
   </TextView>
 
-  <Button
-      android:id="@+id/btnBrowse" 
-      android:text="@string/browse" 
-      android:layout_width="fill_parent" 
-      android:layout_height="wrap_content" 
-      android:typeface="normal">
-  </Button>
+  <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal" >
+
+    <Button
+        android:id="@+id/btnDropbox"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:text="@string/dropbox"
+        android:typeface="normal" >
+
+    </Button>
+
+    <Button
+        android:id="@+id/btnBrowse"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:text="@string/browse"
+        android:typeface="normal" >
+
+    </Button>
+  </LinearLayout>
 
   <TextView
       android:id="@+id/tvMountInfo" 
@@ -31,21 +46,43 @@
       android:textStyle="bold">
   </TextView>
 
-  <TableRow>
-    <Button
-        android:id="@+id/btnMount" 
-        android:text="@string/mount" 
-        android:layout_width="fill_parent" 
-        android:layout_height="wrap_content" 
-        android:typeface="normal">
-    </Button>
-    <Button
-        android:id="@+id/btnUnmount" 
-        android:text="@string/unmount" 
-        android:layout_width="fill_parent" 
-        android:layout_height="wrap_content" 
-        android:typeface="normal">
-    </Button>
-  </TableRow>
+  <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal" >
 
-</TableLayout>
+      <Button
+          android:id="@+id/btnMount"
+          android:layout_width="wrap_content"
+          android:layout_height="match_parent"
+          android:text="@string/mount"
+          android:typeface="normal" >
+      </Button>
+
+      <Button
+          android:id="@+id/btnUnmount"
+          android:layout_width="wrap_content"
+          android:layout_height="match_parent"
+          android:text="@string/unmount"
+          android:typeface="normal" >
+      </Button>
+
+      <Button
+          android:id="@+id/btnViewMount"
+          android:layout_width="wrap_content"
+          android:layout_height="match_parent"
+          android:text="@string/viewmount"
+          android:typeface="normal" >
+      </Button>
+  </LinearLayout>
+
+  <TextView
+      android:id="@+id/tvVersion" 
+      android:layout_width="fill_parent" 
+      android:layout_height="wrap_content" 
+      android:typeface="normal"
+      android:textStyle="bold">
+  </TextView>
+
+
+</LinearLayout>

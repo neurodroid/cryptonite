@@ -8,10 +8,8 @@ package csh.cryptonite;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
@@ -45,13 +43,12 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 public class Cryptonite extends Activity
 {
 
     private static final int REQUEST_SAVE=0, REQUEST_LOAD=1, REQUEST_PREFS=2;
-    private static final int MOUNT_MODE=0, BROWSE_MODE=1;
+    private static final int MOUNT_MODE=0, BROWSE_MODE=1, DROPBOX_MODE=2, VIEWMOUNT_MODE=3;
     private static final int MY_PASSWORD_DIALOG_ID = 0;
     public static final String MNTPNT = "/csh.cryptonite/mnt";
     public static final String BINDIR = "/data/data/csh.cryptonite";
@@ -66,7 +63,7 @@ public class Cryptonite extends Activity
     private TextView tv;
     private TextView tvMountInfo;
     private String encfsversion, encfsoutput, cursrcdir, fdlabel;
-    private Button buttonBrowse, buttonMount, buttonUnmount;
+    private Button buttonDropbox, buttonBrowse, buttonMount, buttonUnmount, buttonViewMount;
     private int op_mode = -1;
     
     /** Called when the activity is first created. */
@@ -93,25 +90,50 @@ public class Cryptonite extends Activity
         
         /* Copy the encfs binaries to binDir and make executable.
          */
-        pd = ProgressDialog.show(this,
-                                 this.getString(R.string.wait_msg),
-                                 this.getString(R.string.copying_bins), true);
-        new Thread(new Runnable(){
-                public void run(){
-                    cpEncFSBin();
-                    runOnUiThread(new Runnable(){
-                            @Override public void run() {
-                                if (pd.isShowing())
-                                    pd.dismiss();
-                                /* Get version information from EncFS */
-                                encfsversion = "EncFS " + encfsVersion();
-                                Log.v(TAG, "EncFS version: " + encfsVersion());
-                                tv = (TextView)findViewById(R.id.tvVersion);
-                                tv.setText(encfsversion);
-                            }
-                        });
-                }
-            }).start();
+        if (!(new File(ENCFSBIN)).exists()) {
+            pd = ProgressDialog.show(this,
+                                     this.getString(R.string.wait_msg),
+                                     this.getString(R.string.copying_bins), true);
+            new Thread(new Runnable(){
+                    public void run(){
+                        cpEncFSBin();
+                        runOnUiThread(new Runnable(){
+                                public void run() {
+                                    if (pd.isShowing())
+                                        pd.dismiss();
+                                    /* Get version information from EncFS */
+                                    encfsversion = "EncFS " + encfsVersion();
+                                    Log.v(TAG, "EncFS version: " + encfsVersion());
+                                    tv = (TextView)findViewById(R.id.tvVersion);
+                                    tv.setText(encfsversion);
+                                }
+                            });
+                    }
+                }).start();
+        }
+        
+        /* Select source directory using a simple file dialog */
+        buttonDropbox = (Button)findViewById(R.id.btnDropbox);
+        fdlabel = this.getString(R.string.select_enc);
+        buttonDropbox.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    op_mode = DROPBOX_MODE;
+                    if (!externalStorageIsWritable()) {
+                        ad.setIcon(R.drawable.ic_launcher_cryptonite);
+                        ad.setTitle(R.string.sdcard_not_writable);
+                        ad.setPositiveButton("OK",
+                                                  new DialogInterface.OnClickListener() {
+                                                      public void onClick(DialogInterface dialog,
+                                                                              int which) {
+                                                          
+                                                      }
+                                                  });
+                        ad.show();
+                    } else {
+                    }
+                }});
+
+        buttonDropbox.setEnabled(false);
         
         /* Select source directory using a simple file dialog */
         buttonBrowse = (Button)findViewById(R.id.btnBrowse);
@@ -124,8 +146,7 @@ public class Cryptonite extends Activity
                         ad.setTitle(R.string.sdcard_not_writable);
                         ad.setPositiveButton("OK",
                                                   new DialogInterface.OnClickListener() {
-                                                      @Override
-                                                          public void onClick(DialogInterface dialog,
+                                                      public void onClick(DialogInterface dialog,
                                                                               int which) {
                                                           
                                                       }
@@ -141,6 +162,8 @@ public class Cryptonite extends Activity
                     }
                 }});
 
+        buttonBrowse.setEnabled(false);
+        
         /* Select source directory using a simple file dialog */
         buttonMount = (Button)findViewById(R.id.btnMount);
         fdlabel = this.getString(R.string.select_enc);
@@ -152,8 +175,7 @@ public class Cryptonite extends Activity
                         ad.setTitle(R.string.sdcard_not_writable);
                         ad.setPositiveButton("OK",
                                                   new DialogInterface.OnClickListener() {
-                                                      @Override
-                                                          public void onClick(DialogInterface dialog,
+                                                      public void onClick(DialogInterface dialog,
                                                                               int which) {
                                                           
                                                       }
@@ -177,6 +199,33 @@ public class Cryptonite extends Activity
                     runBinary(umountlist, BINDIR, null, true);
                     updateButtons();
                 }});
+
+        /* Select source directory using a simple file dialog */
+        buttonViewMount = (Button)findViewById(R.id.btnViewMount);
+        fdlabel = this.getString(R.string.select_enc);
+        buttonViewMount.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    op_mode = VIEWMOUNT_MODE;
+                    if (!externalStorageIsWritable()) {
+                        ad.setIcon(R.drawable.ic_launcher_cryptonite);
+                        ad.setTitle(R.string.sdcard_not_writable);
+                        ad.setPositiveButton("OK",
+                                                  new DialogInterface.OnClickListener() {
+                                                      public void onClick(DialogInterface dialog,
+                                                                              int which) {
+                                                          
+                                                      }
+                                                  });
+                        ad.show();
+                    } else {
+
+                        Intent intent = new Intent(getBaseContext(),
+                                                   FileDialog.class);
+                        intent.putExtra(FileDialog.START_PATH, mntDir);
+                        intent.putExtra(FileDialog.LABEL, fdlabel);
+                        startActivityForResult(intent, SelectionMode.MODE_OPEN);
+                    }
+                }});
         updateButtons();
     }
 
@@ -186,6 +235,7 @@ public class Cryptonite extends Activity
         Log.v(TAG, "EncFS mount state: " + ism + " FUSE support: " + sf);
         buttonMount.setEnabled(!ism && sf);
         buttonUnmount.setEnabled(ism && sf);
+        buttonViewMount.setEnabled(ism && sf);
     }
 
     /** Called upon exit from other activities */
@@ -213,6 +263,7 @@ public class Cryptonite extends Activity
              }
              break;
          case REQUEST_PREFS:
+             @SuppressWarnings("unused")
              SharedPreferences prefs = getBaseContext().getSharedPreferences("csh.cryptonite_preferences", 0);
              break;
          default:
@@ -351,7 +402,7 @@ public class Cryptonite extends Activity
                     String[] cmdlist = {ENCFSBIN, "--stdinpass", cursrcdir, mntDir};
                     encfsoutput = runBinary(cmdlist, BINDIR, curPassword, true);
                     runOnUiThread(new Runnable(){
-                            @Override public void run() {
+                            public void run() {
                                 if (pd.isShowing())
                                     pd.dismiss();
                                 if (encfsoutput.length() > 0) {
@@ -366,9 +417,9 @@ public class Cryptonite extends Activity
     }
     
     public static String join(String[] sa, String delimiter) {
-        Collection s = Arrays.asList(sa);
+        Collection<String> s = Arrays.asList(sa);
         StringBuffer buffer = new StringBuffer();
-        Iterator iter = s.iterator();
+        Iterator<String> iter = s.iterator();
         while (iter.hasNext()) {
             buffer.append(iter.next());
             if (iter.hasNext()) {
