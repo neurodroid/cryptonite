@@ -21,6 +21,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.InputMethodManager;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -137,6 +138,7 @@ public class FileDialog extends ListActivity {
             });
 
         String startPath = getIntent().getStringExtra(START_PATH);
+        Log.v(Cryptonite.TAG, "Received start path: " + startPath);
         if (startPath != null) {
             getDir(startPath);
         } else {
@@ -171,6 +173,7 @@ public class FileDialog extends ListActivity {
         File f = new File(currentPath);
         File[] files = f.listFiles();
         if (files == null) {
+            Log.v(Cryptonite.TAG, "No files in current path");
             currentPath = ROOT;
             f = new File(currentPath);
             files = f.listFiles();

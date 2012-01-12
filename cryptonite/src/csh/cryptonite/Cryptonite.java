@@ -219,8 +219,7 @@ public class Cryptonite extends Activity
                         ad.show();
                     } else {
 
-                        Intent intent = new Intent(getBaseContext(),
-                                                   FileDialog.class);
+                        Intent intent = new Intent(getBaseContext(), FileDialog.class);
                         intent.putExtra(FileDialog.START_PATH, mntDir);
                         intent.putExtra(FileDialog.LABEL, fdlabel);
                         startActivityForResult(intent, SelectionMode.MODE_OPEN);
