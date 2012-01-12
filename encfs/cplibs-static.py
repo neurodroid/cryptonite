@@ -32,12 +32,12 @@ for arch in archs:
         cpfile(splitfile, "../cryptonite/assets/%s/" % arch)
 
     # encfsctl
-    p = subprocess.Popen("/usr/bin/split -b 1m encfsctl encfsctl.split", 
-                         cwd="./encfs-1.7.4/%s/bin" % arch, 
-                         shell=True)
-    p.wait()
+    # p = subprocess.Popen("/usr/bin/split -b 1m encfsctl encfsctl.split", 
+    #                      cwd="./encfs-1.7.4/%s/bin" % arch, 
+    #                      shell=True)
+    # p.wait()
 
-    splitfiles = glob.glob("./encfs-1.7.4/%s/bin/encfsctl.split*" % arch)
-    print splitfiles
-    for splitfile in splitfiles:
-        cpfile(splitfile, "../cryptonite/assets/%s/" % arch)
+    # splitfiles = glob.glob("./encfs-1.7.4/%s/bin/encfsctl.split*" % arch)
+    # print splitfiles
+    # for splitfile in splitfiles:
+    #     cpfile(splitfile, "../cryptonite/assets/%s/" % arch)

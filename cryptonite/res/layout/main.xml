@@ -6,6 +6,31 @@
     android:layout_height="wrap_content"
     android:stretchColumns="*">
 
+  <TextView
+      android:id="@+id/tvVersion" 
+      android:layout_width="fill_parent" 
+      android:layout_height="wrap_content" 
+      android:typeface="normal"
+      android:textStyle="bold">
+  </TextView>
+
+  <Button
+      android:id="@+id/btnBrowse" 
+      android:text="@string/browse" 
+      android:layout_width="fill_parent" 
+      android:layout_height="wrap_content" 
+      android:typeface="normal">
+  </Button>
+
+  <TextView
+      android:id="@+id/tvMountInfo" 
+      android:text="@string/mount_info" 
+      android:layout_width="fill_parent" 
+      android:layout_height="wrap_content" 
+      android:typeface="normal"
+      android:textStyle="bold">
+  </TextView>
+
   <TableRow>
     <Button
         android:id="@+id/btnMount" 
@@ -22,11 +47,5 @@
         android:typeface="normal">
     </Button>
   </TableRow>
-    <TextView
-       android:id="@+id/txtOutput" 
-       android:layout_width="fill_parent" 
-       android:layout_height="wrap_content" 
-       android:typeface="normal">
-    </TextView>
 
 </TableLayout>

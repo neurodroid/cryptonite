@@ -7,12 +7,15 @@
 package csh.cryptonite;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -48,7 +51,7 @@ public class Cryptonite extends Activity
 {
 
     private static final int REQUEST_SAVE=0, REQUEST_LOAD=1, REQUEST_PREFS=2;
-    private static final int MOUNT_MODE=0;
+    private static final int MOUNT_MODE=0, BROWSE_MODE=1;
     private static final int MY_PASSWORD_DIALOG_ID = 0;
     public static final String MNTPNT = "/csh.cryptonite/mnt";
     public static final String BINDIR = "/data/data/csh.cryptonite";
@@ -61,9 +64,10 @@ public class Cryptonite extends Activity
     private ProgressDialog pd;
     private AlertDialog.Builder ad;
     private TextView tv;
+    private TextView tvMountInfo;
     private String encfsversion, encfsoutput, cursrcdir, fdlabel;
-    private Button buttonMount, buttonUnmount;
-    private int op_mode = MOUNT_MODE;
+    private Button buttonBrowse, buttonMount, buttonUnmount;
+    private int op_mode = -1;
     
     /** Called when the activity is first created. */
     @Override public void onCreate(Bundle savedInstanceState) {
@@ -74,12 +78,18 @@ public class Cryptonite extends Activity
 
         getResources();
 
-        mntDir = Environment.getExternalStorageDirectory().getPath() + MNTPNT;
-        File mntDirF = new File(mntDir);
-        if (!mntDirF.exists()) {
-            mntDirF.mkdirs();
+        if (externalStorageIsWritable()) {
+            mntDir = Environment.getExternalStorageDirectory().getPath() + MNTPNT;
+            File mntDirF = new File(mntDir);
+            if (!mntDirF.exists()) {
+                mntDirF.mkdirs();
+            }
         }
-        Log.v(TAG, mntDir);
+
+        tvMountInfo = (TextView)findViewById(R.id.tvMountInfo);
+        if (!externalStorageIsWritable() || !supportsFuse()) {
+            tv.setText(this.getString(R.string.mount_info_unsupported));
+        }
         
         /* Copy the encfs binaries to binDir and make executable.
          */
@@ -89,25 +99,48 @@ public class Cryptonite extends Activity
         new Thread(new Runnable(){
                 public void run(){
                     cpEncFSBin();
-                    cpEncFSBin("encfsctl");
                     runOnUiThread(new Runnable(){
                             @Override public void run() {
                                 if (pd.isShowing())
                                     pd.dismiss();
-                                /* Get version information from EncFS (goes to stderr) */
-                                // String[] cmdlist = {ENCFSBIN, "--version"};
-                                String[] cmdlist = {ENCFSBIN, "--extpass='sh -c \"echo password\"'", "/sdcard/encfs2", "/mnt/sdcard/csh.cryptonite/mnt"};
-                                Log.v(TAG, join(cmdlist, " "));
-                                encfsversion = runBinary(cmdlist, BINDIR, true);
-                                Log.v(TAG, "EncFS version: " + encfsversion);
-                                
-                                tv = (TextView)findViewById(R.id.txtOutput);
+                                /* Get version information from EncFS */
+                                encfsversion = "EncFS " + encfsVersion();
+                                Log.v(TAG, "EncFS version: " + encfsVersion());
+                                tv = (TextView)findViewById(R.id.tvVersion);
                                 tv.setText(encfsversion);
                             }
                         });
                 }
             }).start();
         
+        /* Select source directory using a simple file dialog */
+        buttonBrowse = (Button)findViewById(R.id.btnBrowse);
+        fdlabel = this.getString(R.string.select_enc);
+        buttonBrowse.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    op_mode = BROWSE_MODE;
+                    if (!externalStorageIsWritable()) {
+                        ad.setIcon(R.drawable.ic_launcher_cryptonite);
+                        ad.setTitle(R.string.sdcard_not_writable);
+                        ad.setPositiveButton("OK",
+                                                  new DialogInterface.OnClickListener() {
+                                                      @Override
+                                                          public void onClick(DialogInterface dialog,
+                                                                              int which) {
+                                                          
+                                                      }
+                                                  });
+                        ad.show();
+                    } else {
+
+                        Intent intent = new Intent(getBaseContext(),
+                                                   FileDialog.class);
+                        intent.putExtra(FileDialog.START_PATH, "/");
+                        intent.putExtra(FileDialog.LABEL, fdlabel);
+                        startActivityForResult(intent, SelectionMode.MODE_OPEN);
+                    }
+                }});
+
         /* Select source directory using a simple file dialog */
         buttonMount = (Button)findViewById(R.id.btnMount);
         fdlabel = this.getString(R.string.select_enc);
@@ -141,7 +174,7 @@ public class Cryptonite extends Activity
         buttonUnmount.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     String[] umountlist = {"umount", mntDir};
-                    runBinary(umountlist, BINDIR);
+                    runBinary(umountlist, BINDIR, null, true);
                     updateButtons();
                 }});
         updateButtons();
@@ -150,6 +183,7 @@ public class Cryptonite extends Activity
     private void updateButtons() {
         boolean ism = isMounted();
         boolean sf = supportsFuse();
+        Log.v(TAG, "EncFS mount state: " + ism + " FUSE support: " + sf);
         buttonMount.setEnabled(!ism && sf);
         buttonUnmount.setEnabled(ism && sf);
     }
@@ -171,7 +205,6 @@ public class Cryptonite extends Activity
                  }
                      
                  currentPath = data.getStringExtra(FileDialog.RESULT_PATH);
-                 Log.v(TAG, currentPath);
 
                  showDialog(MY_PASSWORD_DIALOG_ID);
 
@@ -236,52 +269,55 @@ public class Cryptonite extends Activity
     }
 
     public static String runBinary(String[] binName, String encfsHome) {
-        return runBinary(binName, encfsHome, false);
+        return runBinary(binName, encfsHome, null, false);
     }
 
     /** Run a binary using binDir as the wd. Return stdout
      *  and optinally stderr
      */
-    public static String runBinary(String[] binName, String encfsHome, boolean stderr) {
+    public static String runBinary(String[] binName, String encfsHome, String toStdIn, boolean root) {
         try {
             File binDir = new File(BINDIR);
             if (!binDir.exists()) {
                 binDir.mkdirs();
             }
             
-            /* Can't set the environment on Android <= 2.2 with
-             * ProcessBuilder. Resorting back to old-school exec.
-             */
-            String[] envp = {"NEURONHOME="+encfsHome};
-            Process process = Runtime.getRuntime().exec(binName, envp, binDir);
-            process.waitFor();
-            
             String NL = System.getProperty("line.separator");
+            ProcessBuilder pb = new ProcessBuilder(binName);
+            pb.directory(binDir);
+            pb.redirectErrorStream(true);
+            Process process;
             
-            String output = "";
-            
-            if (stderr) {
-                Scanner errscanner = new Scanner(new BufferedInputStream(process.getErrorStream()));
-                try {
-                    while (errscanner.hasNextLine()) {
-                        output += errscanner.nextLine() + NL;
-                    }
-                }
-                finally {
-                    errscanner.close();
-                }
+            if (root) {
+                String[] sucmd = {"su", "-c", join(binName, " ")};
+                pb.command(sucmd);
+                process = pb.start();
             } else {
-                Scanner outscanner = new Scanner(new BufferedInputStream(process.getInputStream()));
-                try {
-                    while (outscanner.hasNextLine()) {
-                        output += outscanner.nextLine();
-                        output += NL;
-                    }
-                }
-                finally {
-                    outscanner.close();
+                pb.command(binName);
+                process = pb.start();
+            }
+            
+            if (toStdIn != null) {
+                BufferedWriter writer = new BufferedWriter(
+                                                           new OutputStreamWriter(process.getOutputStream()) );
+                writer.write(toStdIn + "\n");
+                writer.flush();
+            }
+
+            process.waitFor();
+                
+            String output = "";
+            Scanner outscanner = new Scanner(new BufferedInputStream(process.getInputStream()));
+            try {
+                while (outscanner.hasNextLine()) {
+                    output += outscanner.nextLine();
+                    output += NL;
                 }
             }
+            finally {
+                outscanner.close();
+            }
+
             return output;
 
         } catch (IOException e) {
@@ -303,7 +339,7 @@ public class Cryptonite extends Activity
     }
 
     public void runEncFS(String srcdir, String pwd) {
-        tv.setText(encfsversion + "\n");
+        tv.setText(encfsversion);
         tv.invalidate();
         pd = ProgressDialog.show(this,
                                  this.getString(R.string.wait_msg),
@@ -312,15 +348,16 @@ public class Cryptonite extends Activity
         Log.v(TAG, "Running encfs with" + srcdir + mntDir);
         new Thread(new Runnable(){
                 public void run(){
-                    String[] cmdlist = {ENCFSBIN, "--extpass=\"echo " + curPassword + "\"", cursrcdir, mntDir};
-                    Log.v(TAG, join(cmdlist, " "));
-                    
-                    encfsoutput = runBinary(cmdlist, BINDIR, false);
+                    String[] cmdlist = {ENCFSBIN, "--stdinpass", cursrcdir, mntDir};
+                    encfsoutput = runBinary(cmdlist, BINDIR, curPassword, true);
                     runOnUiThread(new Runnable(){
                             @Override public void run() {
                                 if (pd.isShowing())
                                     pd.dismiss();
-                                tv.setText(encfsversion + "\n" + encfsoutput);
+                                if (encfsoutput.length() > 0) {
+                                    tv.setText(encfsversion + "\n" + encfsoutput);
+                                }
+                                updateButtons();
                             }
                         });
                 }
@@ -364,7 +401,6 @@ public class Cryptonite extends Activity
                          removeDialog(MY_PASSWORD_DIALOG_ID);
                          if (op_mode == MOUNT_MODE) {
                              runEncFS(currentPath, curPassword);
-                             updateButtons();
                          }
                      }
                  });
@@ -404,6 +440,7 @@ public class Cryptonite extends Activity
     }
 
     public static boolean isMounted() {
+        boolean isMounted = false;
         try {
             /* Read mounted info */
             FileInputStream fis = new FileInputStream("/proc/mounts");
@@ -411,20 +448,35 @@ public class Cryptonite extends Activity
             try {
                 Log.v(TAG, "Parsing /proc/mounts for mounted encfs devices");
                 while (scanner.hasNextLine()) {
-                    if (scanner.findInLine("fuse.encfs")!=null) {
-                        scanner.close();
-                        return true;
+                    if (!isMounted && scanner.findInLine("fuse.encfs")!=null) {
+                        Log.v(TAG, "Found mounted EncFS volume");
+                        isMounted = true;
                     }
-                    String l = scanner.nextLine();
-                    Log.v(TAG, l);
+                    Log.v(TAG, scanner.nextLine());
                 }
             } finally {
                 scanner.close();
-                return false;
             }
         } catch (IOException e) {
-            return false;
+            return isMounted;
         }
+        return isMounted;
     }
+
+    /* Native methods are implemented by the
+     * 'cryptonite' native library, which is packaged
+     * with this application.
+     */
+    public native int     encfsMount();
+    public native String  encfsVersion();
     
+    /* this is used to load the 'cryptonite' library on application
+     * startup. The library has already been unpacked into
+     * /data/data/csh.cryptonite/lib/libcryptonite.so at
+     * installation time by the package manager.
+     */
+    static {
+        System.loadLibrary("cryptonite");
+    }
+
 }
