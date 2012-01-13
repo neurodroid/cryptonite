@@ -32,14 +32,21 @@ LOCAL_CPPFLAGS := \
     -DRLOG_COMPONENT="encfs" \
     -DFUSE_USE_VERSION=26 \
     -D__STDC_FORMAT_MACROS \
-    -D__MULTI_THREAD
+    -D__MULTI_THREAD \
+    -DOPENSSL_NO_ENGINE \
+    -DHAVE_EVP_AES \
+    -DHAVE_EVP_BF \
+    -fexceptions \
+    -frtti
 
-LOCAL_LDLIBS := \
+LOCAL_LDFLAGS := \
+    ./obj/local/armeabi/libencfs.a \
     ./obj/local/armeabi/libfuse.a \
-    ./obj/local/armeabi/libboost_filesystem.a \
     ./obj/local/armeabi/libboost_serialization.a \
-    ./obj/local/armeabi/libboost_system.a \
     ./obj/local/armeabi/librlog.a \
-    ./obj/local/armeabi/libencfs.a
+    ./obj/local/armeabi/libboost_filesystem.a \
+    ./obj/local/armeabi/libboost_system.a
+
+LOCAL_LDLIBS :=
 
 include $(BUILD_SHARED_LIBRARY)
