@@ -37,7 +37,7 @@
 // #include <Context.h>
 #include <FileNode.h>
 #include <DirNode.h>
-// #include <config.h>
+#include <config.h>
 
 // apply an operation to every block in the file
 template<typename T>
@@ -285,7 +285,7 @@ Java_csh_cryptonite_Cryptonite_encfsBrowse(JNIEnv* env, jobject thiz, jstring sr
 {
     const char* c_srcdir = env->GetStringUTFChars(srcdir, 0);
     int res = EXIT_FAILURE;
-#if 0
+
     RootPtr rootInfo = initRootInfo(c_srcdir);
     env->ReleaseStringUTFChars(srcdir, c_srcdir);
 
@@ -300,7 +300,7 @@ Java_csh_cryptonite_Cryptonite_encfsBrowse(JNIEnv* env, jobject thiz, jstring sr
     res = traverseDirs(rootInfo, "/", c_destdir);
     
     env->ReleaseStringUTFChars(destdir, c_destdir);
-#endif
+
     return res;
 }
 

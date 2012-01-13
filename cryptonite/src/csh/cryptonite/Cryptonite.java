@@ -103,6 +103,8 @@ public class Cryptonite extends Activity
 
         getResources();
 
+        encfsversion = "EncFS " + encfsVersion();
+
         if (externalStorageIsWritable()) {
             mntDir = Environment.getExternalStorageDirectory().getPath() + MNTPNT;
             File mntDirF = new File(mntDir);
@@ -130,8 +132,7 @@ public class Cryptonite extends Activity
                                     if (pd.isShowing())
                                         pd.dismiss();
                                     /* Get version information from EncFS */
-                                    encfsversion = "EncFS " + encfsVersion();
-                                    Log.v(TAG, "EncFS version: " + encfsVersion());
+                                    Log.v(TAG, encfsversion);
                                     tv = (TextView)findViewById(R.id.tvVersion);
                                     tv.setText(encfsversion);
                                 }
@@ -418,7 +419,7 @@ public class Cryptonite extends Activity
     }
 
     public void runEncFS(String srcdir, String pwd) {
-        tv.setText("EncFS " + encfsVersion());
+        tv.setText(encfsversion);
         tv.invalidate();
         pd = ProgressDialog.show(this,
                                  this.getString(R.string.wait_msg),
