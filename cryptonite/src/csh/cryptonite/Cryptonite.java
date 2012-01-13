@@ -398,7 +398,7 @@ public class Cryptonite extends Activity
         Log.v(TAG, "Running encfs with" + srcdir + mntDir);
         new Thread(new Runnable(){
                 public void run(){
-                    String[] cmdlist = {ENCFSBIN, "--stdinpass", cursrcdir, mntDir};
+                    String[] cmdlist = {ENCFSBIN, "--public", "--stdinpass", cursrcdir, mntDir};
                     encfsoutput = runBinary(cmdlist, BINDIR, curPassword, true);
                     runOnUiThread(new Runnable(){
                             public void run() {
