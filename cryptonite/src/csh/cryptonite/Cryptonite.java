@@ -418,7 +418,7 @@ public class Cryptonite extends Activity
     }
 
     public void runEncFS(String srcdir, String pwd) {
-        tv.setText(encfsversion);
+        tv.setText("EncFS " + encfsVersion());
         tv.invalidate();
         pd = ProgressDialog.show(this,
                                  this.getString(R.string.wait_msg),
@@ -476,7 +476,6 @@ public class Cryptonite extends Activity
              builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                      public void onClick(DialogInterface dialog, int which) {
                          curPassword = password.getText().toString();
-                         Log.v(TAG, curPassword);
                          removeDialog(MY_PASSWORD_DIALOG_ID);
                          if (opMode == MOUNT_MODE) {
                              runEncFS(currentReturnPath, curPassword);
