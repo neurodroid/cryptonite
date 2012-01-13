@@ -7,6 +7,8 @@
     <string name="pref_name">Cryptonite preferences</string>
     <string name="preferences">Preferences</string>
     <string name="about_menu">About</string>
+    <string name="cb_builtin_title">Use built-in file browser</string>
+    <string name="cb_builtin_summary">Always use the built-in file browser</string>
 
     <string name="sdcard_not_writable">Can\'t write to SD card</string>
     <string name="title_password">EncFS password</string>
@@ -17,6 +19,11 @@
     <string name="browse_info">Browse EncFS volume</string>
     <string name="mount_info">Mount EncFS volume</string>
     <string name="mount_info_unsupported">Mounting is not supported on this phone</string>
+
+    <string name="app_oi_missing">OI file browser not installed.</string>
+    <string name="app_oi_get">Go to Market</string>
+    <string name="app_oi_builtin">Use built-in file browser</string>
+    <string name="market_missing">Google Market wasn\'t found on your device</string>
 
     <!-- File Browser -->
     <string name="select_enc">Select EncFS root directory</string>
@@ -38,6 +45,7 @@
     <string name="mount">Mount</string>
     <string name="unmount">Unmount</string>
     <string name="viewmount">View mounted</string>
+    <string name="back">Back</string>
     
     <!-- Misc -->
     <string name="wait_msg">Please wait&#8230;</string>

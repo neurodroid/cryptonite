@@ -27,6 +27,8 @@
 *.exe
 *.swp
 *.orig
+\#*
+.\#*
 
 # autotools noise
 
