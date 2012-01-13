@@ -25,10 +25,16 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 
+import android.content.ActivityNotFoundException;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+
+import android.net.Uri;
 
 import android.os.Bundle;
 import android.os.Environment;
@@ -47,8 +53,9 @@ import android.widget.TextView;
 public class Cryptonite extends Activity
 {
 
-    private static final int REQUEST_SAVE=0, REQUEST_LOAD=1, REQUEST_PREFS=2;
+    private static final int REQUEST_PREFS=0, REQUEST_CODE_PICK_FILE_OR_DIRECTORY=1;
     private static final int MOUNT_MODE=0, BROWSE_MODE=1, DROPBOX_MODE=2, VIEWMOUNT_MODE=3;
+    private static final int DIRPICK_MODE=0, FILEPICK_MODE=1;
     private static final int MY_PASSWORD_DIALOG_ID = 0;
     public static final String MNTPNT = "/csh.cryptonite/mnt";
     public static final String BINDIR = "/data/data/csh.cryptonite";
@@ -153,12 +160,7 @@ public class Cryptonite extends Activity
                                                   });
                         ad.show();
                     } else {
-
-                        Intent intent = new Intent(getBaseContext(),
-                                                   FileDialog.class);
-                        intent.putExtra(FileDialog.START_PATH, "/");
-                        intent.putExtra(FileDialog.LABEL, fdlabel);
-                        startActivityForResult(intent, SelectionMode.MODE_OPEN);
+                        launchFileBrowser("/", fdlabel, DIRPICK_MODE);
                     }
                 }});
 
@@ -182,12 +184,7 @@ public class Cryptonite extends Activity
                                                   });
                         ad.show();
                     } else {
-
-                        Intent intent = new Intent(getBaseContext(),
-                                                   FileDialog.class);
-                        intent.putExtra(FileDialog.START_PATH, "/");
-                        intent.putExtra(FileDialog.LABEL, fdlabel);
-                        startActivityForResult(intent, SelectionMode.MODE_OPEN);
+                        launchFileBrowser("/", fdlabel, DIRPICK_MODE);
                     }
                 }});
 
@@ -218,11 +215,7 @@ public class Cryptonite extends Activity
                                                   });
                         ad.show();
                     } else {
-
-                        Intent intent = new Intent(getBaseContext(), FileDialog.class);
-                        intent.putExtra(FileDialog.START_PATH, mntDir);
-                        intent.putExtra(FileDialog.LABEL, fdlabel);
-                        startActivityForResult(intent, SelectionMode.MODE_OPEN);
+                        launchFileBrowser(mntDir, fdlabel, FILEPICK_MODE);
                     }
                 }});
         updateButtons();
@@ -242,21 +235,11 @@ public class Cryptonite extends Activity
                                               int resultCode, final Intent data) {
 
         switch (requestCode) {
-         case REQUEST_SAVE:
          case SelectionMode.MODE_OPEN:
              /* file dialog */
              if (resultCode == Activity.RESULT_OK) {
-                     
-                 if (requestCode == REQUEST_SAVE) {
-                     System.out.println("Saving...");
-                 } else if (requestCode == REQUEST_LOAD) {
-                     System.out.println("Loading...");
-                 }
-                     
                  currentPath = data.getStringExtra(FileDialog.RESULT_PATH);
-
                  showDialog(MY_PASSWORD_DIALOG_ID);
-
              } else if (resultCode == Activity.RESULT_CANCELED) {
                  Log.v(TAG, "file not selected");
              }
@@ -264,6 +247,18 @@ public class Cryptonite extends Activity
          case REQUEST_PREFS:
              @SuppressWarnings("unused")
              SharedPreferences prefs = getBaseContext().getSharedPreferences("csh.cryptonite_preferences", 0);
+             break;
+         case REQUEST_CODE_PICK_FILE_OR_DIRECTORY:
+             if (resultCode == RESULT_OK && data != null) {
+                 // obtain the filename
+                 Uri fileUri = data.getData();
+                 if (fileUri != null) {
+                     currentPath = fileUri.getPath();
+                     if (currentPath != null) {
+                         showDialog(MY_PASSWORD_DIALOG_ID);
+                     }
+                 }
+             }
              break;
          default:
              Log.e(TAG, "Unknown request code");
@@ -513,6 +508,34 @@ public class Cryptonite extends Activity
         return isMounted;
     }
 
+    private void launchFileBrowser(String startPath, String fdlabel, int mode) {
+        // Note the different intent: PICK_DIRECTORY
+        String oiIntent = "org.openintents.action.PICK_FILE";
+        String btnLabel = "OK";
+        if (mode == DIRPICK_MODE) {
+            oiIntent = "org.openintents.action.PICK_DIRECTORY";
+            btnLabel = this.getString(R.string.select_enc_short);
+        }
+        Intent intent = new Intent(oiIntent);
+
+        // Construct URI from file name.
+        File file = new File(startPath);
+        intent.setData(Uri.fromFile(file));
+
+        intent.putExtra("org.openintents.extra.TITLE", fdlabel);
+
+        try {
+            startActivityForResult(intent, REQUEST_CODE_PICK_FILE_OR_DIRECTORY);
+        } catch (ActivityNotFoundException e) {
+            intent = new Intent(getBaseContext(),
+                                       FileDialog.class);
+            intent.putExtra(FileDialog.START_PATH, startPath);
+            intent.putExtra(FileDialog.LABEL, fdlabel);
+            startActivityForResult(intent, SelectionMode.MODE_OPEN);
+        }
+
+    }
+    
     /* Native methods are implemented by the
      * 'cryptonite' native library, which is packaged
      * with this application.
