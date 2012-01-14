@@ -51,6 +51,7 @@ LOCAL_LDLIBS := \
     ./obj/local/armeabi/libboost_system.a \
     ./obj/local/armeabi/libgnustl_static.a \
     ./obj/local/armeabi/libgcc.a \
-    -L../openssl/openssl-android/libs/armeabi -lssl -lcrypto
+    -L../openssl/openssl-android/libs/armeabi -lssl -lcrypto \
+    -llog
 
 include $(BUILD_SHARED_LIBRARY)

@@ -24,20 +24,83 @@
 
 
 #include <jni.h>
+#include <android/log.h>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_array.hpp>
 #include <string>
 #include <iostream>
+#include <sstream>
 
 #include <encfs.h>
-// #include <FileUtils.h>
-// #include <Cipher.h>
-
-// #include <Context.h>
 #include <FileNode.h>
 #include <DirNode.h>
 #include <config.h>
+
+#define  LOG_TAG    "cryptonite-jni"
+#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+
+static bool checkDir( std::string &rootDir )
+{
+    if( !isDirectory( rootDir.c_str() ))
+    {
+        std::cerr << "directory " << rootDir.c_str() << " does not exist.\n";
+	return false;
+    }
+    if(rootDir[ rootDir.length()-1 ] != '/')
+	rootDir.append("/");
+    return true;
+}
+
+static int isValidEncFS(std::string rootDir) {
+    if( !checkDir( rootDir ))
+	return EXIT_FAILURE;
+
+    boost::shared_ptr<EncFSConfig> config(new EncFSConfig);
+    ConfigType type = readConfig( rootDir, config );
+
+    std::ostringstream info;
+    // show information stored in config..
+    switch(type)
+    {
+    case Config_None:
+	// xgroup(diag)
+	LOGI("Unable to load or parse config file");
+	return EXIT_FAILURE;
+    case Config_Prehistoric:
+	// xgroup(diag)
+	LOGI("A really old EncFS filesystem was found.\n"
+             "It is not supported in this EncFS build.");
+	return EXIT_FAILURE;
+    case Config_V3:
+	// xgroup(diag)
+        info << "Version 3 configuration; created by " << config->creator.c_str();
+        LOGI(info.str().c_str());
+	break;
+    case Config_V4:
+	// xgroup(diag)
+        info << "Version 4 configuration; created by " << config->creator.c_str();
+        LOGI(info.str().c_str());
+	break;
+    case Config_V5:
+	// xgroup(diag)
+        info << "Version 5 configuration; created by " << config->creator.c_str()
+             << " (revision " << config->subVersion << ")";
+        LOGI(info.str().c_str());
+	break;
+    case Config_V6:
+	// xgroup(diag)
+        info << "Version 6 configuration; created by " << config->creator.c_str()
+             << " (revision " << config->subVersion << ")";
+        LOGI(info.str().c_str());
+	break;
+    }
+
+    showFSInfo( config );
+
+    return EXIT_SUCCESS;
+}
 
 // apply an operation to every block in the file
 template<typename T>
@@ -240,18 +303,6 @@ bool myIsDirectory( const char *fileName )
     }
 }
 
-static bool checkDir( std::string &rootDir )
-{
-    if( !isDirectory( rootDir.c_str() ))
-    {
-        std::cerr << "directory " << rootDir.c_str() << " does not exist.\n";
-	return false;
-    }
-    if(rootDir[ rootDir.length()-1 ] != '/')
-	rootDir.append("/");
-    return true;
-}
-
 static RootPtr initRootInfo(const char* crootDir)
 {
     std::string rootDir(crootDir);
@@ -272,11 +323,34 @@ static RootPtr initRootInfo(const char* crootDir)
 #ifdef __cplusplus
 extern "C" {
 #endif
-    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_encfsMount(JNIEnv * env, jobject thiz, jstring srcdir, jstring destdir);
+    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_encfsFailure(JNIEnv * env, jobject thiz);
+    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_encfsSuccess(JNIEnv * env, jobject thiz);
+    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_encfsIsValidEncFS(JNIEnv * env, jobject thiz, jstring srcdir);
+    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_encfsBrowse(JNIEnv * env, jobject thiz, jstring srcdir, jstring destdir);
     JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_encfsVersion(JNIEnv * env, jobject thiz);
 #ifdef __cplusplus
 };
 #endif
+
+JNIEXPORT jint JNICALL
+Java_csh_cryptonite_Cryptonite_encfsFailure(JNIEnv * env, jobject thiz)
+{
+    return (jint)EXIT_FAILURE;
+}
+
+JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_encfsSuccess(JNIEnv * env, jobject thiz)
+{
+    return (jint)EXIT_SUCCESS;
+}
+
+JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_encfsIsValidEncFS(JNIEnv * env, jobject thiz, jstring srcdir)
+{
+    const char* c_srcdir = env->GetStringUTFChars(srcdir, 0);
+    jint res = (jint)isValidEncFS(c_srcdir);
+    env->ReleaseStringUTFChars(srcdir, c_srcdir);
+
+    return res;
+}
 
 JNIEXPORT jint JNICALL
 Java_csh_cryptonite_Cryptonite_encfsBrowse(JNIEnv* env, jobject thiz, jstring srcdir, jstring destdir)

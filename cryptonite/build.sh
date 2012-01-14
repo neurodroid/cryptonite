@@ -2,7 +2,7 @@
 
 if test -n $1; then
     if [ "$1" = "1" ]; then
-        ./build-jni.sh
+        ./jni-build.sh
     fi
 fi
 

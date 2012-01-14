@@ -19,6 +19,7 @@ package csh.cryptonite;
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -86,8 +87,6 @@ public class Cryptonite extends Activity
     private String currentDialogStartPath = "/";
     private String curPassword = "";
     private String mntDir = "/sdcard" + MNTPNT;
-    private ProgressDialog pd;
-    private AlertDialog.Builder ad;
     private TextView tv;
     private TextView tvMountInfo;
     private String encfsversion, encfsoutput, cursrcdir, fdlabel;
@@ -104,6 +103,9 @@ public class Cryptonite extends Activity
         getResources();
 
         encfsversion = "EncFS " + encfsVersion();
+        Log.v(TAG, encfsversion);
+        tv = (TextView)findViewById(R.id.tvVersion);
+        tv.setText(encfsversion);
 
         if (externalStorageIsWritable()) {
             mntDir = Environment.getExternalStorageDirectory().getPath() + MNTPNT;
@@ -121,9 +123,9 @@ public class Cryptonite extends Activity
         /* Copy the encfs binaries to binDir and make executable.
          */
         if (!(new File(ENCFSBIN)).exists()) {
-            pd = ProgressDialog.show(this,
-                                     this.getString(R.string.wait_msg),
-                                     this.getString(R.string.copying_bins), true);
+            final ProgressDialog pd = ProgressDialog.show(this,
+                                                          this.getString(R.string.wait_msg),
+                                                          this.getString(R.string.copying_bins), true);
             new Thread(new Runnable(){
                     public void run(){
                         cpEncFSBin();
@@ -131,10 +133,6 @@ public class Cryptonite extends Activity
                                 public void run() {
                                     if (pd.isShowing())
                                         pd.dismiss();
-                                    /* Get version information from EncFS */
-                                    Log.v(TAG, encfsversion);
-                                    tv = (TextView)findViewById(R.id.tvVersion);
-                                    tv.setText(encfsversion);
                                 }
                             });
                     }
@@ -148,16 +146,7 @@ public class Cryptonite extends Activity
                 public void onClick(View v) {
                     opMode = DROPBOX_MODE;
                     if (!externalStorageIsWritable()) {
-                        ad.setIcon(R.drawable.ic_launcher_cryptonite);
-                        ad.setTitle(R.string.sdcard_not_writable);
-                        ad.setPositiveButton("OK",
-                                                  new DialogInterface.OnClickListener() {
-                                                      public void onClick(DialogInterface dialog,
-                                                                              int which) {
-                                                          
-                                                      }
-                                                  });
-                        ad.show();
+                        ShowAlert(getString(R.string.sdcard_not_writable));
                     } else {
                     }
                 }});
@@ -176,16 +165,7 @@ public class Cryptonite extends Activity
                         currentDialogStartPath = "/";
                     }
                     if (!externalStorageIsWritable()) {
-                        ad.setIcon(R.drawable.ic_launcher_cryptonite);
-                        ad.setTitle(R.string.sdcard_not_writable);
-                        ad.setPositiveButton("OK",
-                                                  new DialogInterface.OnClickListener() {
-                                                      public void onClick(DialogInterface dialog,
-                                                                              int which) {
-                                                          
-                                                      }
-                                                  });
-                        ad.show();
+                        ShowAlert(getString(R.string.sdcard_not_writable));
                     } else {
                         launchFileBrowser(DIRPICK_MODE);
                     }
@@ -205,16 +185,7 @@ public class Cryptonite extends Activity
                         currentDialogStartPath = "/";
                     }
                     if (!externalStorageIsWritable()) {
-                        ad.setIcon(R.drawable.ic_launcher_cryptonite);
-                        ad.setTitle(R.string.sdcard_not_writable);
-                        ad.setPositiveButton("OK",
-                                                  new DialogInterface.OnClickListener() {
-                                                      public void onClick(DialogInterface dialog,
-                                                                              int which) {
-                                                          
-                                                      }
-                                                  });
-                        ad.show();
+                        ShowAlert(getString(R.string.sdcard_not_writable));
                     } else {
                         launchFileBrowser(DIRPICK_MODE);
                     }
@@ -237,16 +208,7 @@ public class Cryptonite extends Activity
                     opMode = VIEWMOUNT_MODE;
                     currentDialogStartPath = mntDir;
                     if (!externalStorageIsWritable()) {
-                        ad.setIcon(R.drawable.ic_launcher_cryptonite);
-                        ad.setTitle(R.string.sdcard_not_writable);
-                        ad.setPositiveButton("OK",
-                                                  new DialogInterface.OnClickListener() {
-                                                      public void onClick(DialogInterface dialog,
-                                                                              int which) {
-                                                          
-                                                      }
-                                                  });
-                        ad.show();
+                        ShowAlert(getString(R.string.sdcard_not_writable));
                     } else {
                         launchFileBrowser(FILEPICK_MODE);
                     }
@@ -418,12 +380,34 @@ public class Cryptonite extends Activity
         return chmod;
     }
 
-    public void runEncFS(String srcdir, String pwd) {
+    private void ShowAlert(String alert) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
+        builder.setIcon(R.drawable.ic_launcher_cryptonite)
+            .setTitle(alert)
+            .setPositiveButton("OK",
+                               new DialogInterface.OnClickListener() {
+                                   public void onClick(DialogInterface dialog,
+                                                       int which) {
+                                       
+                                   }
+                               });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+    
+    private void mountEncFS(String srcdir, String pwd) {
         tv.setText(encfsversion);
         tv.invalidate();
-        pd = ProgressDialog.show(this,
-                                 this.getString(R.string.wait_msg),
-                                 this.getString(R.string.running_encfs), true);
+
+        if (encfsIsValidEncFS(srcdir) != encfsSuccess()) {
+            ShowAlert(getString(R.string.invalid_encfs));
+            Log.v(TAG, "Invalid EncFS");
+            return;
+        }
+        
+        final ProgressDialog pd = ProgressDialog.show(this,
+                                                      this.getString(R.string.wait_msg),
+                                                      this.getString(R.string.running_encfs), true);
         cursrcdir = srcdir;
         Log.v(TAG, "Running encfs with" + srcdir + mntDir);
         new Thread(new Runnable(){
@@ -479,7 +463,7 @@ public class Cryptonite extends Activity
                          curPassword = password.getText().toString();
                          removeDialog(MY_PASSWORD_DIALOG_ID);
                          if (opMode == MOUNT_MODE) {
-                             runEncFS(currentReturnPath, curPassword);
+                             mountEncFS(currentReturnPath, curPassword);
                          }
                      }
                  });
@@ -673,7 +657,10 @@ public class Cryptonite extends Activity
      * 'cryptonite' native library, which is packaged
      * with this application.
      */
-    public native int     encfsMount();
+    public native int     encfsFailure();
+    public native int     encfsSuccess();
+    public native int     encfsIsValidEncFS(String srcDir);
+    public native int     encfsBrowse(String srcDir, String destDir);
     public native String  encfsVersion();
     
     /* this is used to load the 'cryptonite' library on application
