@@ -262,9 +262,7 @@ static RootPtr initRootInfo(const char* crootDir)
 	opts->rootDir = rootDir;
 	opts->createIfNotFound = false;
 	opts->checkKey = false;
-#if 0
 	result = initFS( NULL, opts );
-#endif
     }
     if(!result)
         std::cerr << "Unable to initialize encrypted filesystem - check path.\n";
