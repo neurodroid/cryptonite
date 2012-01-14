@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# Have to repeat libgcc.a and libgnustl_static.a so that they come after
+# the other static libraries.
+
 LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
@@ -39,14 +42,15 @@ LOCAL_CPPFLAGS := \
     -fexceptions \
     -frtti
 
-LOCAL_LDFLAGS := \
+LOCAL_LDLIBS := \
     ./obj/local/armeabi/libencfs.a \
     ./obj/local/armeabi/libfuse.a \
     ./obj/local/armeabi/libboost_serialization.a \
     ./obj/local/armeabi/librlog.a \
     ./obj/local/armeabi/libboost_filesystem.a \
-    ./obj/local/armeabi/libboost_system.a
-
-LOCAL_LDLIBS :=
+    ./obj/local/armeabi/libboost_system.a \
+    ./obj/local/armeabi/libgnustl_static.a \
+    ./obj/local/armeabi/libgcc.a \
+    -L../openssl/openssl-android/libs/armeabi -lssl -lcrypto
 
 include $(BUILD_SHARED_LIBRARY)
