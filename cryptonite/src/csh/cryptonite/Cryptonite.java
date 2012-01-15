@@ -485,14 +485,22 @@ public class Cryptonite extends Activity
                     return;
                 }
             }
+            deleteDir(browseDirFTmp);
         }
         Log.v(TAG, browseDirFTmp.getPath());
+        final File browseDirF = getBaseContext().getDir("browse", Context.MODE_PRIVATE);
+        if (!browseDirF.exists()) {
+            if (!browseDirF.mkdirs()) {
+                showAlert(getString(R.string.target_dir_setup_failure));
+                return;
+            }
+        }
+            
         final ProgressDialog pd = ProgressDialog.show(this,
                                                       this.getString(R.string.wait_msg),
                                                       this.getString(R.string.running_encfs), true);
         new Thread(new Runnable(){
                 public void run(){
-                    File browseDirF = getBaseContext().getDir("browse", Context.MODE_PRIVATE);
                     if (jniBrowse(srcDir, browseDirF.getPath(), curPassword) != jniSuccess()) {
                         Log.v(TAG, getString(R.string.browse_failed));
                         currentDialogStartPath = "";
