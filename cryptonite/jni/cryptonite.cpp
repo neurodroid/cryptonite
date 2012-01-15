@@ -19,7 +19,7 @@
  *
  *****************************************************************************
  * Copyright (c) 2004, Valient Gough
- *
+ * 
  */
 
 
@@ -31,6 +31,10 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <cerrno>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include <encfs.h>
 #include <FileNode.h>
@@ -235,12 +239,21 @@ static int copyContents(const boost::shared_ptr<EncFS_Root> &rootInfo,
         } else
         {
             int outfd = creat(targetName, st.st_mode);
-            std::ostringstream out;
-            out << "Creating " << targetName;
-	    LOGI(out.str().c_str());
-	    WriteOutput output(outfd);
-            if (!fake)
+
+            if (outfd == -1) {
+                if (errno == EACCES /* sic! */ || errno == EROFS || errno == ENOSPC) {
+                    std::ostringstream out;
+                    out << "Not creating " << targetName << ": "
+                        << strerror(errno);
+                    LOGE(out.str().c_str());
+                    return EXIT_FAILURE;
+                }
+            }
+
+            if (!fake) {
+                WriteOutput output(outfd);
                 processContents( rootInfo, encfsName, output );
+            }
         }
     }
     return EXIT_SUCCESS;
@@ -263,7 +276,19 @@ static int traverseDirs(const boost::shared_ptr<EncFS_Root> &rootInfo,
         if(dirNode->getAttr(&st))
             return EXIT_FAILURE;
 
-        mkdir(destDir.c_str(), st.st_mode);
+        // In fake mode, we always create rw:
+        mode_t srcmode = st.st_mode;
+        if (fake)
+            srcmode = S_IRWXU;
+        if (mkdir(destDir.c_str(), srcmode) == -1) {
+            if (errno == EACCES /* sic! */ || errno == EROFS || errno == ENOSPC) {
+                std::ostringstream out;
+                out << "Not creating " << destDir << ": "
+                    << strerror(errno);
+                LOGE(out.str().c_str());
+                return EXIT_FAILURE;
+            }
+        }
     }
     // show files in directory
     DirTraverse dt = rootInfo->root->openDir(volumeDir.c_str());
@@ -279,14 +304,18 @@ static int traverseDirs(const boost::shared_ptr<EncFS_Root> &rootInfo,
                 std::string cpath = rootInfo->root->cipherPath(plainPath.c_str());
                 std::string destName = destDir + name;
 
+                std::ostringstream out;
+                out << "Decoding " << cpath << " to " << plainPath << " in " << destName;
+                LOGI(out.str().c_str());
+                
                 int r = EXIT_SUCCESS;
                 struct stat stBuf;
                 if( !lstat( cpath.c_str(), &stBuf ))
                 {
                     if( S_ISDIR( stBuf.st_mode ) )
                     {
-                        traverseDirs(rootInfo, (plainPath + '/').c_str(), 
-                                     destName + '/', fake);
+                        r = traverseDirs(rootInfo, (plainPath + '/').c_str(), 
+                                         destName + '/', fake);
                     } else if( S_ISLNK( stBuf.st_mode ))
                     {
                         r = copyLink( stBuf, rootInfo, cpath, destName );
@@ -307,19 +336,6 @@ static int traverseDirs(const boost::shared_ptr<EncFS_Root> &rootInfo,
     return EXIT_SUCCESS;
 }
 
-
-bool myIsDirectory( const char *fileName )
-{
-    struct stat buf;
-    if( !lstat( fileName, &buf ))
-    {
-	return S_ISDIR( buf.st_mode );
-    } else
-    {
-	return false;
-    }
-}
-
 static RootPtr initRootInfo(const std::string& rootDir, const std::string& password)
 {
     RootPtr result;
@@ -328,13 +344,12 @@ static RootPtr initRootInfo(const std::string& rootDir, const std::string& passw
     opts->checkKey = false;
     opts->password.assign(password);
     opts->rootDir.assign(rootDir);
-    if(checkDir( opts->rootDir ))
+    if(checkDir( opts->rootDir )) {
+        LOGI((std::string("Initialising file system with root ") + rootDir).c_str());
         result = initFS( NULL, opts );
-
+    }
     if(!result) {
-        std::ostringstream err;
-        err << "Unable to initialize encrypted filesystem - check path.";
-        LOGE(err.str().c_str());
+        LOGE("Unable to initialize encrypted filesystem - check path.");
     }
 
     return result;
@@ -379,6 +394,10 @@ Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv* env, jobject thiz, jstring srcd
     const char* c_password = env->GetStringUTFChars(password, 0);
     int res = EXIT_FAILURE;
 
+    if ((jint)isValidEncFS(c_srcdir) != EXIT_SUCCESS) {
+        LOGE("EncFS root directory is not valid");
+        return EXIT_FAILURE;
+    }
     RootPtr rootInfo = initRootInfo(std::string(c_srcdir), std::string(c_password));
 
     env->ReleaseStringUTFChars(srcdir, c_srcdir);
@@ -388,15 +407,21 @@ Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv* env, jobject thiz, jstring srcd
     memset((char*)c_password, 0, pw_len);
     env->ReleaseStringUTFChars(password, c_password);
 
-    if(!rootInfo)
+    if(!rootInfo) {
+        LOGE("Error initialising root volume");
         return EXIT_FAILURE;
+    }
 
+    if (!rootInfo->volumeKey) {
+        LOGI("Wrong password");
+        return EXIT_FAILURE;
+    }
+    
     const char* c_destdir = env->GetStringUTFChars(destdir, 0);
     std::string std_destdir(c_destdir);
     // if the dir doesn't exist, then create it (with user permission)
     if(!checkDir(std_destdir) && !userAllowMkdir(c_destdir, 0700))
 	return EXIT_FAILURE;
-    std::ostringstream out;
 
     res = traverseDirs(rootInfo, "/", c_destdir, true);
     

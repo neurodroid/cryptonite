@@ -20,8 +20,9 @@
     <string name="mount_info">Mount EncFS volume</string>
     <string name="mount_info_unsupported">Mounting is not supported on this phone</string>
     <string name="invalid_encfs">This is not a valid EncFS root volume</string>
-    <string name="browse_failed">Failed to decode the EncFS volume</string>
-
+    <string name="browse_failed">Failed to decode the EncFS volume; check password and file permissions.</string>
+    <string name="empty_password">Password was empty</string>
+    <string name="target_dir_cleanup_failure">Couldn\'t clean up target directory</string>
     <string name="app_oi_missing">OI file browser not installed.</string>
     <string name="app_oi_get">Go to Market</string>
     <string name="app_oi_builtin">Use built-in file browser</string>

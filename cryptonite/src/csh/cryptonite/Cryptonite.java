@@ -146,7 +146,7 @@ public class Cryptonite extends Activity
                 public void onClick(View v) {
                     opMode = DROPBOX_MODE;
                     if (!externalStorageIsWritable()) {
-                        ShowAlert(getString(R.string.sdcard_not_writable));
+                        showAlert(getString(R.string.sdcard_not_writable));
                     } else {
                     }
                 }});
@@ -165,7 +165,7 @@ public class Cryptonite extends Activity
                         currentDialogStartPath = "/";
                     }
                     if (!externalStorageIsWritable()) {
-                        ShowAlert(getString(R.string.sdcard_not_writable));
+                        showAlert(getString(R.string.sdcard_not_writable));
                     } else {
                         launchFileBrowser(DIRPICK_MODE);
                     }
@@ -185,7 +185,7 @@ public class Cryptonite extends Activity
                         currentDialogStartPath = "/";
                     }
                     if (!externalStorageIsWritable()) {
-                        ShowAlert(getString(R.string.sdcard_not_writable));
+                        showAlert(getString(R.string.sdcard_not_writable));
                     } else {
                         launchFileBrowser(DIRPICK_MODE);
                     }
@@ -208,7 +208,7 @@ public class Cryptonite extends Activity
                     opMode = VIEWMOUNT_MODE;
                     currentDialogStartPath = mntDir;
                     if (!externalStorageIsWritable()) {
-                        ShowAlert(getString(R.string.sdcard_not_writable));
+                        showAlert(getString(R.string.sdcard_not_writable));
                     } else {
                         launchFileBrowser(FILEPICK_MODE);
                     }
@@ -380,7 +380,7 @@ public class Cryptonite extends Activity
         return chmod;
     }
 
-    private void ShowAlert(String alert) {
+    private void showAlert(String alert) {
         AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
         builder.setIcon(R.drawable.ic_launcher_cryptonite)
             .setTitle(alert)
@@ -394,6 +394,25 @@ public class Cryptonite extends Activity
         AlertDialog dialog = builder.create();
         dialog.show();
     }
+
+    /** Deletes all files and subdirectories under dir.
+     * Returns true if all deletions were successful.
+     * If a deletion fails, the method stops attempting to delete and returns false.
+     */
+    public static boolean deleteDir(File dir) {
+        if (dir.isDirectory()) {
+            String[] children = dir.list();
+            for (int i=0; i<children.length; i++) {
+                boolean success = deleteDir(new File(dir, children[i]));
+                if (!success) {
+                    return false;
+                }
+            }
+        }
+
+        // The directory is now empty so delete it
+        return dir.delete();
+    }
     
     /** This will run the shipped encfs binary and spawn a daemon on rooted devices
      */
@@ -402,7 +421,7 @@ public class Cryptonite extends Activity
         tv.invalidate();
 
         if (jniIsValidEncFS(srcDir) != jniSuccess()) {
-            ShowAlert(getString(R.string.invalid_encfs));
+            showAlert(getString(R.string.invalid_encfs));
             Log.v(TAG, "Invalid EncFS");
             return;
         }
@@ -410,7 +429,7 @@ public class Cryptonite extends Activity
         final ProgressDialog pd = ProgressDialog.show(this,
                                                       this.getString(R.string.wait_msg),
                                                       this.getString(R.string.running_encfs), true);
-        Log.v(TAG, "Running encfs with" + srcDir + mntDir);
+        Log.v(TAG, "Running encfs with " + srcDir + " " + mntDir);
         new Thread(new Runnable(){
                 public void run(){
                     String[] cmdlist = {ENCFSBIN, "--public", "--stdinpass", srcDir, mntDir};
@@ -439,37 +458,46 @@ public class Cryptonite extends Activity
         tv.invalidate();
 
         if (jniIsValidEncFS(srcDir) != jniSuccess()) {
-            ShowAlert(getString(R.string.invalid_encfs));
+            showAlert(getString(R.string.invalid_encfs));
             Log.v(TAG, "Invalid EncFS");
             return;
         }
         
+        File browseDirFTmp = getBaseContext().getDir("browse", Context.MODE_PRIVATE);
+        if (browseDirFTmp.exists()) {
+            String[] browseFiles = browseDirFTmp.list();
+            for (String browseFile : browseFiles) {
+                if (deleteDir(new File(browseFile))) {
+                    showAlert(getString(R.string.target_dir_cleanup_failure));
+                    return;
+                }
+            }
+        }
+        Log.v(TAG, browseDirFTmp.getPath());
         final ProgressDialog pd = ProgressDialog.show(this,
                                                       this.getString(R.string.wait_msg),
                                                       this.getString(R.string.running_encfs), true);
-        Log.v(TAG, "Running encfs with" + srcDir + mntDir);
         new Thread(new Runnable(){
                 public void run(){
                     File browseDirF = getBaseContext().getDir("browse", Context.MODE_PRIVATE);
-                    if (!browseDirF.exists()) {
-                        browseDirF.mkdirs();
-                    }
-                    Log.v(TAG, browseDirF.getPath());
-                    currentDialogStartPath = browseDirF.getPath();
                     if (jniBrowse(srcDir, browseDirF.getPath(), curPassword) != jniSuccess()) {
                         Log.v(TAG, getString(R.string.browse_failed));
-                        ShowAlert(getString(R.string.browse_failed));
-                        return;
+                        currentDialogStartPath = "";
                     } else {
+                        currentDialogStartPath = browseDirF.getPath();
                         Log.v(TAG, "Decoding succeeded");
                     }
                     runOnUiThread(new Runnable(){
                             public void run() {
                                 if (pd.isShowing())
                                     pd.dismiss();
-                                opMode = VIEWBROWSE_MODE;
                                 nullPassword();
-                                launchBuiltinFileBrowser();
+                                if (!(currentDialogStartPath.length()==0)) {
+                                    opMode = VIEWBROWSE_MODE;
+                                    launchBuiltinFileBrowser();
+                                } else {
+                                    showAlert(getString(R.string.browse_failed));
+                                }
                             }
                         });
                 }
@@ -516,13 +544,17 @@ public class Cryptonite extends Activity
                      public void onClick(DialogInterface dialog, int which) {
                          curPassword = password.getText().toString();
                          removeDialog(MY_PASSWORD_DIALOG_ID);
-                         switch (opMode) {
-                          case MOUNT_MODE:
-                              mountEncFS(currentReturnPath, curPassword);
-                              break;
-                          case BROWSE_MODE:
-                              browseEncFS(currentReturnPath, curPassword);
-                              break;
+                         if (curPassword.length() > 0) {
+                             switch (opMode) {
+                              case MOUNT_MODE:
+                                  mountEncFS(currentReturnPath, curPassword);
+                                  break;
+                              case BROWSE_MODE:
+                                  browseEncFS(currentReturnPath, curPassword);
+                                  break;
+                             }
+                         } else {
+                             showAlert(getString(R.string.empty_password));
                          }
                      }
                  });
