@@ -23,17 +23,19 @@
     <string name="browse_failed">Failed to decode the EncFS volume; check password and file permissions.</string>
     <string name="empty_password">Password was empty</string>
     <string name="target_dir_cleanup_failure">Couldn\'t clean up target directory</string>
+
     <string name="app_oi_missing">OI file browser not installed.</string>
     <string name="app_oi_get">Go to Market</string>
     <string name="app_oi_builtin">Use built-in file browser</string>
     <string name="market_missing">Google Market wasn\'t found on your device</string>
 
     <!-- File Browser -->
+    <string name="select">Select</string>
     <string name="select_enc">Select EncFS root directory</string>
     <string name="select_enc_short">Select current folder</string>
-    <string name="fb_name">File Dialog</string>
+    <string name="encfs_root">EncFS root</string>
+    <string name="fb_name">File Browser</string>
     <string name="nnew">New</string>
-    <string name="select">Select</string>
     <string name="file_name">File name:</string>
     <string name="cancel">Cancel</string>
     <string name="ok">Ok</string>
@@ -41,6 +43,9 @@
     <string name="no_data">No Data</string>
     <string name="location">Location</string>
     <string name="cant_read_folder">folder can\'t be read!</string>
+    <string name="select_file_decode">Select file to decode</string>
+    <string name="decode">Decode</string>
+    <string name="back">Back</string>
 
     <!-- Button labels -->
     <string name="browse">Browse local volume</string>
@@ -48,7 +53,6 @@
     <string name="mount">Mount</string>
     <string name="unmount">Unmount</string>
     <string name="viewmount">View mounted</string>
-    <string name="back">Back</string>
     
     <!-- Misc -->
     <string name="wait_msg">Please wait&#8230;</string>

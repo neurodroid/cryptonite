@@ -348,6 +348,10 @@ static RootPtr initRootInfo(const std::string& rootDir, const std::string& passw
         LOGI((std::string("Initialising file system with root ") + rootDir).c_str());
         result = initFS( NULL, opts );
     }
+
+    // clear buffer
+    opts->password.assign(opts->password.length(), '\0');
+    
     if(!result) {
         LOGE("Unable to initialize encrypted filesystem - check path.");
     }

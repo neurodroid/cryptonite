@@ -83,13 +83,17 @@ public class Cryptonite extends Activity
     public static final String ENCFSBIN = BINDIR + "/encfs";
     public static final String ENCFSCTLBIN = BINDIR + "/encfsctl";
     public static final String TAG = "cryptonite";
-    private String currentReturnPath = "/";
     private String currentDialogStartPath = "/";
+    private String currentDialogLabel = "";
+    private String currentDialogButtonLabel = "OK";
+    private String currentDialogRoot = "/";
+    private String currentDialogRootName = currentDialogRoot;
+    private String currentReturnPath = "/";
     private String curPassword = "";
     private String mntDir = "/sdcard" + MNTPNT;
     private TextView tv;
     private TextView tvMountInfo;
-    private String encfsversion, encfsoutput, fdlabel;
+    private String encfsversion, encfsoutput;
     private Button buttonDropbox, buttonBrowse, buttonMount, buttonUnmount, buttonViewMount;
     private int opMode = -1;
     
@@ -141,9 +145,10 @@ public class Cryptonite extends Activity
         
         /* Select source directory using a simple file dialog */
         buttonDropbox = (Button)findViewById(R.id.btnDropbox);
-        fdlabel = this.getString(R.string.select_enc);
         buttonDropbox.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
+                    currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
+                    currentDialogButtonLabel = Cryptonite.this.getString(R.string.select);
                     opMode = DROPBOX_MODE;
                     if (!externalStorageIsWritable()) {
                         showAlert(getString(R.string.sdcard_not_writable));
@@ -155,19 +160,22 @@ public class Cryptonite extends Activity
         
         /* Select source directory using a simple file dialog */
         buttonBrowse = (Button)findViewById(R.id.btnBrowse);
-        fdlabel = this.getString(R.string.select_enc);
         buttonBrowse.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     opMode = BROWSE_MODE;
+                    currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
+                    currentDialogButtonLabel = Cryptonite.this.getString(R.string.select);
                     if (externalStorageIsWritable()) {
                         currentDialogStartPath = Environment.getExternalStorageDirectory().getPath();
                     } else {
                         currentDialogStartPath = "/";
                     }
+                    currentDialogRoot = "/";
+                    currentDialogRootName = currentDialogRoot;
                     if (!externalStorageIsWritable()) {
                         showAlert(getString(R.string.sdcard_not_writable));
                     } else {
-                        launchFileBrowser(DIRPICK_MODE);
+                        launchBuiltinFileBrowser(); //DIRPICK_MODE);
                     }
                 }});
 
@@ -175,23 +183,25 @@ public class Cryptonite extends Activity
         
         /* Select source directory using a simple file dialog */
         buttonMount = (Button)findViewById(R.id.btnMount);
-        fdlabel = this.getString(R.string.select_enc);
         buttonMount.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     opMode = MOUNT_MODE;
+                    currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
+                    currentDialogButtonLabel = Cryptonite.this.getString(R.string.select);
                     if (externalStorageIsWritable()) {
                         currentDialogStartPath = Environment.getExternalStorageDirectory().getPath();
                     } else {
                         currentDialogStartPath = "/";
                     }
+                    currentDialogRoot = "/";
+                    currentDialogRootName = currentDialogRoot;
                     if (!externalStorageIsWritable()) {
                         showAlert(getString(R.string.sdcard_not_writable));
                     } else {
-                        launchFileBrowser(DIRPICK_MODE);
+                        launchBuiltinFileBrowser();//DIRPICK_MODE);
                     }
                 }});
 
-        /* Select source directory using a simple file dialog */
         buttonUnmount = (Button)findViewById(R.id.btnUnmount);
         buttonUnmount.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
@@ -202,11 +212,14 @@ public class Cryptonite extends Activity
 
         /* Select source directory using a simple file dialog */
         buttonViewMount = (Button)findViewById(R.id.btnViewMount);
-        fdlabel = this.getString(R.string.select_enc);
         buttonViewMount.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     opMode = VIEWMOUNT_MODE;
                     currentDialogStartPath = mntDir;
+                    currentDialogRoot = "/";
+                    currentDialogRootName = currentDialogRoot;
+                    currentDialogLabel = Cryptonite.this.getString(R.string.fb_name);
+                    currentDialogButtonLabel = Cryptonite.this.getString(R.string.back);
                     if (!externalStorageIsWritable()) {
                         showAlert(getString(R.string.sdcard_not_writable));
                     } else {
@@ -487,6 +500,10 @@ public class Cryptonite extends Activity
                         currentDialogStartPath = browseDirF.getPath();
                         Log.v(TAG, "Decoding succeeded");
                     }
+                    currentDialogLabel = getString(R.string.select_file_decode);
+                    currentDialogButtonLabel = getString(R.string.decode);
+                    currentDialogRoot = currentDialogStartPath;
+                    currentDialogRootName = getString(R.string.encfs_root);
                     runOnUiThread(new Runnable(){
                             public void run() {
                                 if (pd.isShowing())
@@ -708,22 +725,17 @@ public class Cryptonite extends Activity
         if (!useBuiltin) {
             // Note the different intent: PICK_DIRECTORY
             String oiIntent = "org.openintents.action.PICK_FILE";
-            String btnLabel = this.getString(R.string.back);
-            String fdtitle = "OI File Manager";
             if (mode == DIRPICK_MODE) {
                 oiIntent = "org.openintents.action.PICK_DIRECTORY";
-                fdtitle = this.getString(R.string.select_enc);
-                btnLabel = this.getString(R.string.select_enc_short);
             }
-            fdlabel = fdtitle; // To make it generally available
             Intent intent = new Intent(oiIntent);
 
             // Construct URI from file name.
             File file = new File(currentDialogStartPath);
             intent.setData(Uri.fromFile(file));
 
-            intent.putExtra("org.openintents.extra.TITLE", fdtitle);
-            intent.putExtra("org.openintents.extra.BUTTON_TEXT", btnLabel);
+            intent.putExtra("org.openintents.extra.TITLE", currentDialogLabel);
+            intent.putExtra("org.openintents.extra.BUTTON_TEXT", currentDialogButtonLabel);
 
             try {
                 startActivityForResult(intent, REQUEST_CODE_PICK_FILE_OR_DIRECTORY);
@@ -739,8 +751,11 @@ public class Cryptonite extends Activity
     private void launchBuiltinFileBrowser() {
         Intent intent = new Intent(getBaseContext(),
                                    FileDialog.class);
+        intent.putExtra(FileDialog.CURRENT_ROOT, currentDialogRoot);
+        intent.putExtra(FileDialog.CURRENT_ROOT_NAME, currentDialogRootName);
+        intent.putExtra(FileDialog.BUTTON_LABEL, currentDialogButtonLabel);
         intent.putExtra(FileDialog.START_PATH, currentDialogStartPath);
-        intent.putExtra(FileDialog.LABEL, fdlabel);
+        intent.putExtra(FileDialog.LABEL, currentDialogLabel);
         startActivityForResult(intent, SelectionMode.MODE_OPEN);
     }
     
