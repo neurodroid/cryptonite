@@ -341,7 +341,7 @@ static RootPtr initRootInfo(const std::string& rootDir, const std::string& passw
     RootPtr result;
     boost::shared_ptr<EncFS_Opts> opts( new EncFS_Opts() );
     opts->createIfNotFound = false;
-    opts->checkKey = false;
+    opts->checkKey = true;
     opts->password.assign(password);
     opts->rootDir.assign(rootDir);
     if(checkDir( opts->rootDir )) {
