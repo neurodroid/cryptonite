@@ -1,6 +1,5 @@
-diff -ur ./encfs/DirNode.cpp /Users/cs/encfs/encfs/DirNode.cpp
 --- ./encfs/DirNode.cpp	2010-08-30 07:27:49.000000000 +0100
-+++ /Users/cs/encfs/encfs/DirNode.cpp	2012-01-08 13:22:02.000000000 +0000
++++ ./encfs/DirNode.cpp	2012-01-10 14:16:57.850439335 +0000
 @@ -27,7 +27,7 @@
  #include <cstdlib>
  #include <pthread.h>
@@ -36,9 +35,93 @@ diff -ur ./encfs/DirNode.cpp /Users/cs/encfs/encfs/DirNode.cpp
      if(res == -1)
      {
  	int eno = errno;
-diff -ur ./encfs/FileNode.cpp /Users/cs/encfs/encfs/FileNode.cpp
+--- ./encfs/encfs.cpp	2010-11-18 02:50:51.000000000 +0000
++++ ./encfs/encfs.cpp	2012-01-15 02:20:26.090439248 +0000
+@@ -421,6 +421,7 @@
+ 
+ 	// use setfsuid / setfsgid so that the new link will be owned by the
+ 	// uid/gid provided by the fuse_context.
++#ifndef ANDROID
+ 	int olduid = -1;
+ 	int oldgid = -1;
+ 	if(ctx->publicFilesystem)
+@@ -429,12 +430,15 @@
+ 	    olduid = setfsuid( context->uid );
+ 	    oldgid = setfsgid( context->gid );
+ 	}
++#endif
+ 	res = ::symlink( fromCName.c_str(), toCName.c_str() );
++#ifndef ANDROID
+ 	if(olduid >= 0)
+ 	    setfsuid( olduid );
+ 	if(oldgid >= 0)
+ 	    setfsgid( oldgid );
+-
++#endif
++        
+ 	if(res == -1)
+ 	    res = -errno;
+ 	else
+@@ -544,7 +548,11 @@
+     tv[1].tv_sec = ts[1].tv_sec;
+     tv[1].tv_usec = ts[1].tv_nsec / 1000;
+ 
++#ifndef ANDROID
+     int res = lutimes( cyName.c_str(), tv);
++#else
++    int res = utimes( cyName.c_str(), tv);
++#endif    
+     return (res == -1) ? -errno : ESUCCESS;
+ }
+ 
+@@ -675,7 +683,9 @@
+ {
+     EncFS_Context *ctx = context();
+ 
++    
+     int res = -EIO;
++#ifndef ANDROID //TODO: find equivalent for Android
+     try
+     {
+ 	(void)path; // path should always be '/' for now..
+@@ -696,6 +706,7 @@
+ 	rError("error caught in statfs");
+ 	err.log( _RLWarningChannel );
+     }
++#endif
+     return res;
+ }
+ 
+--- ./encfs/encfsctl.cpp	2010-08-30 07:27:49.000000000 +0100
++++ ./encfs/encfsctl.cpp	2012-01-10 14:16:57.850439335 +0000
+@@ -384,7 +384,11 @@
+ 		fnode->getAttr( &stbuf );
+ 
+ 		struct tm stm;
++#ifdef ANDROID
++		localtime_r( (const time_t*)&stbuf.st_mtime, &stm );
++#else
+ 		localtime_r( &stbuf.st_mtime, &stm );
++#endif
+ 		stm.tm_year += 1900;
+ 		// TODO: when I add "%s" to the end and name.c_str(), I get a
+ 		// seg fault from within strlen.  Why ???
+@@ -686,10 +690,12 @@
+ 
+     int filesFound = showcruft( rootInfo, "/" );
+ 
++#ifndef ANDROID
+     cerr << autosprintf(
+ 	    ngettext("Found %i invalid file.", "Found %i invalid files.", 
+ 		filesFound), filesFound) << "\n";
+-
++#endif
++    
+     return EXIT_SUCCESS;
+ }
+ 
 --- ./encfs/FileNode.cpp	2010-09-06 04:52:12.000000000 +0100
-+++ /Users/cs/encfs/encfs/FileNode.cpp	2012-01-08 13:20:51.000000000 +0000
++++ ./encfs/FileNode.cpp	2012-01-10 14:16:57.850439335 +0000
 @@ -169,6 +169,7 @@
      int res;
      int olduid = -1;
@@ -81,9 +164,60 @@ diff -ur ./encfs/FileNode.cpp /Users/cs/encfs/encfs/FileNode.cpp
  	if(datasync)
  	    res = fdatasync( fh );
  	else
-diff -ur ./encfs/RawFileIO.cpp /Users/cs/encfs/encfs/RawFileIO.cpp
+--- ./encfs/FileUtils.cpp	2010-11-04 03:28:54.000000000 +0000
++++ ./encfs/FileUtils.cpp	2012-01-15 01:48:18.990438634 +0000
+@@ -1178,6 +1178,11 @@
+     // get user key and use it to encode volume key
+     CipherKey userKey;
+     rDebug( "useStdin: %i", useStdin );
++#ifdef ANDROID
++    if (!opts->password.empty())
++        userKey = config->makeKey( opts->password.c_str(), opts->password.length() );
++    else
++#endif        
+     if(useStdin)
+         userKey = config->getUserKey( useStdin );
+     else if(!passwordProgram.empty())
+@@ -1615,6 +1620,11 @@
+ 	// get user key
+ 	CipherKey userKey;
+ 
++#ifdef ANDROID
++        if(!opts->password.empty())
++            userKey = config->makeKey( opts->password.c_str(), opts->password.length() );
++        else
++#endif
+         if(opts->passwordProgram.empty())
+         {
+             rDebug( "useStdin: %i", opts->useStdin );
+--- ./encfs/FileUtils.h	2010-09-05 21:47:01.000000000 +0100
++++ ./encfs/FileUtils.h	2012-01-15 01:38:52.610439019 +0000
+@@ -72,7 +72,10 @@
+ 
+     std::string passwordProgram; // path to password program (or empty)
+     bool useStdin; // read password from stdin rather then prompting
+-
++#ifdef ANDROID
++    std::string password; // supply password directly if encfs is used as a library
++#endif
++    
+     bool ownerCreate; // set owner of new files to caller
+ 
+     bool reverseEncryption; // Reverse encryption
+--- ./encfs/FSConfig.h	2010-08-30 07:27:49.000000000 +0100
++++ ./encfs/FSConfig.h	2012-01-15 01:46:56.920439056 +0000
+@@ -103,7 +103,9 @@
+     unsigned char *getKeyData() const;
+     unsigned char *getSaltData() const;
+ 
++#ifndef ANDROID
+ private:
++#endif    
+     CipherKey makeKey(const char *password, int passwdLen);
+ };
+    
 --- ./encfs/RawFileIO.cpp	2009-11-29 22:04:12.000000000 +0000
-+++ /Users/cs/encfs/encfs/RawFileIO.cpp	2012-01-08 13:26:43.000000000 +0000
++++ ./encfs/RawFileIO.cpp	2012-01-10 14:16:57.850439335 +0000
 @@ -293,7 +293,7 @@
      if(fd >= 0 && canWrite)
      {
@@ -93,96 +227,8 @@ diff -ur ./encfs/RawFileIO.cpp /Users/cs/encfs/encfs/RawFileIO.cpp
  	::fdatasync( fd );
  #endif
      } else
-diff -ur ./encfs/encfs.cpp /Users/cs/encfs/encfs/encfs.cpp
---- ./encfs/encfs.cpp	2010-11-18 02:50:51.000000000 +0000
-+++ /Users/cs/encfs/encfs/encfs.cpp	2012-01-09 11:56:01.000000000 +0000
-@@ -421,6 +421,7 @@
- 
- 	// use setfsuid / setfsgid so that the new link will be owned by the
- 	// uid/gid provided by the fuse_context.
-+#ifndef ANDROID
- 	int olduid = -1;
- 	int oldgid = -1;
- 	if(ctx->publicFilesystem)
-@@ -429,12 +430,15 @@
- 	    olduid = setfsuid( context->uid );
- 	    oldgid = setfsgid( context->gid );
- 	}
-+#endif
- 	res = ::symlink( fromCName.c_str(), toCName.c_str() );
-+#ifndef ANDROID
- 	if(olduid >= 0)
- 	    setfsuid( olduid );
- 	if(oldgid >= 0)
- 	    setfsgid( oldgid );
--
-+#endif
-+        
- 	if(res == -1)
- 	    res = -errno;
- 	else
-@@ -544,7 +548,11 @@
-     tv[1].tv_sec = ts[1].tv_sec;
-     tv[1].tv_usec = ts[1].tv_nsec / 1000;
- 
-+#ifndef ANDROID
-     int res = lutimes( cyName.c_str(), tv);
-+#else
-+    int res = utimes( cyName.c_str(), tv);
-+#endif    
-     return (res == -1) ? -errno : ESUCCESS;
- }
- 
-@@ -675,7 +683,10 @@
- {
-     EncFS_Context *ctx = context();
- 
-+    
-     int res = -EIO;
-+    return res;
-+#if 0    
-     try
-     {
- 	(void)path; // path should always be '/' for now..
-@@ -697,6 +708,7 @@
- 	err.log( _RLWarningChannel );
-     }
-     return res;
-+#endif
- }
- 
- #ifdef HAVE_XATTR
-diff -ur ./encfs/encfsctl.cpp /Users/cs/encfs/encfs/encfsctl.cpp
---- ./encfs/encfsctl.cpp	2010-08-30 07:27:49.000000000 +0100
-+++ /Users/cs/encfs/encfs/encfsctl.cpp	2012-01-08 13:28:50.000000000 +0000
-@@ -384,7 +384,11 @@
- 		fnode->getAttr( &stbuf );
- 
- 		struct tm stm;
-+#ifdef ANDROID
-+		localtime_r( (const time_t*)&stbuf.st_mtime, &stm );
-+#else
- 		localtime_r( &stbuf.st_mtime, &stm );
-+#endif
- 		stm.tm_year += 1900;
- 		// TODO: when I add "%s" to the end and name.c_str(), I get a
- 		// seg fault from within strlen.  Why ???
-@@ -686,10 +690,12 @@
- 
-     int filesFound = showcruft( rootInfo, "/" );
- 
-+#ifndef ANDROID
-     cerr << autosprintf(
- 	    ngettext("Found %i invalid file.", "Found %i invalid files.", 
- 		filesFound), filesFound) << "\n";
--
-+#endif
-+    
-     return EXIT_SUCCESS;
- }
- 
 --- ./configure.ac	2010-11-18 02:50:51.000000000 +0000
-+++ /Users/cs/encfs/configure.ac	2012-01-10 14:13:29.560437598 +0000
++++ ./configure.ac	2012-01-10 14:13:29.560437598 +0000
 @@ -83,24 +83,24 @@
  AC_SUBST(FUSE_LIBS)
  

@@ -74,7 +74,7 @@ public class Cryptonite extends Activity
 {
 
     private static final int REQUEST_PREFS=0, REQUEST_CODE_PICK_FILE_OR_DIRECTORY=1;
-    private static final int MOUNT_MODE=0, BROWSE_MODE=1, DROPBOX_MODE=2, VIEWMOUNT_MODE=3;
+    private static final int MOUNT_MODE=0, BROWSE_MODE=1, DROPBOX_MODE=2, VIEWMOUNT_MODE=3, VIEWBROWSE_MODE=4;
     private static final int DIRPICK_MODE=0, FILEPICK_MODE=1;
     private static final int MY_PASSWORD_DIALOG_ID = 0;
     private static final int DIALOG_MARKETNOTFOUND=1, DIALOG_OI_UNAVAILABLE=2;
@@ -89,7 +89,7 @@ public class Cryptonite extends Activity
     private String mntDir = "/sdcard" + MNTPNT;
     private TextView tv;
     private TextView tvMountInfo;
-    private String encfsversion, encfsoutput, cursrcdir, fdlabel;
+    private String encfsversion, encfsoutput, fdlabel;
     private Button buttonDropbox, buttonBrowse, buttonMount, buttonUnmount, buttonViewMount;
     private int opMode = -1;
     
@@ -102,7 +102,7 @@ public class Cryptonite extends Activity
 
         getResources();
 
-        encfsversion = "EncFS " + encfsVersion();
+        encfsversion = "EncFS " + jniVersion();
         Log.v(TAG, encfsversion);
         tv = (TextView)findViewById(R.id.tvVersion);
         tv.setText(encfsversion);
@@ -171,7 +171,7 @@ public class Cryptonite extends Activity
                     }
                 }});
 
-        buttonBrowse.setEnabled(false);
+        buttonBrowse.setEnabled(true);
         
         /* Select source directory using a simple file dialog */
         buttonMount = (Button)findViewById(R.id.btnMount);
@@ -395,11 +395,13 @@ public class Cryptonite extends Activity
         dialog.show();
     }
     
-    private void mountEncFS(String srcdir, String pwd) {
+    /** This will run the shipped encfs binary and spawn a daemon on rooted devices
+     */
+    private void mountEncFS(final String srcDir, String pwd) {
         tv.setText(encfsversion);
         tv.invalidate();
 
-        if (encfsIsValidEncFS(srcdir) != encfsSuccess()) {
+        if (jniIsValidEncFS(srcDir) != jniSuccess()) {
             ShowAlert(getString(R.string.invalid_encfs));
             Log.v(TAG, "Invalid EncFS");
             return;
@@ -408,11 +410,10 @@ public class Cryptonite extends Activity
         final ProgressDialog pd = ProgressDialog.show(this,
                                                       this.getString(R.string.wait_msg),
                                                       this.getString(R.string.running_encfs), true);
-        cursrcdir = srcdir;
-        Log.v(TAG, "Running encfs with" + srcdir + mntDir);
+        Log.v(TAG, "Running encfs with" + srcDir + mntDir);
         new Thread(new Runnable(){
                 public void run(){
-                    String[] cmdlist = {ENCFSBIN, "--public", "--stdinpass", cursrcdir, mntDir};
+                    String[] cmdlist = {ENCFSBIN, "--public", "--stdinpass", srcDir, mntDir};
                     encfsoutput = runBinary(cmdlist, BINDIR, curPassword, true);
                     runOnUiThread(new Runnable(){
                             public void run() {
@@ -421,12 +422,65 @@ public class Cryptonite extends Activity
                                 if (encfsoutput.length() > 0) {
                                     tv.setText(encfsversion + "\n" + encfsoutput);
                                 }
+                                nullPassword();
                                 updateButtons();
                             }
                         });
                 }
             }).start();
             
+    }
+    
+    /** This will use the encfs library to create a file tree with empty
+     *  files that can be browsed.
+     */
+    private void browseEncFS(final String srcDir, String pwd) {
+        tv.setText(encfsversion);
+        tv.invalidate();
+
+        if (jniIsValidEncFS(srcDir) != jniSuccess()) {
+            ShowAlert(getString(R.string.invalid_encfs));
+            Log.v(TAG, "Invalid EncFS");
+            return;
+        }
+        
+        final ProgressDialog pd = ProgressDialog.show(this,
+                                                      this.getString(R.string.wait_msg),
+                                                      this.getString(R.string.running_encfs), true);
+        Log.v(TAG, "Running encfs with" + srcDir + mntDir);
+        new Thread(new Runnable(){
+                public void run(){
+                    File browseDirF = getBaseContext().getDir("browse", Context.MODE_PRIVATE);
+                    if (!browseDirF.exists()) {
+                        browseDirF.mkdirs();
+                    }
+                    Log.v(TAG, browseDirF.getPath());
+                    currentDialogStartPath = browseDirF.getPath();
+                    if (jniBrowse(srcDir, browseDirF.getPath(), curPassword) != jniSuccess()) {
+                        Log.v(TAG, getString(R.string.browse_failed));
+                        ShowAlert(getString(R.string.browse_failed));
+                        return;
+                    } else {
+                        Log.v(TAG, "Decoding succeeded");
+                    }
+                    runOnUiThread(new Runnable(){
+                            public void run() {
+                                if (pd.isShowing())
+                                    pd.dismiss();
+                                opMode = VIEWBROWSE_MODE;
+                                nullPassword();
+                                launchBuiltinFileBrowser();
+                            }
+                        });
+                }
+            }).start();
+            
+    }
+
+    private void nullPassword() {
+        char[] fill = new char[curPassword.length()];
+        Arrays.fill(fill, '\0');
+        curPassword = new String(fill);
     }
     
     public static String join(String[] sa, String delimiter) {
@@ -462,8 +516,13 @@ public class Cryptonite extends Activity
                      public void onClick(DialogInterface dialog, int which) {
                          curPassword = password.getText().toString();
                          removeDialog(MY_PASSWORD_DIALOG_ID);
-                         if (opMode == MOUNT_MODE) {
-                             mountEncFS(currentReturnPath, curPassword);
+                         switch (opMode) {
+                          case MOUNT_MODE:
+                              mountEncFS(currentReturnPath, curPassword);
+                              break;
+                          case BROWSE_MODE:
+                              browseEncFS(currentReturnPath, curPassword);
+                              break;
                          }
                      }
                  });
@@ -657,11 +716,11 @@ public class Cryptonite extends Activity
      * 'cryptonite' native library, which is packaged
      * with this application.
      */
-    public native int     encfsFailure();
-    public native int     encfsSuccess();
-    public native int     encfsIsValidEncFS(String srcDir);
-    public native int     encfsBrowse(String srcDir, String destDir);
-    public native String  encfsVersion();
+    public native int     jniFailure();
+    public native int     jniSuccess();
+    public native int     jniIsValidEncFS(String srcDir);
+    public native int     jniBrowse(String srcDir, String destDir, String password);
+    public native String  jniVersion();
     
     /* this is used to load the 'cryptonite' library on application
      * startup. The library has already been unpacked into

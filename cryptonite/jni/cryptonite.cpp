@@ -45,7 +45,9 @@ static bool checkDir( std::string &rootDir )
 {
     if( !isDirectory( rootDir.c_str() ))
     {
-        std::cerr << "directory " << rootDir.c_str() << " does not exist.\n";
+        std::ostringstream err;
+        err << "directory " << rootDir.c_str() << " does not exist.\n";
+        LOGE(err.str().c_str());
 	return false;
     }
     if(rootDir[ rootDir.length()-1 ] != '/')
@@ -53,6 +55,7 @@ static bool checkDir( std::string &rootDir )
     return true;
 }
 
+/* Passing a copy to rootDir is on purpose here */
 static int isValidEncFS(std::string rootDir) {
     if( !checkDir( rootDir ))
 	return EXIT_FAILURE;
@@ -105,7 +108,7 @@ static int isValidEncFS(std::string rootDir) {
 // apply an operation to every block in the file
 template<typename T>
 static int processContents( const shared_ptr<EncFS_Root> &rootInfo, 
-	const char *path, T &op )
+                            const char *path, T &op )
 {
     int errCode = 0;
     shared_ptr<FileNode> node = rootInfo->root->openNode( path, "encfsctl",
@@ -125,7 +128,9 @@ static int processContents( const shared_ptr<EncFS_Root> &rootInfo,
 
     if(!node)
     {
-        std::cerr << "unable to open " << path << "\n";
+        std::ostringstream err;
+        err << "unable to open " << path << "\n";
+        LOGE(err.str().c_str());
 	return errCode;
     } else
     {
@@ -172,7 +177,9 @@ static int copyLink(const struct stat &stBuf,
     int res = ::readlink( cpath.c_str(), buf.get(), stBuf.st_size );
     if(res == -1)
     {
-        std::cerr << "unable to readlink of " << cpath << "\n";
+        std::ostringstream err;
+        err << "unable to readlink of " << cpath;
+        LOGE(err.str().c_str());
         return EXIT_FAILURE;
     }
 
@@ -182,22 +189,27 @@ static int copyLink(const struct stat &stBuf,
     res = ::symlink( decodedLink.c_str(), destName.c_str() );
     if(res == -1)
     {
-        std::cerr << "unable to create symlink for " << cpath 
+        std::ostringstream err;
+        err << "unable to create symlink for " << cpath 
             << " to " << decodedLink << "\n";
+        LOGE(err.str().c_str());
     }
 
     return EXIT_SUCCESS;
 }
 
 static int copyContents(const boost::shared_ptr<EncFS_Root> &rootInfo, 
-                        const char* encfsName, const char* targetName)
+                        const char* encfsName, const char* targetName,
+                        bool fake)
 {
     boost::shared_ptr<FileNode> node = 
 	rootInfo->root->lookupNode( encfsName, "encfsctl" );
 
     if(!node)
     {
-        std::cerr << "unable to open " << encfsName << "\n";
+        std::ostringstream err;
+        err << "unable to open " << encfsName;
+        LOGE(err.str().c_str());
         return EXIT_FAILURE;
     } else
     {
@@ -213,7 +225,9 @@ static int copyContents(const boost::shared_ptr<EncFS_Root> &rootInfo,
 
             if(readlink (d.c_str(), linkContents, PATH_MAX + 1) <= 0)
             {
-                std::cerr << "unable to read link " << encfsName << "\n";
+                std::ostringstream err;
+                err << "unable to read link " << encfsName;
+                LOGE(err.str().c_str());
                 return EXIT_FAILURE;
             }
             symlink(rootInfo->root->plainPath(linkContents).c_str(), 
@@ -221,16 +235,19 @@ static int copyContents(const boost::shared_ptr<EncFS_Root> &rootInfo,
         } else
         {
             int outfd = creat(targetName, st.st_mode);
-	    
+            std::ostringstream out;
+            out << "Creating " << targetName;
+	    LOGI(out.str().c_str());
 	    WriteOutput output(outfd);
-	    processContents( rootInfo, encfsName, output );
+            if (!fake)
+                processContents( rootInfo, encfsName, output );
         }
     }
     return EXIT_SUCCESS;
 }
 
 static int traverseDirs(const boost::shared_ptr<EncFS_Root> &rootInfo, 
-                        std::string volumeDir, std::string destDir)
+                        std::string volumeDir, std::string destDir, bool fake)
 {
     if(!endsWith(volumeDir, '/'))
 	volumeDir.append("/");
@@ -269,14 +286,14 @@ static int traverseDirs(const boost::shared_ptr<EncFS_Root> &rootInfo,
                     if( S_ISDIR( stBuf.st_mode ) )
                     {
                         traverseDirs(rootInfo, (plainPath + '/').c_str(), 
-                                     destName + '/');
+                                     destName + '/', fake);
                     } else if( S_ISLNK( stBuf.st_mode ))
                     {
                         r = copyLink( stBuf, rootInfo, cpath, destName );
                     } else
                     {
                          r = copyContents(rootInfo, plainPath.c_str(), 
-                                          destName.c_str());
+                                          destName.c_str(), fake);
                     }
                 } else
                 {
@@ -303,47 +320,50 @@ bool myIsDirectory( const char *fileName )
     }
 }
 
-static RootPtr initRootInfo(const char* crootDir)
+static RootPtr initRootInfo(const std::string& rootDir, const std::string& password)
 {
-    std::string rootDir(crootDir);
     RootPtr result;
-    if(checkDir( rootDir ))
-    {
-        boost::shared_ptr<EncFS_Opts> opts( new EncFS_Opts() );
-	opts->rootDir = rootDir;
-	opts->createIfNotFound = false;
-	opts->checkKey = false;
-	result = initFS( NULL, opts );
+    boost::shared_ptr<EncFS_Opts> opts( new EncFS_Opts() );
+    opts->createIfNotFound = false;
+    opts->checkKey = false;
+    opts->password.assign(password);
+    opts->rootDir.assign(rootDir);
+    if(checkDir( opts->rootDir ))
+        result = initFS( NULL, opts );
+
+    if(!result) {
+        std::ostringstream err;
+        err << "Unable to initialize encrypted filesystem - check path.";
+        LOGE(err.str().c_str());
     }
-    if(!result)
-        std::cerr << "Unable to initialize encrypted filesystem - check path.\n";
+
     return result;
 }
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_encfsFailure(JNIEnv * env, jobject thiz);
-    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_encfsSuccess(JNIEnv * env, jobject thiz);
-    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_encfsIsValidEncFS(JNIEnv * env, jobject thiz, jstring srcdir);
-    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_encfsBrowse(JNIEnv * env, jobject thiz, jstring srcdir, jstring destdir);
-    JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_encfsVersion(JNIEnv * env, jobject thiz);
+    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniFailure(JNIEnv * env, jobject thiz);
+    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniSuccess(JNIEnv * env, jobject thiz);
+    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniIsValidEncFS(JNIEnv * env, jobject thiz, jstring srcdir);
+    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv * env, jobject thiz, jstring srcdir, jstring destdir, jstring password);
+    JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniVersion(JNIEnv * env, jobject thiz);
 #ifdef __cplusplus
 };
 #endif
 
 JNIEXPORT jint JNICALL
-Java_csh_cryptonite_Cryptonite_encfsFailure(JNIEnv * env, jobject thiz)
+Java_csh_cryptonite_Cryptonite_jniFailure(JNIEnv * env, jobject thiz)
 {
     return (jint)EXIT_FAILURE;
 }
 
-JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_encfsSuccess(JNIEnv * env, jobject thiz)
+JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_jniSuccess(JNIEnv * env, jobject thiz)
 {
     return (jint)EXIT_SUCCESS;
 }
 
-JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_encfsIsValidEncFS(JNIEnv * env, jobject thiz, jstring srcdir)
+JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_jniIsValidEncFS(JNIEnv * env, jobject thiz, jstring srcdir)
 {
     const char* c_srcdir = env->GetStringUTFChars(srcdir, 0);
     jint res = (jint)isValidEncFS(c_srcdir);
@@ -353,13 +373,20 @@ JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_encfsIsValidEncFS(JNIEnv *
 }
 
 JNIEXPORT jint JNICALL
-Java_csh_cryptonite_Cryptonite_encfsBrowse(JNIEnv* env, jobject thiz, jstring srcdir, jstring destdir)
+Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv* env, jobject thiz, jstring srcdir, jstring destdir, jstring password)
 {
     const char* c_srcdir = env->GetStringUTFChars(srcdir, 0);
+    const char* c_password = env->GetStringUTFChars(password, 0);
     int res = EXIT_FAILURE;
 
-    RootPtr rootInfo = initRootInfo(c_srcdir);
+    RootPtr rootInfo = initRootInfo(std::string(c_srcdir), std::string(c_password));
+
     env->ReleaseStringUTFChars(srcdir, c_srcdir);
+
+    /* clear password copy */
+    int pw_len = (int)env->GetStringLength(password);
+    memset((char*)c_password, 0, pw_len);
+    env->ReleaseStringUTFChars(password, c_password);
 
     if(!rootInfo)
         return EXIT_FAILURE;
@@ -369,7 +396,9 @@ Java_csh_cryptonite_Cryptonite_encfsBrowse(JNIEnv* env, jobject thiz, jstring sr
     // if the dir doesn't exist, then create it (with user permission)
     if(!checkDir(std_destdir) && !userAllowMkdir(c_destdir, 0700))
 	return EXIT_FAILURE;
-    res = traverseDirs(rootInfo, "/", c_destdir);
+    std::ostringstream out;
+
+    res = traverseDirs(rootInfo, "/", c_destdir, true);
     
     env->ReleaseStringUTFChars(destdir, c_destdir);
 
@@ -377,7 +406,7 @@ Java_csh_cryptonite_Cryptonite_encfsBrowse(JNIEnv* env, jobject thiz, jstring sr
 }
 
 JNIEXPORT jstring JNICALL
-Java_csh_cryptonite_Cryptonite_encfsVersion(JNIEnv* env, jobject thiz)
+Java_csh_cryptonite_Cryptonite_jniVersion(JNIEnv* env, jobject thiz)
 {
     return env->NewStringUTF(VERSION);
 }
