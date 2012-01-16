@@ -90,7 +90,8 @@ public class Cryptonite extends Activity
     private String currentDialogRoot = "/";
     private String currentDialogRootName = currentDialogRoot;
     private String currentReturnPath = "/";
-    private String curPassword = "";
+    private String currentPassword = "\0";
+    private int currentDialogMode = SelectionMode.MODE_OPEN;
     private String mntDir = "/sdcard" + MNTPNT;
     private TextView tv;
     private TextView tvMountInfo;
@@ -151,6 +152,7 @@ public class Cryptonite extends Activity
                 public void onClick(View v) {
                     currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
                     currentDialogButtonLabel = Cryptonite.this.getString(R.string.select_enc_short);
+                    currentDialogMode = SelectionMode.MODE_OPEN;
                     opMode = DROPBOX_MODE;
                     if (!externalStorageIsWritable()) {
                         showAlert(getString(R.string.sdcard_not_writable));
@@ -167,6 +169,7 @@ public class Cryptonite extends Activity
                     opMode = BROWSE_MODE;
                     currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
                     currentDialogButtonLabel = Cryptonite.this.getString(R.string.select_enc_short);
+                    currentDialogMode = SelectionMode.MODE_OPEN;
                     if (externalStorageIsWritable()) {
                         currentDialogStartPath = Environment.getExternalStorageDirectory().getPath();
                     } else {
@@ -190,6 +193,7 @@ public class Cryptonite extends Activity
                     opMode = MOUNT_MODE;
                     currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
                     currentDialogButtonLabel = Cryptonite.this.getString(R.string.select_enc_short);
+                    currentDialogMode = SelectionMode.MODE_OPEN;
                     if (externalStorageIsWritable()) {
                         currentDialogStartPath = Environment.getExternalStorageDirectory().getPath();
                     } else {
@@ -222,6 +226,7 @@ public class Cryptonite extends Activity
                     currentDialogRootName = currentDialogRoot;
                     currentDialogLabel = Cryptonite.this.getString(R.string.fb_name);
                     currentDialogButtonLabel = Cryptonite.this.getString(R.string.back);
+                    currentDialogMode = SelectionMode.MODE_OPEN;
                     if (!externalStorageIsWritable()) {
                         showAlert(getString(R.string.sdcard_not_writable));
                     } else {
@@ -257,6 +262,7 @@ public class Cryptonite extends Activity
                          opMode = EXPORT_MODE;
                          currentDialogLabel = Cryptonite.this.getString(R.string.select_exp);
                          currentDialogButtonLabel = Cryptonite.this.getString(R.string.select_exp_short);
+                         currentDialogMode = SelectionMode.MODE_OPEN;
                          if (externalStorageIsWritable()) {
                              currentDialogStartPath = Environment
                                  .getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
@@ -482,7 +488,7 @@ public class Cryptonite extends Activity
         new Thread(new Runnable(){
                 public void run(){
                     String[] cmdlist = {ENCFSBIN, "--public", "--stdinpass", srcDir, mntDir};
-                    encfsoutput = runBinary(cmdlist, BINDIR, curPassword, true);
+                    encfsoutput = runBinary(cmdlist, BINDIR, currentPassword, true);
                     runOnUiThread(new Runnable(){
                             public void run() {
                                 if (pd.isShowing())
@@ -531,7 +537,7 @@ public class Cryptonite extends Activity
                                                       this.getString(R.string.running_encfs), true);
         new Thread(new Runnable(){
                 public void run(){
-                    if (jniBrowse(srcDir, browseDirF.getPath(), curPassword) != jniSuccess()) {
+                    if (jniBrowse(srcDir, browseDirF.getPath(), currentPassword) != jniSuccess()) {
                         Log.v(TAG, getString(R.string.browse_failed));
                         currentDialogStartPath = "";
                     } else {
@@ -542,6 +548,7 @@ public class Cryptonite extends Activity
                     currentDialogButtonLabel = getString(R.string.export);
                     currentDialogRoot = currentDialogStartPath;
                     currentDialogRootName = getString(R.string.encfs_root);
+                    currentDialogMode = SelectionMode.MODE_OPEN_MULTISELECT;
                     runOnUiThread(new Runnable(){
                             public void run() {
                                 if (pd.isShowing())
@@ -561,9 +568,9 @@ public class Cryptonite extends Activity
     }
 
     private void nullPassword() {
-        char[] fill = new char[curPassword.length()];
+        char[] fill = new char[currentPassword.length()];
         Arrays.fill(fill, '\0');
-        curPassword = new String(fill);
+        currentPassword = new String(fill);
     }
     
     public static String join(String[] sa, String delimiter) {
@@ -597,15 +604,15 @@ public class Cryptonite extends Activity
                  });
              builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                      public void onClick(DialogInterface dialog, int which) {
-                         curPassword = password.getText().toString();
+                         currentPassword = password.getText().toString();
                          removeDialog(MY_PASSWORD_DIALOG_ID);
-                         if (curPassword.length() > 0) {
+                         if (currentPassword.length() > 0) {
                              switch (opMode) {
                               case MOUNT_MODE:
-                                  mountEncFS(currentReturnPath, curPassword);
+                                  mountEncFS(currentReturnPath, currentPassword);
                                   break;
                               case BROWSE_MODE:
-                                  browseEncFS(currentReturnPath, curPassword);
+                                  browseEncFS(currentReturnPath, currentPassword);
                                   break;
                              }
                          } else {
@@ -794,7 +801,8 @@ public class Cryptonite extends Activity
         intent.putExtra(FileDialog.BUTTON_LABEL, currentDialogButtonLabel);
         intent.putExtra(FileDialog.START_PATH, currentDialogStartPath);
         intent.putExtra(FileDialog.LABEL, currentDialogLabel);
-        startActivityForResult(intent, SelectionMode.MODE_OPEN);
+        intent.putExtra(FileDialog.SELECTION_MODE, currentDialogMode);
+        startActivityForResult(intent, currentDialogMode);
     }
     
     /* Native methods are implemented by the

@@ -22,7 +22,9 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.InputMethodManager;
 import android.util.Log;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckedTextView;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -59,7 +61,7 @@ public class FileDialog extends ListActivity {
     private String currentPath = currentRoot;
     
     @SuppressWarnings("unused")
-    private int selectionMode = SelectionMode.MODE_CREATE;
+    private int selectionMode = SelectionMode.MODE_OPEN;
 
     @SuppressWarnings("unused")
     private File selectedFile;
@@ -111,8 +113,8 @@ public class FileDialog extends ListActivity {
                     /* } */
                 }
             });
-        selectionMode = getIntent().getIntExtra(SELECTION_MODE,
-                                                SelectionMode.MODE_CREATE);
+        selectionMode = getIntent().getIntExtra(SELECTION_MODE, SelectionMode.MODE_OPEN);
+        Log.v(Cryptonite.TAG, "Selection mode is " + selectionMode);
         /*
           final Button newButton = (Button) findViewById(R.id.fdButtonNew);
           newButton.setOnClickListener(new OnClickListener() {
@@ -228,26 +230,35 @@ public class FileDialog extends ListActivity {
                 filesPathMap.put(file.getName(), file.getPath());
             }
         }
+
         item.addAll(dirsMap.tailMap("").values());
         item.addAll(filesMap.tailMap("").values());
         path.addAll(dirsPathMap.tailMap("").values());
         path.addAll(filesPathMap.tailMap("").values());
 
-        SimpleAdapter fileList = new SimpleAdapter(this, mList,
-                                                   R.layout.file_dialog_row,
-                                                   new String[] { ITEM_KEY, ITEM_IMAGE }, new int[] {
-                                                       R.id.fdrowtext, R.id.fdrowimage });
-
         for (String dir : dirsMap.tailMap("").values()) {
             addItem(dir, R.drawable.folder);
         }
-
+        
         for (String file : filesMap.tailMap("").values()) {
             addItem(file, R.drawable.file);
         }
+        
+        SimpleAdapter fileList;
+        if (selectionMode != SelectionMode.MODE_OPEN_MULTISELECT) {
+            fileList = new SimpleAdapter(this, mList,
+                                         R.layout.file_dialog_row_single,
+                                         new String[] { ITEM_KEY, ITEM_IMAGE }, new int[] {
+                                             R.id.fdrowtext, R.id.fdrowimage });
+        } else {
+            fileList = new SimpleAdapter(this, mList,
+                                         R.layout.file_dialog_row_multi,
+                                         new String[] { ITEM_KEY, ITEM_IMAGE }, new int[] {
+                                             R.id.fdrowtext, R.id.fdrowimage });
+            getListView().setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+        }
 
         fileList.notifyDataSetChanged();
-
         setListAdapter(fileList);
 
     }
