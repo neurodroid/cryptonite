@@ -74,7 +74,8 @@ public class Cryptonite extends Activity
 {
 
     private static final int REQUEST_PREFS=0, REQUEST_CODE_PICK_FILE_OR_DIRECTORY=1;
-    private static final int MOUNT_MODE=0, BROWSE_MODE=1, DROPBOX_MODE=2, VIEWMOUNT_MODE=3, VIEWBROWSE_MODE=4;
+    private static final int MOUNT_MODE=0, BROWSE_MODE=1, DROPBOX_MODE=2,
+        VIEWMOUNT_MODE=3, VIEWBROWSE_MODE=4, EXPORT_MODE=5;
     private static final int DIRPICK_MODE=0, FILEPICK_MODE=1;
     private static final int MY_PASSWORD_DIALOG_ID = 0;
     private static final int DIALOG_MARKETNOTFOUND=1, DIALOG_OI_UNAVAILABLE=2;
@@ -96,6 +97,7 @@ public class Cryptonite extends Activity
     private String encfsversion, encfsoutput;
     private Button buttonDropbox, buttonBrowse, buttonMount, buttonUnmount, buttonViewMount;
     private int opMode = -1;
+    private boolean alert = false;
     
     /** Called when the activity is first created. */
     @Override public void onCreate(Bundle savedInstanceState) {
@@ -121,7 +123,7 @@ public class Cryptonite extends Activity
 
         tvMountInfo = (TextView)findViewById(R.id.tvMountInfo);
         if (!externalStorageIsWritable() || !supportsFuse()) {
-            tv.setText(this.getString(R.string.mount_info_unsupported));
+            tvMountInfo.setText(this.getString(R.string.mount_info_unsupported));
         }
         
         /* Copy the encfs binaries to binDir and make executable.
@@ -148,7 +150,7 @@ public class Cryptonite extends Activity
         buttonDropbox.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
-                    currentDialogButtonLabel = Cryptonite.this.getString(R.string.select);
+                    currentDialogButtonLabel = Cryptonite.this.getString(R.string.select_enc_short);
                     opMode = DROPBOX_MODE;
                     if (!externalStorageIsWritable()) {
                         showAlert(getString(R.string.sdcard_not_writable));
@@ -164,7 +166,7 @@ public class Cryptonite extends Activity
                 public void onClick(View v) {
                     opMode = BROWSE_MODE;
                     currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
-                    currentDialogButtonLabel = Cryptonite.this.getString(R.string.select);
+                    currentDialogButtonLabel = Cryptonite.this.getString(R.string.select_enc_short);
                     if (externalStorageIsWritable()) {
                         currentDialogStartPath = Environment.getExternalStorageDirectory().getPath();
                     } else {
@@ -187,7 +189,7 @@ public class Cryptonite extends Activity
                 public void onClick(View v) {
                     opMode = MOUNT_MODE;
                     currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
-                    currentDialogButtonLabel = Cryptonite.this.getString(R.string.select);
+                    currentDialogButtonLabel = Cryptonite.this.getString(R.string.select_enc_short);
                     if (externalStorageIsWritable()) {
                         currentDialogStartPath = Environment.getExternalStorageDirectory().getPath();
                     } else {
@@ -245,10 +247,46 @@ public class Cryptonite extends Activity
         switch (requestCode) {
          case SelectionMode.MODE_OPEN:
              /* file dialog */
-             if (resultCode == Activity.RESULT_OK) {
+             if (resultCode == Activity.RESULT_OK && data != null) {
                  currentReturnPath = data.getStringExtra(FileDialog.RESULT_PATH);
-                 if (currentReturnPath != null && opMode == MOUNT_MODE || opMode == BROWSE_MODE) {
-                     showDialog(MY_PASSWORD_DIALOG_ID);
+                 if (currentReturnPath != null ) {
+                     if (opMode == MOUNT_MODE || opMode == BROWSE_MODE) {
+                         showDialog(MY_PASSWORD_DIALOG_ID);
+                     } else if (opMode == VIEWBROWSE_MODE) {
+                         /* Select destination directory for exported files */
+                         opMode = EXPORT_MODE;
+                         currentDialogLabel = Cryptonite.this.getString(R.string.select_exp);
+                         currentDialogButtonLabel = Cryptonite.this.getString(R.string.select_exp_short);
+                         if (externalStorageIsWritable()) {
+                             currentDialogStartPath = Environment
+                                 .getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                                 .getPath();
+                         } else {
+                             currentDialogStartPath = "/";
+                         }
+                         currentDialogRoot = "/";
+                         currentDialogRootName = currentDialogRoot;
+                         launchBuiltinFileBrowser();
+                     } else if (opMode == EXPORT_MODE) {
+                         final ProgressDialog pd = ProgressDialog.show(this,
+                                                                       this.getString(R.string.wait_msg),
+                                                                       this.getString(R.string.running_export), true);
+                         new Thread(new Runnable(){
+                                 public void run(){
+                                     alert = (jniExport(currentReturnPath) != jniSuccess());
+                                     runOnUiThread(new Runnable(){
+                                             public void run() {
+                                                 if (pd.isShowing())
+                                                     pd.dismiss();
+                                                 if (alert) {
+                                                     showAlert(getString(R.string.export_failed));
+                                                     alert = false;
+                                                 }
+                                             }
+                                         });
+                                 }
+                             }).start();
+                     }
                  }
              } else if (resultCode == Activity.RESULT_CANCELED) {
                  Log.v(TAG, "file not selected");
@@ -259,14 +297,12 @@ public class Cryptonite extends Activity
              SharedPreferences prefs = getBaseContext().getSharedPreferences("csh.cryptonite_preferences", 0);
              break;
          case REQUEST_CODE_PICK_FILE_OR_DIRECTORY:
+             /* from external OI file browser */
              if (resultCode == RESULT_OK && data != null) {
                  // obtain the filename
                  Uri fileUri = data.getData();
                  if (fileUri != null) {
                      currentReturnPath = fileUri.getPath();
-                     if (currentReturnPath != null && opMode == MOUNT_MODE || opMode == BROWSE_MODE) {
-                         showDialog(MY_PASSWORD_DIALOG_ID);
-                     }
                  }
              }
              break;
@@ -502,8 +538,8 @@ public class Cryptonite extends Activity
                         currentDialogStartPath = browseDirF.getPath();
                         Log.v(TAG, "Decoding succeeded");
                     }
-                    currentDialogLabel = getString(R.string.select_file_decode);
-                    currentDialogButtonLabel = getString(R.string.decode);
+                    currentDialogLabel = getString(R.string.select_file_export);
+                    currentDialogButtonLabel = getString(R.string.export);
                     currentDialogRoot = currentDialogStartPath;
                     currentDialogRootName = getString(R.string.encfs_root);
                     runOnUiThread(new Runnable(){
@@ -769,6 +805,7 @@ public class Cryptonite extends Activity
     public native int     jniSuccess();
     public native int     jniIsValidEncFS(String srcDir);
     public native int     jniBrowse(String srcDir, String destDir, String password);
+    public native int     jniExport(String destDir);
     public native String  jniVersion();
     
     /* this is used to load the 'cryptonite' library on application

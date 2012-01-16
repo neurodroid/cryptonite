@@ -14,6 +14,7 @@
     <string name="title_password">EncFS password</string>
     <string name="settings_password">Enter password:</string>
     <string name="running_encfs">Running EncFS&#8230;</string>
+    <string name="running_export">Exporting files&#8230;</string>
     <string name="copying_bins">Copying binaries&#8230;</string>
     <string name="no_fuse">FUSE is not supported on your device</string>
     <string name="browse_info">Browse EncFS volume</string>
@@ -21,6 +22,7 @@
     <string name="mount_info_unsupported">Mounting is not supported on this phone</string>
     <string name="invalid_encfs">This is not a valid EncFS root volume</string>
     <string name="browse_failed">Failed to decode the EncFS volume; check password and file permissions.</string>
+    <string name="export_failed">Failed to export files; check permissions.</string>
     <string name="empty_password">Password was empty</string>
     <string name="target_dir_cleanup_failure">Couldn\'t clean up target directory</string>
     <string name="target_dir_setup_failure">Couldn\'t set up target directory</string>
@@ -34,6 +36,8 @@
     <string name="select">Select</string>
     <string name="select_enc">Select EncFS root directory</string>
     <string name="select_enc_short">Select current folder</string>
+    <string name="select_exp">Select export directory</string>
+    <string name="select_exp_short">Export to current folder</string>
     <string name="encfs_root">EncFS root</string>
     <string name="fb_name">File Browser</string>
     <string name="nnew">New</string>
@@ -44,8 +48,8 @@
     <string name="no_data">No Data</string>
     <string name="location">Location</string>
     <string name="cant_read_folder">folder can\'t be read!</string>
-    <string name="select_file_decode">Select file to decode</string>
-    <string name="decode">Decode</string>
+    <string name="select_file_export">Select file to export</string>
+    <string name="export">Export</string>
     <string name="back">Back</string>
 
     <!-- Button labels -->

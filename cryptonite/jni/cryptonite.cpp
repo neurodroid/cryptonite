@@ -45,6 +45,12 @@
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
+/* Ugly hack for now: Keep a global rootPtr for repeated access
+   to the same decoded EncFS
+   TODO: return a rootPtr equivalent to Java instead
+*/
+RootPtr gRootInfo;
+
 static bool checkDir( std::string &rootDir )
 {
     if( !isDirectory( rootDir.c_str() ))
@@ -111,17 +117,17 @@ static int isValidEncFS(std::string rootDir) {
 
 // apply an operation to every block in the file
 template<typename T>
-static int processContents( const shared_ptr<EncFS_Root> &rootInfo, 
+static int processContents( const shared_ptr<EncFS_Root> &lRootInfo, 
                             const char *path, T &op )
 {
     int errCode = 0;
-    shared_ptr<FileNode> node = rootInfo->root->openNode( path, "encfsctl",
+    shared_ptr<FileNode> node = lRootInfo->root->openNode( path, "encfsctl",
 	    O_RDONLY, &errCode );
 
     if(!node)
     {
         // try opening directly, so a cipher-path can be passed in
-        node = rootInfo->root->directLookup( path );
+        node = lRootInfo->root->directLookup( path );
         if(node)
         {
             errCode = node->open( O_RDONLY );
@@ -174,7 +180,7 @@ public:
 };
 
 static int copyLink(const struct stat &stBuf, 
-                    const boost::shared_ptr<EncFS_Root> &rootInfo,
+                    const boost::shared_ptr<EncFS_Root> &lRootInfo,
                     const std::string &cpath, const std::string &destName )
 {
     boost::scoped_array<char> buf(new char[stBuf.st_size+1]);
@@ -188,7 +194,7 @@ static int copyLink(const struct stat &stBuf,
     }
 
     buf[res] = '\0';
-    std::string decodedLink = rootInfo->root->plainPath(buf.get());
+    std::string decodedLink = lRootInfo->root->plainPath(buf.get());
 
     res = ::symlink( decodedLink.c_str(), destName.c_str() );
     if(res == -1)
@@ -202,12 +208,12 @@ static int copyLink(const struct stat &stBuf,
     return EXIT_SUCCESS;
 }
 
-static int copyContents(const boost::shared_ptr<EncFS_Root> &rootInfo, 
+static int copyContents(const boost::shared_ptr<EncFS_Root> &lRootInfo, 
                         const char* encfsName, const char* targetName,
                         bool fake)
 {
     boost::shared_ptr<FileNode> node = 
-	rootInfo->root->lookupNode( encfsName, "encfsctl" );
+	lRootInfo->root->lookupNode( encfsName, "encfsctl" );
 
     if(!node)
     {
@@ -224,7 +230,7 @@ static int copyContents(const boost::shared_ptr<EncFS_Root> &rootInfo,
 
         if((st.st_mode & S_IFLNK) == S_IFLNK)
         {
-            std::string d = rootInfo->root->cipherPath(encfsName);
+            std::string d = lRootInfo->root->cipherPath(encfsName);
             char linkContents[PATH_MAX+2];
 
             if(readlink (d.c_str(), linkContents, PATH_MAX + 1) <= 0)
@@ -234,7 +240,7 @@ static int copyContents(const boost::shared_ptr<EncFS_Root> &rootInfo,
                 LOGE(err.str().c_str());
                 return EXIT_FAILURE;
             }
-            symlink(rootInfo->root->plainPath(linkContents).c_str(), 
+            symlink(lRootInfo->root->plainPath(linkContents).c_str(), 
 		    targetName);
         } else
         {
@@ -252,14 +258,14 @@ static int copyContents(const boost::shared_ptr<EncFS_Root> &rootInfo,
 
             if (!fake) {
                 WriteOutput output(outfd);
-                processContents( rootInfo, encfsName, output );
+                processContents( lRootInfo, encfsName, output );
             }
         }
     }
     return EXIT_SUCCESS;
 }
 
-static int traverseDirs(const boost::shared_ptr<EncFS_Root> &rootInfo, 
+static int traverseDirs(const boost::shared_ptr<EncFS_Root> &lRootInfo, 
                         std::string volumeDir, std::string destDir, bool fake)
 {
     if(!endsWith(volumeDir, '/'))
@@ -272,7 +278,7 @@ static int traverseDirs(const boost::shared_ptr<EncFS_Root> &rootInfo,
     {
         struct stat st;
         shared_ptr<FileNode> dirNode = 
-            rootInfo->root->lookupNode( volumeDir.c_str(), "encfsctl" );
+            lRootInfo->root->lookupNode( volumeDir.c_str(), "encfsctl" );
         if(dirNode->getAttr(&st))
             return EXIT_FAILURE;
 
@@ -291,7 +297,7 @@ static int traverseDirs(const boost::shared_ptr<EncFS_Root> &rootInfo,
         }
     }
     // show files in directory
-    DirTraverse dt = rootInfo->root->openDir(volumeDir.c_str());
+    DirTraverse dt = lRootInfo->root->openDir(volumeDir.c_str());
     if(dt.valid())
     {
         for(std::string name = dt.nextPlaintextName(); !name.empty(); 
@@ -301,7 +307,7 @@ static int traverseDirs(const boost::shared_ptr<EncFS_Root> &rootInfo,
             if(name != "." && name != "..")
             {
                 std::string plainPath = volumeDir + name;
-                std::string cpath = rootInfo->root->cipherPath(plainPath.c_str());
+                std::string cpath = lRootInfo->root->cipherPath(plainPath.c_str());
                 std::string destName = destDir + name;
 
                 std::ostringstream out;
@@ -314,14 +320,14 @@ static int traverseDirs(const boost::shared_ptr<EncFS_Root> &rootInfo,
                 {
                     if( S_ISDIR( stBuf.st_mode ) )
                     {
-                        r = traverseDirs(rootInfo, (plainPath + '/').c_str(), 
+                        r = traverseDirs(lRootInfo, (plainPath + '/').c_str(), 
                                          destName + '/', fake);
                     } else if( S_ISLNK( stBuf.st_mode ))
                     {
-                        r = copyLink( stBuf, rootInfo, cpath, destName );
+                        r = copyLink( stBuf, lRootInfo, cpath, destName );
                     } else
                     {
-                         r = copyContents(rootInfo, plainPath.c_str(), 
+                         r = copyContents(lRootInfo, plainPath.c_str(), 
                                           destName.c_str(), fake);
                     }
                 } else
@@ -334,6 +340,11 @@ static int traverseDirs(const boost::shared_ptr<EncFS_Root> &rootInfo,
         }
     }
     return EXIT_SUCCESS;
+}
+
+static int exportFiles(const boost::shared_ptr<EncFS_Root> &lRootInfo, 
+                       std::string volumeDir, std::string destDir) {
+    return traverseDirs(lRootInfo, volumeDir, destDir, false);
 }
 
 static RootPtr initRootInfo(const std::string& rootDir, const std::string& password)
@@ -366,6 +377,7 @@ extern "C" {
     JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniSuccess(JNIEnv * env, jobject thiz);
     JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniIsValidEncFS(JNIEnv * env, jobject thiz, jstring srcdir);
     JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv * env, jobject thiz, jstring srcdir, jstring destdir, jstring password);
+    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jobject thiz, jstring destdir);
     JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniVersion(JNIEnv * env, jobject thiz);
 #ifdef __cplusplus
 };
@@ -402,7 +414,7 @@ Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv* env, jobject thiz, jstring srcd
         LOGE("EncFS root directory is not valid");
         return EXIT_FAILURE;
     }
-    RootPtr rootInfo = initRootInfo(std::string(c_srcdir), std::string(c_password));
+    gRootInfo = initRootInfo(std::string(c_srcdir), std::string(c_password));
 
     env->ReleaseStringUTFChars(srcdir, c_srcdir);
 
@@ -411,12 +423,12 @@ Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv* env, jobject thiz, jstring srcd
     memset((char*)c_password, 0, pw_len);
     env->ReleaseStringUTFChars(password, c_password);
 
-    if(!rootInfo) {
+    if(!gRootInfo) {
         LOGE("Error initialising root volume");
         return EXIT_FAILURE;
     }
 
-    if (!rootInfo->volumeKey) {
+    if (!gRootInfo->volumeKey) {
         LOGI("Wrong password");
         return EXIT_FAILURE;
     }
@@ -427,8 +439,34 @@ Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv* env, jobject thiz, jstring srcd
     if(!checkDir(std_destdir) && !userAllowMkdir(c_destdir, 0700))
 	return EXIT_FAILURE;
 
-    res = traverseDirs(rootInfo, "/", c_destdir, true);
+    res = traverseDirs(gRootInfo, "/", c_destdir, true);
     
+    env->ReleaseStringUTFChars(destdir, c_destdir);
+
+    return res;
+}
+
+JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jobject thiz, jstring destdir)
+{
+    if(!gRootInfo) {
+        LOGE("No EncFS root info");
+        return EXIT_FAILURE;
+    }
+
+    if (!gRootInfo->volumeKey) {
+        LOGI("No EncFS volume key");
+        return EXIT_FAILURE;
+    }
+    
+    const char* c_destdir = env->GetStringUTFChars(destdir, 0);
+    std::string std_destdir(c_destdir);
+
+    // if the dir doesn't exist, then create it (with user permission)
+    if(!checkDir(std_destdir) && !userAllowMkdir(c_destdir, 0700))
+	return EXIT_FAILURE;
+
+    int res = (int)exportFiles(gRootInfo, "/", c_destdir);
+
     env->ReleaseStringUTFChars(destdir, c_destdir);
 
     return res;

@@ -138,7 +138,8 @@ public class FileDialog extends ListActivity {
         cancelButton.setOnClickListener(new OnClickListener() {
 
                 public void onClick(View v) {
-                    setSelectVisible(v);
+                    setResult(RESULT_CANCELED, getIntent());
+                    finish();
                 }
 
             });
