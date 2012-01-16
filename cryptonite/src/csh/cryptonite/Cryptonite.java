@@ -475,25 +475,19 @@ public class Cryptonite extends Activity
             Log.v(TAG, "Invalid EncFS");
             return;
         }
-        
-        File browseDirFTmp = getBaseContext().getDir("browse", Context.MODE_PRIVATE);
-        if (browseDirFTmp.exists()) {
-            String[] browseFiles = browseDirFTmp.list();
-            for (String browseFile : browseFiles) {
-                if (deleteDir(new File(browseFile))) {
-                    showAlert(getString(R.string.target_dir_cleanup_failure));
-                    return;
-                }
-            }
-            deleteDir(browseDirFTmp);
-        }
-        Log.v(TAG, browseDirFTmp.getPath());
+
+        /* Tear down and recreate the browse directory to make
+         * sure we have appropriate permissions */
         final File browseDirF = getBaseContext().getDir("browse", Context.MODE_PRIVATE);
-        if (!browseDirF.exists()) {
-            if (!browseDirF.mkdirs()) {
-                showAlert(getString(R.string.target_dir_setup_failure));
+        if (browseDirF.exists()) {
+            if (!deleteDir(browseDirF)) {
+                showAlert(getString(R.string.target_dir_cleanup_failure));
                 return;
             }
+        }
+        if (!browseDirF.mkdirs()) {
+            showAlert(getString(R.string.target_dir_setup_failure));
+            return;
         }
             
         final ProgressDialog pd = ProgressDialog.show(this,
