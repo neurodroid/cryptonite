@@ -406,6 +406,11 @@ JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_jniIsValidEncFS(JNIEnv * e
 JNIEXPORT jint JNICALL
 Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv* env, jobject thiz, jstring srcdir, jstring destdir, jstring password)
 {
+    int pw_len = (int)env->GetStringLength(password);
+    if (pw_len  == 0) {
+        return EXIT_FAILURE;
+    }
+    
     const char* c_srcdir = env->GetStringUTFChars(srcdir, 0);
     const char* c_password = env->GetStringUTFChars(password, 0);
     int res = EXIT_FAILURE;
@@ -419,7 +424,6 @@ Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv* env, jobject thiz, jstring srcd
     env->ReleaseStringUTFChars(srcdir, c_srcdir);
 
     /* clear password copy */
-    int pw_len = (int)env->GetStringLength(password);
     memset((char*)c_password, 0, pw_len);
     env->ReleaseStringUTFChars(password, c_password);
 
