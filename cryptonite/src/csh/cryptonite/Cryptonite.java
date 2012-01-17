@@ -169,7 +169,7 @@ public class Cryptonite extends Activity
                     opMode = BROWSE_MODE;
                     currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
                     currentDialogButtonLabel = Cryptonite.this.getString(R.string.select_enc_short);
-                    currentDialogMode = SelectionMode.MODE_OPEN;
+                    currentDialogMode = SelectionMode.MODE_OPEN_MULTISELECT;
                     if (externalStorageIsWritable()) {
                         currentDialogStartPath = Environment.getExternalStorageDirectory().getPath();
                     } else {

@@ -13,21 +13,27 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.TreeMap;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.InputMethodManager;
 import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.CheckedTextView;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
 
@@ -35,6 +41,7 @@ public class FileDialog extends ListActivity {
 
     private static final String ITEM_KEY = "key";
     private static final String ITEM_IMAGE = "image";
+    private static final String ITEM_CHECK = "check";
     private static final String ROOT = "/";
 
     public static final String START_PATH = "START_PATH";
@@ -66,7 +73,7 @@ public class FileDialog extends ListActivity {
     @SuppressWarnings("unused")
     private File selectedFile;
     private HashMap<String, Integer> lastPositions = new HashMap<String, Integer>();
-
+    
     /** Called when the activity is first created. */
     @Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -191,7 +198,7 @@ public class FileDialog extends ListActivity {
         final List<String> item = new ArrayList<String>();
         path = new ArrayList<String>();
         mList = new ArrayList<HashMap<String, Object>>();
-
+        
         File f = new File(currentPath);
         File[] files = f.listFiles();
         if (files == null) {
@@ -206,11 +213,11 @@ public class FileDialog extends ListActivity {
         if (!currentPath.equals(currentRoot)) {
 
             item.add(currentRoot);
-            addItem(currentRootName, R.drawable.folder);
+            addItem(currentRootName, R.drawable.ic_launcher_folder, false);
             path.add(currentRoot);
 
             item.add("../");
-            addItem("../", R.drawable.folder);
+            addItem("../", R.drawable.ic_launcher_folder, false);
             path.add(f.getParent());
             parentPath = f.getParent();
 
@@ -237,39 +244,98 @@ public class FileDialog extends ListActivity {
         path.addAll(filesPathMap.tailMap("").values());
 
         for (String dir : dirsMap.tailMap("").values()) {
-            addItem(dir, R.drawable.folder);
+            addItem(dir, R.drawable.ic_launcher_folder, false);
         }
         
         for (String file : filesMap.tailMap("").values()) {
-            addItem(file, R.drawable.file);
+            addItem(file, R.drawable.ic_launcher_file, false);
         }
+
         
-        SimpleAdapter fileList;
         if (selectionMode != SelectionMode.MODE_OPEN_MULTISELECT) {
+            SimpleAdapter fileList;
             fileList = new SimpleAdapter(this, mList,
                                          R.layout.file_dialog_row_single,
                                          new String[] { ITEM_KEY, ITEM_IMAGE }, new int[] {
                                              R.id.fdrowtext, R.id.fdrowimage });
+            fileList.notifyDataSetChanged();
+            setListAdapter(fileList);
         } else {
-            fileList = new SimpleAdapter(this, mList,
-                                         R.layout.file_dialog_row_multi,
-                                         new String[] { ITEM_KEY, ITEM_IMAGE }, new int[] {
-                                             R.id.fdrowtext, R.id.fdrowimage });
+            ArrayAdapter<HashMap<String, Object>> fileList = new FileDialogArrayAdapter(this,
+                                                                                         mList);
+            setListAdapter(fileList);
             getListView().setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+            fileList.notifyDataSetChanged();
+            setListAdapter(fileList);
         }
-
-        fileList.notifyDataSetChanged();
-        setListAdapter(fileList);
+        
 
     }
 
-    private void addItem(String fileName, int imageId) {
+    private void addItem(String fileName, Integer imageId, Boolean check) {
         HashMap<String, Object> item = new HashMap<String, Object>();
         item.put(ITEM_KEY, fileName);
         item.put(ITEM_IMAGE, imageId);
+        if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT) {
+            item.put(ITEM_CHECK, check);
+        }
         mList.add(item);
     }
 
+    static class ViewHolder {
+        protected CheckBox checkbox;
+        protected TextView text;
+        protected ImageView image;
+    }
+
+
+    public class FileDialogArrayAdapter extends ArrayAdapter<HashMap<String, Object>> {
+
+        private final List<HashMap<String, Object>> list;
+        private final Activity context;
+
+        public FileDialogArrayAdapter(Activity context, List<HashMap<String, Object>> list) {
+            super(context, R.layout.file_dialog_row_multi, list);
+            this.context = context;
+            this.list = list;
+        }
+        
+        @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+            View view = null;
+            if (convertView == null) {
+                LayoutInflater inflator = context.getLayoutInflater();
+                view = inflator.inflate(R.layout.file_dialog_row_multi, null);
+                final ViewHolder viewHolder = new ViewHolder();
+                viewHolder.image = (ImageView) view.findViewById(R.id.fdrowimage);
+                viewHolder.text = (TextView) view.findViewById(R.id.fdrowtext);
+                viewHolder.checkbox = (CheckBox) view.findViewById(R.id.fdrowcheck);
+                viewHolder.checkbox
+                    .setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+
+                            @Override
+                                public void onCheckedChanged(CompoundButton buttonView,
+                                                             boolean isChecked) {
+                                HashMap<String, Object> element = (HashMap<String, Object>) viewHolder.checkbox
+                                    .getTag();
+                                element.put(ITEM_CHECK, buttonView.isChecked());
+
+                            }
+                        });
+                view.setTag(viewHolder);
+                viewHolder.checkbox.setTag(list.get(position));
+            } else {
+                view = convertView;
+                ((ViewHolder) view.getTag()).checkbox.setTag(list.get(position));
+            }
+            ViewHolder holder = (ViewHolder) view.getTag();
+            holder.text.setText((String) list.get(position).get(ITEM_KEY));
+            holder.checkbox.setChecked((Boolean) list.get(position).get(ITEM_CHECK));
+            holder.image.setImageResource((Integer) list.get(position).get(ITEM_IMAGE));
+            return view;
+        }
+    }
+    
     @Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 
@@ -277,30 +343,36 @@ public class FileDialog extends ListActivity {
 
         setSelectVisible(v);
 
-        if (file.isDirectory()) {
+        if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT) {
+
+
             selectButton.setEnabled(true);
-            if (file.canRead()) {
-                lastPositions.put(currentPath, position);
-                getDir(path.get(position), currentRoot, currentRootName);
-            } else {
-                new AlertDialog.Builder(this)
-                    .setIcon(R.drawable.icon)
-                    .setTitle(
-                              "[" + file.getName() + "] "
-                              + getText(R.string.cant_read_folder))
-                    .setPositiveButton("OK",
-                                       new DialogInterface.OnClickListener() {
-
-                                           public void onClick(DialogInterface dialog,
-                                                                   int which) {
-
-                                           }
-                                       }).show();
-            }
         } else {
-            selectedFile = file;
-            v.setSelected(true);
-            selectButton.setEnabled(true);
+            if (file.isDirectory()) {
+                selectButton.setEnabled(true);
+                if (file.canRead()) {
+                    lastPositions.put(currentPath, position);
+                    getDir(path.get(position), currentRoot, currentRootName);
+                } else {
+                    new AlertDialog.Builder(this)
+                        .setIcon(R.drawable.icon)
+                        .setTitle(
+                                  "[" + file.getName() + "] "
+                                  + getText(R.string.cant_read_folder))
+                        .setPositiveButton("OK",
+                                           new DialogInterface.OnClickListener() {
+
+                                               public void onClick(DialogInterface dialog,
+                                                                       int which) {
+
+                                               }
+                                           }).show();
+                }
+            } else {
+                selectedFile = file;
+                v.setSelected(true);
+                selectButton.setEnabled(true);
+            }
         }
     }
 
