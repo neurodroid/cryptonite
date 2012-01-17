@@ -77,7 +77,7 @@ public class FileDialog extends ListActivity {
     private File selectedFile;
     private HashMap<String, Integer> lastPositions = new HashMap<String, Integer>();
 
-    private Set<File> selectedFiles = new HashSet<File>();
+    private Set<File> selectedPaths = new HashSet<File>();
     
     /** Called when the activity is first created. */
     @Override
@@ -117,8 +117,14 @@ public class FileDialog extends ListActivity {
                       } else {
                     */
                     /* get current path */
-                    if (currentPath != null) {
-                        getIntent().putExtra(RESULT_PATH, currentPath);
+                    if (selectionMode != SelectionMode.MODE_OPEN_MULTISELECT) {
+                        if (currentPath != null) {
+                            getIntent().putExtra(RESULT_PATH, currentPath);
+                            setResult(RESULT_OK, getIntent());
+                            finish();
+                        }
+                    } else {
+                        getIntent().putExtra(RESULT_PATH, selectedPaths.toArray());
                         setResult(RESULT_OK, getIntent());
                         finish();
                     }
@@ -293,7 +299,7 @@ public class FileDialog extends ListActivity {
         item.put(ITEM_KEY, filelabel);
         item.put(ITEM_IMAGE, imageId);
         if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT) {
-            item.put(ITEM_CHECK, selectedFiles.contains(file));
+            item.put(ITEM_CHECK, selectedPaths.contains(file));
             item.put(ITEM_FILE, file);
         }
         mList.add(item);
@@ -333,13 +339,14 @@ public class FileDialog extends ListActivity {
                             @Override
                                 public void onCheckedChanged(CompoundButton buttonView,
                                                              boolean isChecked) {
-                                HashMap<String, Object> element = (HashMap<String, Object>) viewHolder.checkbox
+                                HashMap<String, Object> element =
+                                    (HashMap<String, Object>) viewHolder.checkbox
                                     .getTag();
                                 element.put(ITEM_CHECK, buttonView.isChecked());
                                 if (buttonView.isChecked()) {
-                                    selectedFiles.add((File)(element.get(ITEM_FILE)));
+                                    selectedPaths.add((File)(element.get(ITEM_FILE)));
                                 } else {
-                                    selectedFiles.remove((File)(element.get(ITEM_FILE)));
+                                    selectedPaths.remove((File)(element.get(ITEM_FILE)));
                                 }
                             }
                         });
