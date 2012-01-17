@@ -10,7 +10,9 @@ package csh.cryptonite;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.TreeMap;
 
 import android.app.Activity;
@@ -74,6 +76,8 @@ public class FileDialog extends ListActivity {
     @SuppressWarnings("unused")
     private File selectedFile;
     private HashMap<String, Integer> lastPositions = new HashMap<String, Integer>();
+
+    private Set<File> selectedFiles = new HashSet<File>();
     
     /** Called when the activity is first created. */
     @Override
@@ -214,11 +218,11 @@ public class FileDialog extends ListActivity {
         if (!currentPath.equals(currentRoot)) {
 
             item.add(currentRoot);
-            addItem(currentRootName, R.drawable.ic_launcher_folder, false, new File(currentRootName));
+            addItem(new File(currentRoot), R.drawable.ic_launcher_folder, currentRootName);
             path.add(currentRoot);
 
             item.add("../");
-            addItem("../", R.drawable.ic_launcher_folder, false, new File(f.getParent()));
+            addItem(new File(f.getParent()), R.drawable.ic_launcher_folder, "../");
             path.add(f.getParent());
             parentPath = f.getParent();
 
@@ -251,13 +255,13 @@ public class FileDialog extends ListActivity {
         // }
         
         for (String dirpath : dirsPathMap.tailMap("").keySet()) {
-            addItem(dirpath, R.drawable.ic_launcher_folder, false,
-                    new File(dirsPathMap.tailMap("").get(dirpath)));
+            addItem(new File(dirsPathMap.tailMap("").get(dirpath)),
+                    R.drawable.ic_launcher_folder);
         }
 
         for (String filepath : filesPathMap.tailMap("").keySet()) {
-            addItem(filepath, R.drawable.ic_launcher_file, false,
-                    new File(filesPathMap.tailMap("").get(filepath)));
+            addItem(new File(filesPathMap.tailMap("").get(filepath)),
+                    R.drawable.ic_launcher_file);
         }
         
         if (selectionMode != SelectionMode.MODE_OPEN_MULTISELECT) {
@@ -280,12 +284,16 @@ public class FileDialog extends ListActivity {
 
     }
 
-    private void addItem(String fileName, Integer imageId, Boolean check, File file) {
+    private void addItem(File file, Integer imageId) {
+        addItem(file, imageId, file.getName());
+    }
+    
+    private void addItem(File file, Integer imageId, String filelabel) {
         HashMap<String, Object> item = new HashMap<String, Object>();
-        item.put(ITEM_KEY, fileName);
+        item.put(ITEM_KEY, filelabel);
         item.put(ITEM_IMAGE, imageId);
         if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT) {
-            item.put(ITEM_CHECK, check);
+            item.put(ITEM_CHECK, selectedFiles.contains(file));
             item.put(ITEM_FILE, file);
         }
         mList.add(item);
@@ -328,7 +336,11 @@ public class FileDialog extends ListActivity {
                                 HashMap<String, Object> element = (HashMap<String, Object>) viewHolder.checkbox
                                     .getTag();
                                 element.put(ITEM_CHECK, buttonView.isChecked());
-
+                                if (buttonView.isChecked()) {
+                                    selectedFiles.add((File)(element.get(ITEM_FILE)));
+                                } else {
+                                    selectedFiles.remove((File)(element.get(ITEM_FILE)));
+                                }
                             }
                         });
                 view.setTag(viewHolder);
