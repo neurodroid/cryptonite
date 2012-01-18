@@ -44,6 +44,7 @@ public class FileDialog extends ListActivity {
     private static final String ITEM_KEY = "key";
     private static final String ITEM_IMAGE = "image";
     private static final String ITEM_CHECK = "check";
+    private static final String ITEM_ENABLED = "enables";
     private static final String ITEM_FILE = "file";
     private static final String ROOT = "/";
 
@@ -77,7 +78,7 @@ public class FileDialog extends ListActivity {
     private File selectedFile;
     private HashMap<String, Integer> lastPositions = new HashMap<String, Integer>();
 
-    private Set<File> selectedPaths = new HashSet<File>();
+    private Set<String> selectedPaths = new HashSet<String>();
     
     /** Called when the activity is first created. */
     @Override
@@ -124,7 +125,7 @@ public class FileDialog extends ListActivity {
                             finish();
                         }
                     } else {
-                        getIntent().putExtra(RESULT_PATH, selectedPaths.toArray());
+                        getIntent().putExtra(RESULT_PATH, selectedPaths.toArray(new String[0]));
                         setResult(RESULT_OK, getIntent());
                         finish();
                     }
@@ -256,10 +257,6 @@ public class FileDialog extends ListActivity {
         path.addAll(dirsPathMap.tailMap("").values());
         path.addAll(filesPathMap.tailMap("").values());
 
-        // for (String dir : dirsMap.tailMap("").values()) {
-        //     addItem(dir, R.drawable.ic_launcher_folder, false, new File(dir));
-        // }
-        
         for (String dirpath : dirsPathMap.tailMap("").keySet()) {
             addItem(new File(dirsPathMap.tailMap("").get(dirpath)),
                     R.drawable.ic_launcher_folder);
@@ -299,8 +296,11 @@ public class FileDialog extends ListActivity {
         item.put(ITEM_KEY, filelabel);
         item.put(ITEM_IMAGE, imageId);
         if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT) {
-            item.put(ITEM_CHECK, selectedPaths.contains(file));
+            item.put(ITEM_CHECK, selectedPaths.contains(file.getPath()));
             item.put(ITEM_FILE, file);
+            item.put(ITEM_ENABLED,
+                     (Boolean) (!file.getPath().equals(currentRoot) &&
+                                !file.getPath().equals(new File(currentPath).getParent())));
         }
         mList.add(item);
     }
@@ -343,10 +343,20 @@ public class FileDialog extends ListActivity {
                                     (HashMap<String, Object>) viewHolder.checkbox
                                     .getTag();
                                 element.put(ITEM_CHECK, buttonView.isChecked());
+                                File f = (File) element.get(ITEM_FILE);
                                 if (buttonView.isChecked()) {
-                                    selectedPaths.add((File)(element.get(ITEM_FILE)));
+                                    if (f.isDirectory()) {
+                                        addChildrenRecursively(f);
+                                    } else {
+                                        selectedPaths.add(f.getPath());
+                                    }
+                                        
                                 } else {
-                                    selectedPaths.remove((File)(element.get(ITEM_FILE)));
+                                    if (f.isDirectory()) {
+                                        removeChildrenRecursively(f);
+                                    } else {
+                                        selectedPaths.remove(((File) element.get(ITEM_FILE)).getPath());
+                                    }
                                 }
                             }
                         });
@@ -357,13 +367,48 @@ public class FileDialog extends ListActivity {
                 ((ViewHolder) view.getTag()).checkbox.setTag(list.get(position));
             }
             ViewHolder holder = (ViewHolder) view.getTag();
-            holder.text.setText((String) list.get(position).get(ITEM_KEY));
-            holder.checkbox.setChecked((Boolean) list.get(position).get(ITEM_CHECK));
+            String filelabel = (String) list.get(position).get(ITEM_KEY);
+            holder.text.setText(filelabel);
+            Boolean enabled = (Boolean) list.get(position).get(ITEM_ENABLED);
+            holder.checkbox.setEnabled(enabled);
+            holder.checkbox.setChecked((Boolean) list.get(position).get(ITEM_CHECK) && enabled);
             holder.image.setImageResource((Integer) list.get(position).get(ITEM_IMAGE));
             return view;
         }
     }
-    
+
+    private void addChildrenRecursively(File f) {
+        selectedPaths.add(f.getPath());
+        if (f.isDirectory()) {
+            File[] fileList = f.listFiles();
+            if (fileList != null && fileList.length > 0) {
+                for (File child : fileList) {
+                    if (child.isDirectory()) {
+                        addChildrenRecursively(child);
+                    } else {
+                        selectedPaths.add(child.getPath());
+                    }
+                }
+            }
+        }
+    }
+
+    private void removeChildrenRecursively(File f) {
+        selectedPaths.remove(f.getPath());
+        if (f.isDirectory()) {
+            File[] fileList = f.listFiles();
+            if (fileList != null && fileList.length > 0) {
+                for (File child : fileList) {
+                    if (child.isDirectory()) {
+                        removeChildrenRecursively(child);
+                    } else {
+                        selectedPaths.remove(child.getPath());
+                    }
+                }
+            }
+        }
+    }
+
     @Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 
@@ -371,8 +416,9 @@ public class FileDialog extends ListActivity {
 
         setSelectVisible(v);
 
+        selectButton.setEnabled(true);
+        
         if (file.isDirectory()) {
-            selectButton.setEnabled(true);
             if (file.canRead()) {
                 lastPositions.put(currentPath, position);
                 getDir(path.get(position), currentRoot, currentRootName);
@@ -396,7 +442,6 @@ public class FileDialog extends ListActivity {
             } else {
                 selectedFile = file;
                 v.setSelected(true);
-                selectButton.setEnabled(true);
             }
         }
     }

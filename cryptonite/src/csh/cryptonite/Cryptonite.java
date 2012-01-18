@@ -74,8 +74,8 @@ public class Cryptonite extends Activity
 {
 
     private static final int REQUEST_PREFS=0, REQUEST_CODE_PICK_FILE_OR_DIRECTORY=1;
-    private static final int MOUNT_MODE=0, BROWSE_MODE=1, DROPBOX_MODE=2,
-        VIEWMOUNT_MODE=3, VIEWBROWSE_MODE=4, EXPORT_MODE=5;
+    private static final int MOUNT_MODE=0, SELECTLOCALENCFS_MODE=1, DROPBOX_MODE=2,
+        VIEWMOUNT_MODE=3, SELECTEXPORT_MODE=4, EXPORT_MODE=5;
     private static final int DIRPICK_MODE=0, FILEPICK_MODE=1;
     private static final int MY_PASSWORD_DIALOG_ID = 0;
     private static final int DIALOG_MARKETNOTFOUND=1, DIALOG_OI_UNAVAILABLE=2;
@@ -166,7 +166,7 @@ public class Cryptonite extends Activity
         buttonBrowse = (Button)findViewById(R.id.btnBrowse);
         buttonBrowse.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-                    opMode = BROWSE_MODE;
+                    opMode = SELECTLOCALENCFS_MODE;
                     currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
                     currentDialogButtonLabel = Cryptonite.this.getString(R.string.select_enc_short);
                     currentDialogMode = SelectionMode.MODE_OPEN_MULTISELECT; /* TODO: revert */
@@ -255,11 +255,10 @@ public class Cryptonite extends Activity
              if (resultCode == Activity.RESULT_OK && data != null) {
                  currentReturnPath = data.getStringExtra(FileDialog.RESULT_PATH);
                  if (currentReturnPath != null ) {
-                     if (opMode == MOUNT_MODE || opMode == BROWSE_MODE) {
+                     if (opMode == MOUNT_MODE || opMode == SELECTLOCALENCFS_MODE) {
                          showDialog(MY_PASSWORD_DIALOG_ID);
-                     } else if (opMode == VIEWBROWSE_MODE) {
+                     } else if (opMode == EXPORT_MODE) {
                          /* Select destination directory for exported files */
-                         opMode = EXPORT_MODE;
                          currentDialogLabel = Cryptonite.this.getString(R.string.select_exp);
                          currentDialogButtonLabel = Cryptonite.this.getString(R.string.select_exp_short);
                          currentDialogMode = SelectionMode.MODE_OPEN;
@@ -273,26 +272,36 @@ public class Cryptonite extends Activity
                          currentDialogRoot = "/";
                          currentDialogRootName = currentDialogRoot;
                          launchBuiltinFileBrowser();
-                     } else if (opMode == EXPORT_MODE) {
-                         final ProgressDialog pd = ProgressDialog.show(this,
-                                                                       this.getString(R.string.wait_msg),
-                                                                       this.getString(R.string.running_export), true);
-                         new Thread(new Runnable(){
-                                 public void run(){
-                                     alert = (jniExport(currentReturnPath) != jniSuccess());
-                                     runOnUiThread(new Runnable(){
-                                             public void run() {
-                                                 if (pd.isShowing())
-                                                     pd.dismiss();
-                                                 if (alert) {
-                                                     showAlert(getString(R.string.export_failed));
-                                                     alert = false;
-                                                 }
-                                             }
-                                         });
-                                 }
-                             }).start();
                      }
+                 }
+             } else if (resultCode == Activity.RESULT_CANCELED) {
+                 Log.v(TAG, "file not selected");
+             }
+             break;
+         case SelectionMode.MODE_OPEN_MULTISELECT:
+             /* file dialog */
+             if (resultCode == Activity.RESULT_OK && data != null) {
+                 String[] selectedPaths = data.getStringArrayExtra(FileDialog.RESULT_PATH);
+                 if (selectedPaths != null && opMode == SELECTEXPORT_MODE) {
+                     opMode = EXPORT_MODE;
+                     final ProgressDialog pd = ProgressDialog.show(this,
+                                                                   this.getString(R.string.wait_msg),
+                                                                   this.getString(R.string.running_export), true);
+                     new Thread(new Runnable(){
+                             public void run(){
+                                 alert = (jniExport(currentReturnPath) != jniSuccess());
+                                 runOnUiThread(new Runnable(){
+                                         public void run() {
+                                             if (pd.isShowing())
+                                                 pd.dismiss();
+                                             if (alert) {
+                                                 showAlert(getString(R.string.export_failed));
+                                                 alert = false;
+                                             }
+                                         }
+                                     });
+                             }
+                         }).start();
                  }
              } else if (resultCode == Activity.RESULT_CANCELED) {
                  Log.v(TAG, "file not selected");
@@ -555,7 +564,7 @@ public class Cryptonite extends Activity
                                     pd.dismiss();
                                 nullPassword();
                                 if (!(currentDialogStartPath.length()==0)) {
-                                    opMode = VIEWBROWSE_MODE;
+                                    opMode = SELECTEXPORT_MODE;
                                     launchBuiltinFileBrowser();
                                 } else {
                                     showAlert(getString(R.string.browse_failed));
@@ -611,7 +620,7 @@ public class Cryptonite extends Activity
                               case MOUNT_MODE:
                                   mountEncFS(currentReturnPath, currentPassword);
                                   break;
-                              case BROWSE_MODE:
+                              case SELECTLOCALENCFS_MODE:
                                   browseEncFS(currentReturnPath, currentPassword);
                                   break;
                              }
