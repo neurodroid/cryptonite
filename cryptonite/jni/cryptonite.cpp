@@ -377,11 +377,90 @@ extern "C" {
     JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniSuccess(JNIEnv * env, jobject thiz);
     JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniIsValidEncFS(JNIEnv * env, jobject thiz, jstring srcdir);
     JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv * env, jobject thiz, jstring srcdir, jstring destdir, jstring password);
-    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jobject thiz, jstring destdir);
+    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jobject thiz, jobjectArray, jstring destdir);
     JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniVersion(JNIEnv * env, jobject thiz);
 #ifdef __cplusplus
 };
 #endif
+
+
+class jniStringManager {
+  public:
+    jniStringManager()
+    {
+        env = NULL;
+        pjs = NULL;
+        pc = NULL;
+    }
+
+    jniStringManager(JNIEnv* penv, jstring src) :
+        env(penv), pjs(src)
+    {
+        pc = env->GetStringUTFChars(pjs, 0);
+        str_repr = std::string(pc);
+    }
+
+    ~jniStringManager() {
+        release();
+    }
+
+    void init(JNIEnv* penv, jstring src) {
+        env = penv;
+        pjs = src;
+        pc = penv->GetStringUTFChars(pjs, 0);
+        str_repr = std::string(pc);
+    }
+
+    void release() {
+        if (pjs != NULL) {
+            str_repr.assign(str_repr.length(), '\0');
+
+            int len = (int)env->GetStringLength(pjs);
+            memset((char*)pc, 0, len);
+            
+            env->ReleaseStringUTFChars(pjs, pc);
+            pjs = NULL;
+        }
+    }
+
+    const char* c_str() {
+        return pc;
+    }
+    
+    const std::string& str() const {
+        return str_repr;
+    }
+    
+    std::string& str() {
+        return str_repr;
+    }
+    
+  private:
+
+    JNIEnv* env;
+    jstring pjs;
+    const char* pc;
+    std::string str_repr;
+
+};
+
+void recTree(std::string currentPath, std::vector<std::string>& fullList) {
+    if (!isDirectory(currentPath.c_str())) {
+        fullList.push_back(currentPath);
+    } else {
+        // TODO: recursively add paths.
+    }
+}
+
+std::vector<std::string> fullTree(const std::vector<jniStringManager>& pathList) {
+
+    std::vector<std::string> fullList;
+    std::vector<jniStringManager>::const_iterator it = pathList.begin();
+    for (; it != pathList.end(); ++it) {
+        recTree((*it).str(), fullList);
+    }
+        
+}
 
 JNIEXPORT jint JNICALL
 Java_csh_cryptonite_Cryptonite_jniFailure(JNIEnv * env, jobject thiz)
@@ -411,21 +490,18 @@ Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv* env, jobject thiz, jstring srcd
         return EXIT_FAILURE;
     }
     
-    const char* c_srcdir = env->GetStringUTFChars(srcdir, 0);
-    const char* c_password = env->GetStringUTFChars(password, 0);
+    jniStringManager msrcdir(env, srcdir);
+    jniStringManager mpassword(env, password);
     int res = EXIT_FAILURE;
 
-    if ((jint)isValidEncFS(c_srcdir) != EXIT_SUCCESS) {
+    if ((jint)isValidEncFS(msrcdir.str()) != EXIT_SUCCESS) {
         LOGE("EncFS root directory is not valid");
         return EXIT_FAILURE;
     }
-    gRootInfo = initRootInfo(std::string(c_srcdir), std::string(c_password));
-
-    env->ReleaseStringUTFChars(srcdir, c_srcdir);
+    gRootInfo = initRootInfo(msrcdir.str(), mpassword.str());
 
     /* clear password copy */
-    memset((char*)c_password, 0, pw_len);
-    env->ReleaseStringUTFChars(password, c_password);
+    mpassword.release();
 
     if(!gRootInfo) {
         LOGE("Error initialising root volume");
@@ -437,21 +513,44 @@ Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv* env, jobject thiz, jstring srcd
         return EXIT_FAILURE;
     }
     
-    const char* c_destdir = env->GetStringUTFChars(destdir, 0);
-    std::string std_destdir(c_destdir);
+    jniStringManager mdestdir(env, destdir);
+
     // if the dir doesn't exist, then create it (with user permission)
-    if(!checkDir(std_destdir) && !userAllowMkdir(c_destdir, 0700))
+    if(!checkDir(mdestdir.str()) && !userAllowMkdir(mdestdir.c_str(), 0700))
 	return EXIT_FAILURE;
 
-    res = traverseDirs(gRootInfo, "/", c_destdir, true);
+    res = traverseDirs(gRootInfo, "/", mdestdir.str(), true);
     
-    env->ReleaseStringUTFChars(destdir, c_destdir);
-
     return res;
 }
 
-JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jobject thiz, jstring destdir)
+JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jobject thiz, jobjectArray exportpaths, jstring destdir)
 {
+    int res = EXIT_FAILURE;
+    
+    int npaths = env->GetArrayLength(exportpaths);
+    if (npaths==0)
+        return res;
+    
+    std::ostringstream info;
+    info << "Received " << npaths << " paths";
+    LOGI(info.str().c_str());
+
+    jclass stringClass = env->FindClass("java/lang/String");
+ 
+    
+    std::vector<jniStringManager> mexportpaths(npaths);
+    std::vector<std::string> std_exportpaths(npaths);
+    for (int nstr = 0; nstr < mexportpaths.size(); ++nstr) {
+        jobject obj = env->GetObjectArrayElement(exportpaths, nstr);
+        if (env->IsInstanceOf(obj, stringClass)) {
+            // const char* c_path = env->GetStringUTFChars((jstring)obj, 0);
+            mexportpaths[nstr].init(env, (jstring)obj);
+            LOGI(mexportpaths[nstr].c_str());
+        }
+    }
+    
+    // TODO: put these checks back to the beginning
     if(!gRootInfo) {
         LOGE("No EncFS root info");
         return EXIT_FAILURE;
@@ -462,16 +561,13 @@ JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jo
         return EXIT_FAILURE;
     }
     
-    const char* c_destdir = env->GetStringUTFChars(destdir, 0);
-    std::string std_destdir(c_destdir);
+    jniStringManager mdestdir(env, destdir);
 
     // if the dir doesn't exist, then create it (with user permission)
-    if(!checkDir(std_destdir) && !userAllowMkdir(c_destdir, 0700))
+    if(!checkDir(mdestdir.str()) && !userAllowMkdir(mdestdir.c_str(), 0700))
 	return EXIT_FAILURE;
 
-    int res = (int)exportFiles(gRootInfo, "/", c_destdir);
-
-    env->ReleaseStringUTFChars(destdir, c_destdir);
+    // int res = (int)exportFiles(gRootInfo, "/", c_destdir);
 
     return res;
 }

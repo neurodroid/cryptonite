@@ -281,18 +281,18 @@ public class Cryptonite extends Activity
          case SelectionMode.MODE_OPEN_MULTISELECT:
              /* file dialog */
              if (resultCode == Activity.RESULT_OK && data != null) {
-                 String[] exportPaths = data.getStringArrayExtra(FileDialog.RESULT_PATH);
+                 final String[] exportPaths = data.getStringArrayExtra(FileDialog.RESULT_PATH);
                  for (String path : exportPaths) {
                      Log.v(TAG, path);
                  }
-                 if (exportPaths != null && opMode == SELECTEXPORT_MODE) {
+                 if (exportPaths != null) { // TODO: uncomment this: && opMode == SELECTEXPORT_MODE) {
                      opMode = EXPORT_MODE;
                      final ProgressDialog pd = ProgressDialog.show(this,
                                                                    this.getString(R.string.wait_msg),
                                                                    this.getString(R.string.running_export), true);
                      new Thread(new Runnable(){
                              public void run(){
-                                 alert = (jniExport(currentReturnPath) != jniSuccess());
+                                 alert = (jniExport(exportPaths, currentReturnPath) != jniSuccess());
                                  runOnUiThread(new Runnable(){
                                          public void run() {
                                              if (pd.isShowing())
@@ -825,7 +825,7 @@ public class Cryptonite extends Activity
     public native int     jniSuccess();
     public native int     jniIsValidEncFS(String srcDir);
     public native int     jniBrowse(String srcDir, String destDir, String password);
-    public native int     jniExport(String destDir);
+    public native int     jniExport(String[] exportPaths, String destDir);
     public native String  jniVersion();
     
     /* this is used to load the 'cryptonite' library on application
