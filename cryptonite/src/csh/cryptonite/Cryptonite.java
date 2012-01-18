@@ -281,8 +281,8 @@ public class Cryptonite extends Activity
          case SelectionMode.MODE_OPEN_MULTISELECT:
              /* file dialog */
              if (resultCode == Activity.RESULT_OK && data != null) {
-                 String[] selectedPaths = data.getStringArrayExtra(FileDialog.RESULT_PATH);
-                 if (selectedPaths != null && opMode == SELECTEXPORT_MODE) {
+                 String[] exportPaths = data.getStringArrayExtra(FileDialog.RESULT_PATH);
+                 if (exportPaths != null && opMode == SELECTEXPORT_MODE) {
                      opMode = EXPORT_MODE;
                      final ProgressDialog pd = ProgressDialog.show(this,
                                                                    this.getString(R.string.wait_msg),

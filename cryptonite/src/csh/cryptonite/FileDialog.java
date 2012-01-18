@@ -57,7 +57,7 @@ public class FileDialog extends ListActivity {
     public static final String CURRENT_ROOT_NAME = "CURRENT_ROOT_NAME";
 
     private String currentRoot = ROOT;
-    private String currentRootName = ROOT;
+    private String currentRootLabel = ROOT;
     private List<String> path = null;
     private TextView myPath;
     private EditText mFileName;
@@ -98,9 +98,9 @@ public class FileDialog extends ListActivity {
         }
         currentPath = currentRoot;
 
-        String currentRootName = getIntent().getStringExtra(CURRENT_ROOT_NAME);
-        if (currentRootName == null) {
-            currentRootName = currentRoot;
+        String currentRootLabel = getIntent().getStringExtra(CURRENT_ROOT_NAME);
+        if (currentRootLabel == null) {
+            currentRootLabel = currentRoot;
         }
 
         String buttonLabel = getIntent().getStringExtra(BUTTON_LABEL);
@@ -179,9 +179,9 @@ public class FileDialog extends ListActivity {
 
         String startPath = getIntent().getStringExtra(START_PATH);
         if (startPath != null) {
-            getDir(startPath, currentRoot, currentRootName);
+            getDir(startPath, currentRoot, currentRootLabel);
         } else {
-            getDir(currentRoot, currentRoot, currentRootName);
+            getDir(currentRoot, currentRoot, currentRootLabel);
         }
         String label = getIntent().getStringExtra(LABEL);
         this.setTitle(label);
@@ -205,7 +205,7 @@ public class FileDialog extends ListActivity {
 
         currentPath = dirPath;
         currentRoot = rootPath;
-        currentRootName = rootName;
+        currentRootLabel = rootName;
         
         final List<String> item = new ArrayList<String>();
         path = new ArrayList<String>();
@@ -219,13 +219,13 @@ public class FileDialog extends ListActivity {
             f = new File(currentPath);
             files = f.listFiles();
         }
-        myPath.setText(getText(R.string.location) + ": " + currentRootName +
+        myPath.setText(getText(R.string.location) + ": " + currentRootLabel +
                        currentPath.substring(currentRoot.length()));
 
         if (!currentPath.equals(currentRoot)) {
 
             item.add(currentRoot);
-            addItem(new File(currentRoot), R.drawable.ic_launcher_folder, currentRootName);
+            addItem(new File(currentRoot), R.drawable.ic_launcher_folder, currentRootLabel);
             path.add(currentRoot);
 
             item.add("../");
@@ -296,7 +296,7 @@ public class FileDialog extends ListActivity {
         item.put(ITEM_KEY, filelabel);
         item.put(ITEM_IMAGE, imageId);
         if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT) {
-            item.put(ITEM_CHECK, selectedPaths.contains(file.getPath()));
+            item.put(ITEM_CHECK, getChecked(file));
             item.put(ITEM_FILE, file);
             item.put(ITEM_ENABLED,
                      (Boolean) (!file.getPath().equals(currentRoot) &&
@@ -305,6 +305,13 @@ public class FileDialog extends ListActivity {
         mList.add(item);
     }
 
+    /** returns true if the parent directory is checked and/or
+     *  the path itself is checked */
+    private boolean getChecked(File file) {
+        return selectedPaths.contains(file.getParent()) ||
+            selectedPaths.contains(file.getPath());
+    }
+    
     static class ViewHolder {
         protected CheckBox checkbox;
         protected TextView text;
@@ -345,18 +352,9 @@ public class FileDialog extends ListActivity {
                                 element.put(ITEM_CHECK, buttonView.isChecked());
                                 File f = (File) element.get(ITEM_FILE);
                                 if (buttonView.isChecked()) {
-                                    if (f.isDirectory()) {
-                                        addChildrenRecursively(f);
-                                    } else {
-                                        selectedPaths.add(f.getPath());
-                                    }
-                                        
+                                    selectedPaths.add(f.getPath());
                                 } else {
-                                    if (f.isDirectory()) {
-                                        removeChildrenRecursively(f);
-                                    } else {
-                                        selectedPaths.remove(((File) element.get(ITEM_FILE)).getPath());
-                                    }
+                                    removePath(f);
                                 }
                             }
                         });
@@ -376,7 +374,35 @@ public class FileDialog extends ListActivity {
             return view;
         }
     }
+    
+    private void removePath(File f) {
+        /* Remove all paths that contain parent */
+        if (f.isDirectory()) {
+            Set newSelectedPaths = new HashSet<String>();
+            for (String path : selectedPaths) {
+                if (!path.contains(f.getPath())) {
+                     newSelectedPaths.add(path);
+                }
+            }
+            selectedPaths = newSelectedPaths;
+        } else {
+            selectedPaths.remove(f.getPath());
+        }
 
+        /* Remove all parent directories checkmarks */
+        if (!f.getPath().equals(currentRoot)) {
+            String parent = f.getParent();
+            while (parent != null) {
+                selectedPaths.remove(parent);
+                if (parent.equals(currentRoot)) {
+                    parent = null;
+                } else {
+                    parent = new File(parent).getParent();
+                }
+            }
+        }
+    }
+    
     private void addChildrenRecursively(File f) {
         selectedPaths.add(f.getPath());
         if (f.isDirectory()) {
@@ -421,7 +447,7 @@ public class FileDialog extends ListActivity {
         if (file.isDirectory()) {
             if (file.canRead()) {
                 lastPositions.put(currentPath, position);
-                getDir(path.get(position), currentRoot, currentRootName);
+                getDir(path.get(position), currentRoot, currentRootLabel);
             } else {
                 new AlertDialog.Builder(this)
                     .setIcon(R.drawable.icon)
@@ -456,7 +482,7 @@ public class FileDialog extends ListActivity {
                 layoutSelect.setVisibility(View.VISIBLE);
             } else {
                 if (!currentPath.equals(currentRoot)) {
-                    getDir(parentPath, currentRoot, currentRootName);
+                    getDir(parentPath, currentRoot, currentRootLabel);
                 } else {
                     return super.onKeyDown(keyCode, event);
                 }
