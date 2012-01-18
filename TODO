@@ -3,4 +3,5 @@ MAJOR
 * Implement Dropbox support
 
 MINOR
-* Add symbol icons to buttons
+* Don't do a full recursion; check for labelled parent instead.
+* Add symbol icons to buttons.
