@@ -282,6 +282,9 @@ public class Cryptonite extends Activity
              /* file dialog */
              if (resultCode == Activity.RESULT_OK && data != null) {
                  String[] exportPaths = data.getStringArrayExtra(FileDialog.RESULT_PATH);
+                 for (String path : exportPaths) {
+                     Log.v(TAG, path);
+                 }
                  if (exportPaths != null && opMode == SELECTEXPORT_MODE) {
                      opMode = EXPORT_MODE;
                      final ProgressDialog pd = ProgressDialog.show(this,

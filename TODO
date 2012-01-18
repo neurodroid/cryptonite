@@ -1,7 +1,17 @@
+TODO
+====
+
 MAJOR
 * Implement multiselect export
 * Implement Dropbox support
 
 MINOR
-* Don't do a full recursion; check for labelled parent instead.
+* Check whether child directory is fully labelled
 * Add symbol icons to buttons.
+
+
+DONE
+====
+
+MINOR
+X Don't do a full recursion; check for labelled parent instead.

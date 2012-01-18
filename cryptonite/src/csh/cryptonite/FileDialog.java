@@ -306,10 +306,35 @@ public class FileDialog extends ListActivity {
     }
 
     /** returns true if the parent directory is checked and/or
-     *  the path itself is checked */
+     *  the path itself is checked
+     */
     private boolean getChecked(File file) {
-        return selectedPaths.contains(file.getParent()) ||
-            selectedPaths.contains(file.getPath());
+        boolean allChildrenSelected = file.isDirectory();
+        if (file.isDirectory()) {
+            File[] children = file.listFiles();
+            if (children != null) {
+                for (File child : file.listFiles()) {
+                    if (!selectedPaths.contains(child.getPath())) {
+                        allChildrenSelected = false;
+                        break;
+                    }
+                }
+                if (children.length == 0) {
+                    allChildrenSelected = false;
+                }
+            } else {
+                allChildrenSelected = false;
+            }
+        }
+        if (selectedPaths.contains(file.getParent()) ||
+            selectedPaths.contains(file.getPath()) ||
+            allChildrenSelected) {
+            selectedPaths.add(file.getPath());
+            Log.v(Cryptonite.TAG, "Adding " + file.getPath() + " size is now " + selectedPaths.size());
+            return true;
+        } else {
+            return false;
+        }
     }
     
     static class ViewHolder {
@@ -351,10 +376,18 @@ public class FileDialog extends ListActivity {
                                     .getTag();
                                 element.put(ITEM_CHECK, buttonView.isChecked());
                                 File f = (File) element.get(ITEM_FILE);
+                                /* Avoid recursion for performance reasons */
                                 if (buttonView.isChecked()) {
                                     selectedPaths.add(f.getPath());
+                                    Log.v(Cryptonite.TAG, "Adding " + f.getPath());
                                 } else {
-                                    removePath(f);
+                                    Log.v(Cryptonite.TAG, "Removing " + f.getPath());
+                                    /* Is this a bug in the SDK ?? This will get fired
+                                     * upon scrolling from disabled elements.
+                                     */
+                                    if ((Boolean)element.get(ITEM_ENABLED)) {
+                                        removePath(f);
+                                    }
                                 }
                             }
                         });
@@ -376,17 +409,20 @@ public class FileDialog extends ListActivity {
     }
     
     private void removePath(File f) {
-        /* Remove all paths that contain parent */
+        /* Remove all paths that have f as parent */
         if (f.isDirectory()) {
             Set newSelectedPaths = new HashSet<String>();
             for (String path : selectedPaths) {
-                if (!path.contains(f.getPath())) {
-                     newSelectedPaths.add(path);
+                if (path.indexOf(f.getPath()) == -1) {
+                    newSelectedPaths.add(path);
+                    Log.v(Cryptonite.TAG, "Adding " + path + " size is now " + selectedPaths.size());
                 }
             }
             selectedPaths = newSelectedPaths;
+            Log.v(Cryptonite.TAG, "Resetting selectedPaths, size is now " + selectedPaths.size());
         } else {
             selectedPaths.remove(f.getPath());
+            Log.v(Cryptonite.TAG, "Removing " + f.getPath() + " size is now " + selectedPaths.size());
         }
 
         /* Remove all parent directories checkmarks */
@@ -394,6 +430,7 @@ public class FileDialog extends ListActivity {
             String parent = f.getParent();
             while (parent != null) {
                 selectedPaths.remove(parent);
+                Log.v(Cryptonite.TAG, "Removing " + parent);
                 if (parent.equals(currentRoot)) {
                     parent = null;
                 } else {
@@ -402,7 +439,8 @@ public class FileDialog extends ListActivity {
             }
         }
     }
-    
+
+    /** Avoid recursion for performance reasons */
     private void addChildrenRecursively(File f) {
         selectedPaths.add(f.getPath());
         if (f.isDirectory()) {
@@ -419,6 +457,7 @@ public class FileDialog extends ListActivity {
         }
     }
 
+    /** Avoid recursion for performance reasons */
     private void removeChildrenRecursively(File f) {
         selectedPaths.remove(f.getPath());
         if (f.isDirectory()) {
