@@ -26,7 +26,7 @@
     <string name="empty_password">Password was empty</string>
     <string name="target_dir_cleanup_failure">Couldn\'t clean up target directory</string>
     <string name="target_dir_setup_failure">Couldn\'t set up target directory</string>
-
+    <string name="jni_arg_too_large">File list too large. Try selecting whole directories.</string>
     <string name="app_oi_missing">OI file browser not installed.</string>
     <string name="app_oi_get">Go to Market</string>
     <string name="app_oi_builtin">Use built-in file browser</string>

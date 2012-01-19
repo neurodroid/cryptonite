@@ -271,11 +271,13 @@ static int copyContents(const boost::shared_ptr<EncFS_Root> &lRootInfo,
 
             if (!fake) {
                 WriteOutput output(outfd);
-                std::ostringstream out;
+                /*std::ostringstream out;
                 out << "Writing to " << encfsName;
-                LOGE(out.str().c_str());
+                LOGE(out.str().c_str());*/
                 processContents( lRootInfo, encfsName, output );
             }
+
+            close(outfd);
         }
     }
     return EXIT_SUCCESS;
@@ -344,9 +346,9 @@ static int traverseDirs(const boost::shared_ptr<EncFS_Root> &lRootInfo,
                 std::string cpath = lRootInfo->root->cipherPath(plainPath.c_str());
                 std::string destName = destDir + name;
 
-                std::ostringstream out;
+                /*std::ostringstream out;
                 out << "Decoding " << cpath << " to " << plainPath << " in " << destName;
-                LOGI(out.str().c_str());
+                LOGI(out.str().c_str()); */
                 
                 int r = EXIT_SUCCESS;
                 struct stat stBuf;
@@ -487,7 +489,7 @@ void recTree(std::string currentPath, std::set<std::string>& fullList, const std
         fs::path bRoot(exportroot);
         fs::path bPath(currentPath);
         std::string stripstr = bPath.string().substr(bRoot.string().length());
-        LOGI((std::string("recTree: ") + stripstr).c_str());
+        // LOGI((std::string("recTree: ") + stripstr).c_str());
         if (fs::is_directory(bPath.string())) {
 
             fullList.insert(stripstr);
@@ -505,7 +507,7 @@ void recTree(std::string currentPath, std::set<std::string>& fullList, const std
 #else
             DIR* d;
             std::string dir_str = bPath.string();
-            LOGI((std::string("dir_str: ") + dir_str).c_str());
+            // LOGI((std::string("dir_str: ") + dir_str).c_str());
             if (dir_str.at(dir_str.length() - 1) != '/') dir_str += "/";
             if ((d = opendir(dir_str.c_str())) == NULL) return;
 
@@ -516,7 +518,7 @@ void recTree(std::string currentPath, std::set<std::string>& fullList, const std
 
                 if (std::string(de->d_name) != "." && std::string(de->d_name) != "..") {
                     path += std::string(de->d_name);
-                    LOGI((std::string("path: ") + path).c_str());
+                    // LOGI((std::string("path: ") + path).c_str());
                     recTree(path, fullList, exportroot);
                 }
             }
@@ -524,6 +526,16 @@ void recTree(std::string currentPath, std::set<std::string>& fullList, const std
 #endif
         } else {
             fullList.insert(stripstr);
+            if (!bPath.parent_path().empty()) {
+                fs::path parent = fs::path(bPath.parent_path());
+                // Add parent dirs of current file down to root
+                while (parent != bRoot) {
+                    std::string strippar = parent.string().substr(bRoot.string().length());
+                    fullList.insert(strippar);
+                    // LOGI((std::string("Adding parent ") + parent.string()).c_str());
+                    parent = fs::path(parent.parent_path());
+                }
+            }
         }
     }
 }
@@ -625,9 +637,9 @@ JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jo
     if (npaths==0)
         return res;
     
-    std::ostringstream info;
-    info << "Received " << npaths << " paths";
-    LOGI(info.str().c_str());
+    // std::ostringstream info;
+    // info << "Received " << npaths << " paths";
+    // LOGI(info.str().c_str());
 
     jniStringManager mexportroot = jniStringManager(env, exportroot);
     
@@ -643,15 +655,15 @@ JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jo
 
     std::set<std::string> allPaths(fullTree(std_exportpaths, mexportroot.str()));
 
-    info.str("");
-    info << "Full size of tree is " << allPaths.size();
-    LOGI(info.str().c_str());
+    // info.str("");
+    // info << "Full size of tree is " << allPaths.size();
+    // LOGI(info.str().c_str());
 
     
     std::set<std::string>::const_iterator it = allPaths.begin();
-    for (; it != allPaths.end(); ++it) {
-        LOGI((*it).c_str());
-    }
+    // for (; it != allPaths.end(); ++it) {
+    //     LOGI((*it).c_str());
+    // }
 
     jniStringManager mdestdir(env, destdir);
 

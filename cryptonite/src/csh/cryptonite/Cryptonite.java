@@ -83,6 +83,7 @@ public class Cryptonite extends Activity
     private static final int DIRPICK_MODE=0, FILEPICK_MODE=1;
     private static final int MY_PASSWORD_DIALOG_ID = 0;
     private static final int DIALOG_MARKETNOTFOUND=1, DIALOG_OI_UNAVAILABLE=2;
+    private static final int MAX_JNI_SIZE = 512;
     public static final String MNTPNT = "/csh.cryptonite/mnt";
     public static final String BINDIR = "/data/data/csh.cryptonite";
     public static final String ENCFSBIN = BINDIR + "/encfs";
@@ -269,7 +270,7 @@ public class Cryptonite extends Activity
 
             } else {
                 fullList.add(stripstr);
-                Log.v(TAG, "Adding " + stripstr + " to decoding file list");
+                // Log.v(TAG, "Adding " + stripstr + " to decoding file list");
             }
         }
     }
@@ -306,6 +307,7 @@ public class Cryptonite extends Activity
                          new Thread(new Runnable(){
                                  public void run(){
                                      String exportName = currentReturnPath + "/Cryptonite";
+                                     Log.v(TAG, "Exporting to " + exportName);
                                      if (!new File(exportName).exists()) {
                                          new File(exportName).mkdirs();
                                      }
@@ -338,9 +340,14 @@ public class Cryptonite extends Activity
                  currentReturnPathList = data.getStringArrayExtra(FileDialog.RESULT_PATH);
                  if (currentReturnPathList != null && opMode == SELECTEXPORT_MODE) {
                      /* May make the argument passed to jniExport too large */
-                     /* currentReturnPathList = fullTree(currentReturnPathList, encfsBrowseRoot); */
+                     /* currentReturnPathList = fullTree(currentReturnPathList, encfsBrowseRoot);
                      for (String path : currentReturnPathList) {
                          Log.v(TAG, path);
+                         }*/
+
+                     if (currentReturnPathList.length > MAX_JNI_SIZE) {
+                         showAlert(getString(R.string.jni_arg_too_large));
+                         break;
                      }
                      opMode = EXPORT_MODE;
 
