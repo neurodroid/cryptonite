@@ -241,6 +241,8 @@ public class Cryptonite extends Activity
                     }
                 }});
         updateButtons();
+
+        showAlert(getString(R.string.disclaimer), getString(R.string.no_warranty));
     }
 
     private void updateButtons() {
@@ -508,9 +510,14 @@ public class Cryptonite extends Activity
     }
 
     private void showAlert(String alert) {
+        showAlert("");
+    }
+    
+    private void showAlert(String alert, String msg) {
         AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
         builder.setIcon(R.drawable.ic_launcher_cryptonite)
             .setTitle(alert)
+            .setMessage(msg)
             .setPositiveButton("OK",
                                new DialogInterface.OnClickListener() {
                                    public void onClick(DialogInterface dialog,

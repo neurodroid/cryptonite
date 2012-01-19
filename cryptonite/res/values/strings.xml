@@ -31,7 +31,8 @@
     <string name="app_oi_get">Go to Market</string>
     <string name="app_oi_builtin">Use built-in file browser</string>
     <string name="market_missing">Google Market wasn\'t found on your device</string>
-
+    <string name="disclaimer">Disclaimer</string>
+    <string name="no_warranty">This program is under development and is distributed WITHOUT ANY WARRANTY. Do not use it if you\'re not sure what you\'re doing. Otherwise, you may damage your file system and your phone.</string>
     <!-- File Browser -->
     <string name="select">Select</string>
     <string name="select_enc">Select EncFS root directory</string>
