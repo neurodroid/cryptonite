@@ -35,9 +35,11 @@
 #include <iostream>
 #include <sstream>
 #include <cerrno>
+#include <unistd.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
+#include <dirent.h>
 
 #include <encfs.h>
 #include <FileNode.h>
@@ -162,7 +164,6 @@ static int processContents( const shared_ptr<EncFS_Root> &lRootInfo,
 	{
 	    int bytes = node->read(i*sizeof(buf), buf, sizeof(buf));
 	    int res = op(buf, bytes);
-            LOGI((std::string("Writing ") + std::string((char*)buf)).c_str());
 	    if(res < 0)
 		return res;
 	}
@@ -270,7 +271,9 @@ static int copyContents(const boost::shared_ptr<EncFS_Root> &lRootInfo,
 
             if (!fake) {
                 WriteOutput output(outfd);
-                LOGI((std::string("Processing ") + targetName).c_str());
+                std::ostringstream out;
+                out << "Writing to " << encfsName;
+                LOGE(out.str().c_str());
                 processContents( lRootInfo, encfsName, output );
             }
         }
@@ -300,9 +303,6 @@ static int traverseDirs(const boost::shared_ptr<EncFS_Root> &lRootInfo,
     if (!toWrite.empty() &&
         toWrite.find(test_string) == toWrite.end()) {
         return EXIT_SUCCESS;
-    }
-    if (!toWrite.empty()) {
-        LOGI((std::string("Entering traverseDirs: ") + test_string + std::string(" ") + *(toWrite.begin())).c_str());
     }
 
     // Lookup directory node so we can create a destination directory
@@ -336,7 +336,7 @@ static int traverseDirs(const boost::shared_ptr<EncFS_Root> &lRootInfo,
             name = dt.nextPlaintextName())
         {
             bool skip = !toWrite.empty() && toWrite.find(volumeDir+name) == toWrite.end();
-            LOGI((std::string("skip: ") + volumeDir + name).c_str());
+
             // Recurse to subdirectories
             if(name != "." && name != ".." && !skip)
             {
@@ -487,18 +487,41 @@ void recTree(std::string currentPath, std::set<std::string>& fullList, const std
         fs::path bRoot(exportroot);
         fs::path bPath(currentPath);
         std::string stripstr = bPath.string().substr(bRoot.string().length());
-
+        LOGI((std::string("recTree: ") + stripstr).c_str());
         if (fs::is_directory(bPath.string())) {
 
             fullList.insert(stripstr);
-            LOGI((std::string("Substr ") + stripstr).c_str());
 
+            /* boost::filesystem will throw an exception
+             * if the max number of open files is reached
+             */
+#if 0
             fs::directory_iterator end_iter;
             for (fs::directory_iterator dir_iter(bPath);
                  dir_iter != end_iter;
                  ++dir_iter) {
                 recTree(dir_iter->string(), fullList, exportroot);
             }
+#else
+            DIR* d;
+            std::string dir_str = bPath.string();
+            LOGI((std::string("dir_str: ") + dir_str).c_str());
+            if (dir_str.at(dir_str.length() - 1) != '/') dir_str += "/";
+            if ((d = opendir(dir_str.c_str())) == NULL) return;
+
+            struct dirent* de;
+
+            while ((de = readdir(d)) != NULL) {
+                std::string path = dir_str;
+
+                if (std::string(de->d_name) != "." && std::string(de->d_name) != "..") {
+                    path += std::string(de->d_name);
+                    LOGI((std::string("path: ") + path).c_str());
+                    recTree(path, fullList, exportroot);
+                }
+            }
+            closedir(d);
+#endif
         } else {
             fullList.insert(stripstr);
         }

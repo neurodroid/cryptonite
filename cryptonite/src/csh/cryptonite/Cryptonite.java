@@ -29,9 +29,11 @@ import java.io.OutputStreamWriter;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -249,6 +251,41 @@ public class Cryptonite extends Activity
         buttonViewMount.setEnabled(ism && sf);
     }
 
+    private static void recTree(String currentPath, Set<String> fullList, String exportRoot) {
+        if (new File(currentPath).exists()) {
+
+            /* normalise path names */
+            String bRoot = new File(exportRoot).getPath();
+            String bPath = new File(currentPath).getPath();
+            String stripstr = bPath.substring(bRoot.length());
+
+            if (new File(bPath).isDirectory()) {
+
+                fullList.add(stripstr);
+
+                for (File f : new File(bPath).listFiles()) {
+                    recTree(f.getPath(), fullList, exportRoot);
+                }
+
+            } else {
+                fullList.add(stripstr);
+                Log.v(TAG, "Adding " + stripstr + " to decoding file list");
+            }
+        }
+    }
+    
+    private static String[] fullTree(String[] pathList, String exportRoot) {
+        Set<String> fullList = new HashSet<String>();
+        fullList.add("/");
+
+        for (String path : pathList) {
+            recTree(path, fullList, exportRoot);
+        }
+        
+        return fullList.toArray(new String[0]);
+
+    }
+    
     /** Called upon exit from other activities */
     public synchronized void onActivityResult(final int requestCode,
                                               int resultCode, final Intent data) {
@@ -268,7 +305,15 @@ public class Cryptonite extends Activity
                                                                        this.getString(R.string.running_export), true);
                          new Thread(new Runnable(){
                                  public void run(){
-                                     alert = (jniExport(currentReturnPathList, encfsBrowseRoot, currentReturnPath) != jniSuccess());
+                                     String exportName = currentReturnPath + "/Cryptonite";
+                                     if (!new File(exportName).exists()) {
+                                         new File(exportName).mkdirs();
+                                     }
+                                     if (!new File(exportName).exists()) {
+                                         alert = true;
+                                     } else {
+                                         alert = (jniExport(currentReturnPathList, encfsBrowseRoot, currentReturnPath + "/Cryptonite") != jniSuccess());
+                                     }
                                      runOnUiThread(new Runnable(){
                                              public void run() {
                                                  if (pd.isShowing())
@@ -292,6 +337,8 @@ public class Cryptonite extends Activity
              if (resultCode == Activity.RESULT_OK && data != null) {
                  currentReturnPathList = data.getStringArrayExtra(FileDialog.RESULT_PATH);
                  if (currentReturnPathList != null && opMode == SELECTEXPORT_MODE) {
+                     /* May make the argument passed to jniExport too large */
+                     /* currentReturnPathList = fullTree(currentReturnPathList, encfsBrowseRoot); */
                      for (String path : currentReturnPathList) {
                          Log.v(TAG, path);
                      }
