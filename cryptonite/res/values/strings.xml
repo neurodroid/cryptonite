@@ -48,7 +48,7 @@
     <string name="no_data">No Data</string>
     <string name="location">Location</string>
     <string name="cant_read_folder">folder can\'t be read!</string>
-    <string name="select_file_export">Select file to export</string>
+    <string name="select_file_export">Select files to export</string>
     <string name="export">Export selected</string>
     <string name="back">Back</string>
 

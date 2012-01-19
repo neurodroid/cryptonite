@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<!DOCTYPE boost_serialization>
+<boost_serialization signature="serialization::archive" version="9">
+<cfg class_id="0" tracking_level="0" version="20">
+	<version>20100713</version>
+	<creator>EncFS 1.7.4</creator>
+	<cipherAlg class_id="1" tracking_level="0" version="0">
+		<name>ssl/blowfish</name>
+		<major>3</major>
+		<minor>0</minor>
+	</cipherAlg>
+	<nameAlg>
+		<name>nameio/block</name>
+		<major>3</major>
+		<minor>0</minor>
+	</nameAlg>
+	<keySize>128</keySize>
+	<blockSize>256</blockSize>
+	<uniqueIV>1</uniqueIV>
+	<chainedNameIV>1</chainedNameIV>
+	<externalIVChaining>0</externalIVChaining>
+	<blockMACBytes>0</blockMACBytes>
+	<blockMACRandBytes>0</blockMACRandBytes>
+	<allowHoles>1</allowHoles>
+	<encodedKeySize>28</encodedKeySize>
+	<encodedKeyData>
+koETMxh4HwNoiGNuy8kKebMV7s0oJHwMyAs0di==
+	</encodedKeyData>
+	<saltLen>20</saltLen>
+	<saltData>
+d433kMepgeJSTMwME8OmOyy3bnM=
+	</saltData>
+	<kdfIterations>88525</kdfIterations>
+	<desiredKDFDuration>500</desiredKDFDuration>
+</cfg>
+</boost_serialization>
+

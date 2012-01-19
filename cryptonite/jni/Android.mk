@@ -39,6 +39,7 @@ LOCAL_CPPFLAGS := \
     -DOPENSSL_NO_ENGINE \
     -DHAVE_EVP_AES \
     -DHAVE_EVP_BF \
+    -DBOOST_FILESYSTEM_VERSION=2 \
     -fexceptions \
     -frtti
 

@@ -28,7 +28,10 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_array.hpp>
+#include <boost/filesystem.hpp>
+
 #include <string>
+#include <set>
 #include <iostream>
 #include <sstream>
 #include <cerrno>
@@ -45,6 +48,14 @@
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
+namespace fs = boost::filesystem;
+
+enum writeMode {
+    WRITE,
+    TOUCH,
+    EXPORT
+};
+    
 /* Ugly hack for now: Keep a global rootPtr for repeated access
    to the same decoded EncFS
    TODO: return a rootPtr equivalent to Java instead
@@ -151,6 +162,7 @@ static int processContents( const shared_ptr<EncFS_Root> &lRootInfo,
 	{
 	    int bytes = node->read(i*sizeof(buf), buf, sizeof(buf));
 	    int res = op(buf, bytes);
+            LOGI((std::string("Writing ") + std::string((char*)buf)).c_str());
 	    if(res < 0)
 		return res;
 	}
@@ -258,6 +270,7 @@ static int copyContents(const boost::shared_ptr<EncFS_Root> &lRootInfo,
 
             if (!fake) {
                 WriteOutput output(outfd);
+                LOGI((std::string("Processing ") + targetName).c_str());
                 processContents( lRootInfo, encfsName, output );
             }
         }
@@ -266,12 +279,31 @@ static int copyContents(const boost::shared_ptr<EncFS_Root> &lRootInfo,
 }
 
 static int traverseDirs(const boost::shared_ptr<EncFS_Root> &lRootInfo, 
-                        std::string volumeDir, std::string destDir, bool fake)
+                        std::string volumeDir, std::string destDir,
+                        const std::set<std::string>& toWrite )
 {
+    bool fake = toWrite.empty();
+    
     if(!endsWith(volumeDir, '/'))
 	volumeDir.append("/");
     if(!endsWith(destDir, '/'))
 	destDir.append("/");
+
+    std::string test_string = volumeDir;
+    if (endsWith(test_string, '/') &&
+        test_string.length() != 1) {
+        test_string = test_string.substr(0, test_string.length()-1);
+    }
+    /* Abort if we're in export mode and this directory
+     * doesn't need to be written
+     */
+    if (!toWrite.empty() &&
+        toWrite.find(test_string) == toWrite.end()) {
+        return EXIT_SUCCESS;
+    }
+    if (!toWrite.empty()) {
+        LOGI((std::string("Entering traverseDirs: ") + test_string + std::string(" ") + *(toWrite.begin())).c_str());
+    }
 
     // Lookup directory node so we can create a destination directory
     // with the same permissions
@@ -303,8 +335,10 @@ static int traverseDirs(const boost::shared_ptr<EncFS_Root> &lRootInfo,
         for(std::string name = dt.nextPlaintextName(); !name.empty(); 
             name = dt.nextPlaintextName())
         {
+            bool skip = !toWrite.empty() && toWrite.find(volumeDir+name) == toWrite.end();
+            LOGI((std::string("skip: ") + volumeDir + name).c_str());
             // Recurse to subdirectories
-            if(name != "." && name != "..")
+            if(name != "." && name != ".." && !skip)
             {
                 std::string plainPath = volumeDir + name;
                 std::string cpath = lRootInfo->root->cipherPath(plainPath.c_str());
@@ -321,14 +355,14 @@ static int traverseDirs(const boost::shared_ptr<EncFS_Root> &lRootInfo,
                     if( S_ISDIR( stBuf.st_mode ) )
                     {
                         r = traverseDirs(lRootInfo, (plainPath + '/').c_str(), 
-                                         destName + '/', fake);
+                                         destName + '/', toWrite);
                     } else if( S_ISLNK( stBuf.st_mode ))
                     {
                         r = copyLink( stBuf, lRootInfo, cpath, destName );
                     } else
                     {
-                         r = copyContents(lRootInfo, plainPath.c_str(), 
-                                          destName.c_str(), fake);
+                        r = copyContents(lRootInfo, plainPath.c_str(), 
+                                         destName.c_str(), fake);
                     }
                 } else
                 {
@@ -343,8 +377,9 @@ static int traverseDirs(const boost::shared_ptr<EncFS_Root> &lRootInfo,
 }
 
 static int exportFiles(const boost::shared_ptr<EncFS_Root> &lRootInfo, 
-                       std::string volumeDir, std::string destDir) {
-    return traverseDirs(lRootInfo, volumeDir, destDir, false);
+                       std::string volumeDir, std::string destDir,
+                       const std::set<std::string>& decodedNames) {
+    return traverseDirs(lRootInfo, volumeDir, destDir, decodedNames);
 }
 
 static RootPtr initRootInfo(const std::string& rootDir, const std::string& password)
@@ -377,7 +412,9 @@ extern "C" {
     JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniSuccess(JNIEnv * env, jobject thiz);
     JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniIsValidEncFS(JNIEnv * env, jobject thiz, jstring srcdir);
     JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv * env, jobject thiz, jstring srcdir, jstring destdir, jstring password);
-    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jobject thiz, jobjectArray, jstring destdir);
+    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jobject thiz,
+                                                                       jobjectArray exportpaths, jstring exportroot,
+                                                                       jstring destdir);
     JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniVersion(JNIEnv * env, jobject thiz);
 #ifdef __cplusplus
 };
@@ -444,22 +481,42 @@ class jniStringManager {
 
 };
 
-void recTree(std::string currentPath, std::vector<std::string>& fullList) {
-    if (!isDirectory(currentPath.c_str())) {
-        fullList.push_back(currentPath);
-    } else {
-        // TODO: recursively add paths.
+void recTree(std::string currentPath, std::set<std::string>& fullList, const std::string& exportroot) {
+    if (fs::exists(currentPath)) {
+
+        fs::path bRoot(exportroot);
+        fs::path bPath(currentPath);
+        std::string stripstr = bPath.string().substr(bRoot.string().length());
+
+        if (fs::is_directory(bPath.string())) {
+
+            fullList.insert(stripstr);
+            LOGI((std::string("Substr ") + stripstr).c_str());
+
+            fs::directory_iterator end_iter;
+            for (fs::directory_iterator dir_iter(bPath);
+                 dir_iter != end_iter;
+                 ++dir_iter) {
+                recTree(dir_iter->string(), fullList, exportroot);
+            }
+        } else {
+            fullList.insert(stripstr);
+        }
     }
 }
 
-std::vector<std::string> fullTree(const std::vector<jniStringManager>& pathList) {
+std::set<std::string> fullTree(const std::set<std::string>& pathList,
+                               const std::string& exportroot) {
 
-    std::vector<std::string> fullList;
-    std::vector<jniStringManager>::const_iterator it = pathList.begin();
+    std::set<std::string> fullList;
+    fullList.insert("/");
+    
+    std::set<std::string>::const_iterator it = pathList.begin();
     for (; it != pathList.end(); ++it) {
-        recTree((*it).str(), fullList);
+        recTree(*it, fullList, exportroot);
     }
-        
+
+    return fullList;
 }
 
 JNIEXPORT jint JNICALL
@@ -519,36 +576,16 @@ Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv* env, jobject thiz, jstring srcd
     if(!checkDir(mdestdir.str()) && !userAllowMkdir(mdestdir.c_str(), 0700))
 	return EXIT_FAILURE;
 
-    res = traverseDirs(gRootInfo, "/", mdestdir.str(), true);
+    std::set<std::string> empty;
+    res = traverseDirs(gRootInfo, "/", mdestdir.str(), empty);
     
     return res;
 }
 
-JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jobject thiz, jobjectArray exportpaths, jstring destdir)
+JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jobject thiz, jobjectArray exportpaths,
+                                                                jstring exportroot, jstring destdir)
 {
     int res = EXIT_FAILURE;
-    
-    int npaths = env->GetArrayLength(exportpaths);
-    if (npaths==0)
-        return res;
-    
-    std::ostringstream info;
-    info << "Received " << npaths << " paths";
-    LOGI(info.str().c_str());
-
-    jclass stringClass = env->FindClass("java/lang/String");
- 
-    
-    std::vector<jniStringManager> mexportpaths(npaths);
-    std::vector<std::string> std_exportpaths(npaths);
-    for (int nstr = 0; nstr < mexportpaths.size(); ++nstr) {
-        jobject obj = env->GetObjectArrayElement(exportpaths, nstr);
-        if (env->IsInstanceOf(obj, stringClass)) {
-            // const char* c_path = env->GetStringUTFChars((jstring)obj, 0);
-            mexportpaths[nstr].init(env, (jstring)obj);
-            LOGI(mexportpaths[nstr].c_str());
-        }
-    }
     
     // TODO: put these checks back to the beginning
     if(!gRootInfo) {
@@ -560,14 +597,47 @@ JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jo
         LOGI("No EncFS volume key");
         return EXIT_FAILURE;
     }
+
+    int npaths = env->GetArrayLength(exportpaths);
+    if (npaths==0)
+        return res;
     
+    std::ostringstream info;
+    info << "Received " << npaths << " paths";
+    LOGI(info.str().c_str());
+
+    jniStringManager mexportroot = jniStringManager(env, exportroot);
+    
+    jclass stringClass = env->FindClass("java/lang/String");
+     
+    std::set<std::string> std_exportpaths;
+    for (int nstr = 0; nstr < npaths; ++nstr) {
+        jobject obj = env->GetObjectArrayElement(exportpaths, nstr);
+        if (env->IsInstanceOf(obj, stringClass)) {
+            std_exportpaths.insert(jniStringManager(env, (jstring)obj).str());
+        }
+    }
+
+    std::set<std::string> allPaths(fullTree(std_exportpaths, mexportroot.str()));
+
+    info.str("");
+    info << "Full size of tree is " << allPaths.size();
+    LOGI(info.str().c_str());
+
+    
+    std::set<std::string>::const_iterator it = allPaths.begin();
+    for (; it != allPaths.end(); ++it) {
+        LOGI((*it).c_str());
+    }
+
     jniStringManager mdestdir(env, destdir);
 
     // if the dir doesn't exist, then create it (with user permission)
     if(!checkDir(mdestdir.str()) && !userAllowMkdir(mdestdir.c_str(), 0700))
 	return EXIT_FAILURE;
 
-    // int res = (int)exportFiles(gRootInfo, "/", c_destdir);
+    LOGI((std::string("Exporting to ") + mdestdir.str()).c_str());
+    res = (int)exportFiles(gRootInfo, "/", mdestdir.str(), allPaths);
 
     return res;
 }
