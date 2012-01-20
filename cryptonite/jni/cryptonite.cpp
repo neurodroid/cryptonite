@@ -46,6 +46,8 @@
 #include <DirNode.h>
 #include <config.h>
 
+#include "android_key.h"
+
 #define  LOG_TAG    "cryptonite-jni"
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
@@ -418,6 +420,8 @@ extern "C" {
                                                                        jobjectArray exportpaths, jstring exportroot,
                                                                        jstring destdir);
     JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniVersion(JNIEnv * env, jobject thiz);
+    JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniAppKey(JNIEnv* env, jobject thiz);
+    JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniAppPw(JNIEnv* env, jobject thiz);
 #ifdef __cplusplus
 };
 #endif
@@ -681,4 +685,16 @@ JNIEXPORT jstring JNICALL
 Java_csh_cryptonite_Cryptonite_jniVersion(JNIEnv* env, jobject thiz)
 {
     return env->NewStringUTF(VERSION);
+}
+
+JNIEXPORT jstring JNICALL
+Java_csh_cryptonite_Cryptonite_jniAppKey(JNIEnv* env, jobject thiz)
+{
+    return env->NewStringUTF(APP_KEY);
+}
+
+JNIEXPORT jstring JNICALL
+Java_csh_cryptonite_Cryptonite_jniAppPw(JNIEnv* env, jobject thiz)
+{
+    return env->NewStringUTF(APP_SECRET);
 }

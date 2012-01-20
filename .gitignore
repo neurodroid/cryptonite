@@ -94,4 +94,4 @@ cryptonite/tests/bin/*
 local.properties
 commit.sh
 
-cryptonite/jni/android_key.h*
+cryptonite/jni/android_key.*
