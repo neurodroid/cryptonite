@@ -158,12 +158,11 @@ public class Cryptonite extends Activity
                     currentDialogMode = SelectionMode.MODE_OPEN;
                     opMode = DROPBOX_MODE;
                     if (!externalStorageIsWritable()) {
-                        showAlert(getString(R.string.sdcard_not_writable));
                     } else {
                     }
                 }});
 
-        buttonDropbox.setEnabled(false);
+        buttonDropbox.setEnabled(true);
         
         /* Select source directory using a simple file dialog */
         buttonBrowse = (Button)findViewById(R.id.btnBrowse);
@@ -506,7 +505,7 @@ public class Cryptonite extends Activity
     }
 
     private void showAlert(String alert) {
-        showAlert("");
+        showAlert(alert, "");
     }
     
     private void showAlert(String alert, String msg) {
@@ -891,6 +890,8 @@ public class Cryptonite extends Activity
     public native int     jniBrowse(String srcDir, String destDir, String password);
     public native int     jniExport(String[] exportPaths, String exportRoot, String destDir);
     public native String  jniVersion();
+    public native String  jniAppKey();
+    public native String  jniAppPw();
     
     /* this is used to load the 'cryptonite' library on application
      * startup. The library has already been unpacked into

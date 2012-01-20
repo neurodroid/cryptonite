@@ -20,7 +20,7 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_MODULE    := libcryptonite
-LOCAL_SRC_FILES := cryptonite.cpp
+LOCAL_SRC_FILES := cryptonite.cpp android_key.cpp
 
 LOCAL_C_INCLUDES := \
     ../encfs/encfs-1.7.4 \
@@ -28,7 +28,8 @@ LOCAL_C_INCLUDES := \
     ../encfs/encfs-1.7.4/intl \
     ../fuse/fuse-android/jni/include \
     ../boost/boost_1_46_1 \
-    ../rlog/rlog-1.4/armeabi/include
+    ../rlog/rlog-1.4/armeabi/include \
+    ../openssl/openssl-android/include
 
 LOCAL_CPPFLAGS := \
     -D_FILE_OFFSET_BITS=64 \
