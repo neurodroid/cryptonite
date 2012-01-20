@@ -26,7 +26,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.InputMethodManager;
-import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -35,7 +34,6 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.RelativeLayout;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
 
@@ -71,7 +69,6 @@ public class FileDialog extends ListActivity {
     private String parentPath;
     private String currentPath = currentRoot;
     
-    @SuppressWarnings("unused")
     private int selectionMode = SelectionMode.MODE_OPEN;
 
     @SuppressWarnings("unused")
@@ -368,8 +365,7 @@ public class FileDialog extends ListActivity {
                 viewHolder.checkbox
                     .setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 
-                            @Override
-                                public void onCheckedChanged(CompoundButton buttonView,
+                            public void onCheckedChanged(CompoundButton buttonView,
                                                              boolean isChecked) {
                                 HashMap<String, Object> element =
                                     (HashMap<String, Object>) viewHolder.checkbox
@@ -411,7 +407,7 @@ public class FileDialog extends ListActivity {
     private void removePath(File f) {
         /* Remove all paths that have f as parent */
         if (f.isDirectory()) {
-            Set newSelectedPaths = new HashSet<String>();
+            Set<String> newSelectedPaths = new HashSet<String>();
             for (String path : selectedPaths) {
                 if (path.indexOf(f.getPath()) == -1) {
                     newSelectedPaths.add(path);
@@ -441,6 +437,7 @@ public class FileDialog extends ListActivity {
     }
 
     /** Avoid recursion for performance reasons */
+    /*
     private void addChildrenRecursively(File f) {
         selectedPaths.add(f.getPath());
         if (f.isDirectory()) {
@@ -457,7 +454,6 @@ public class FileDialog extends ListActivity {
         }
     }
 
-    /** Avoid recursion for performance reasons */
     private void removeChildrenRecursively(File f) {
         selectedPaths.remove(f.getPath());
         if (f.isDirectory()) {
@@ -473,6 +469,7 @@ public class FileDialog extends ListActivity {
             }
         }
     }
+    */
 
     @Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {

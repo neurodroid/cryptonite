@@ -19,7 +19,6 @@ package csh.cryptonite;
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -27,11 +26,9 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 
 import java.util.Arrays;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 
@@ -41,7 +38,6 @@ import android.app.Dialog;
 import android.app.ProgressDialog;
 
 import android.content.ActivityNotFoundException;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;

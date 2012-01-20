@@ -16,8 +16,6 @@
 
 package csh.cryptonite;
 
-import java.io.IOException;
-
 import android.content.SharedPreferences;
 
 import android.os.Bundle;

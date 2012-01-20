@@ -48,9 +48,6 @@ missing
 Makefile
 libtool
 stamp-h1
-nmodlconf.h
-nrnconf.h
-nrnrpm.spec
 stamp-h*
 
 # fuse source
@@ -88,9 +85,13 @@ cryptonite/obj/*
 cryptonite/tests/bin
 cryptonite/tests/bin/*
 
+# various
+
 .DS_Store
 .AppleDouble
 
 .classpath
 local.properties
 commit.sh
+
+cryptonite/jni/android_key.h
