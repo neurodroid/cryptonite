@@ -13,7 +13,7 @@
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
-#ifdef 1
+#if 0
 #include "android_fake.h"
 #else
 #include "android_key.h"

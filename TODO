@@ -2,16 +2,21 @@ TODO
 ====
 
 MAJOR
-* Implement multiselect export
 * Implement Dropbox support
 
 MINOR
-* Check whether child directory is fully labelled
+* Use same button for mount/unmount (see DBRoulette)
+  Use same button for connect / disconnect from Dropbox
+  Use 2-column table layout
 * Add symbol icons to buttons.
 
 
 DONE
 ====
 
+MAJOR
+X Implement multiselect export
+
 MINOR
 X Don't do a full recursion; check for labelled parent instead.
+X Check whether child directory is fully labelled
