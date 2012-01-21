@@ -726,8 +726,13 @@ public class Cryptonite extends Activity
                 if (dbPath.contents != null) {
                     if (dbPath.contents.size()>0) {
                         for (Entry dbChild : dbPath.contents) {
-                            dbChild = mApi.metadata(dbChild.path, 0, null, true, null);
-                            dbRecursive(dbChild, dbTree);
+                            if (dbChild.isDir) {
+                                dbChild = mApi.metadata(dbChild.path, 0, null, true, null);
+                                dbRecursive(dbChild, dbTree);
+                            } else {
+                                dbTree.add(dbPath.path);
+                                Log.i(TAG, dbPath.path);
+                            }
                         }
                     }
                 }
