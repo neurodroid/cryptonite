@@ -34,8 +34,13 @@
     <string name="disclaimer">Disclaimer</string>
     <string name="no_warranty">This program is under development and is distributed WITHOUT ANY WARRANTY. Do not use it if you\'re not sure what you\'re doing. Otherwise, you may damage your file system and your phone.</string>
 
+    <string name="dropbox_link">Link with Dropbox</string>
+    <string name="dropbox_unlink">Unlink from Dropbox</string>
+    <string name="dropbox_reading">Reading Dropbox&#8230;</string>
+    <string name="dropbox_browse">Decrypt Dropbox</string>
     <string name="dropbox_auth_fail">"Couldn\'t authenticate with Dropbox</string>
-    
+    <string name="dropbox_read_fail">"Problem reading from Dropbox"</string>
+        
     <!-- File Browser -->
     <string name="select">Select</string>
     <string name="select_enc">Select EncFS root directory</string>
@@ -57,8 +62,7 @@
     <string name="back">Back</string>
 
     <!-- Button labels -->
-    <string name="browse">Local</string>
-    <string name="dropbox">Dropbox</string>
+    <string name="browse_local">Decrypt local</string>
     <string name="mount">Mount</string>
     <string name="unmount">Unmount</string>
     <string name="viewmount">View mounted</string>

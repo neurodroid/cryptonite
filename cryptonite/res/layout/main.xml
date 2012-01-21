@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="wrap_content"
+<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical" >
+    android:orientation="vertical"
+    android:stretchColumns="*" >
 
   <TextView
       android:id="@+id/tvBrowse" 
@@ -13,29 +14,35 @@
       android:textStyle="bold">
   </TextView>
 
-  <LinearLayout
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:orientation="horizontal" >
+   <TableRow android:layout_width="wrap_content" >
 
-    <Button
-        android:id="@+id/btnDropbox"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:text="@string/dropbox"
-        android:typeface="normal" >
+       <Button
+           android:id="@+id/btnDropbox"
+           android:layout_width="0dp"
+           android:layout_height="match_parent"
+           android:layout_weight="1"
+           android:text="@string/dropbox_link"
+           android:typeface="normal" >
+       </Button>
 
-    </Button>
+       <Button
+           android:id="@+id/btnBrowseDropbox"
+           android:layout_width="0dp"
+           android:layout_height="match_parent"
+           android:layout_weight="1"
+           android:text="@string/dropbox_browse"
+           android:typeface="normal" >
+       </Button>
 
-    <Button
-        android:id="@+id/btnBrowse"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:text="@string/browse"
-        android:typeface="normal" >
-
-    </Button>
-  </LinearLayout>
+       <Button
+           android:id="@+id/btnBrowseLocal"
+           android:layout_width="0dp"
+           android:layout_height="match_parent"
+           android:layout_weight="1"
+           android:text="@string/browse_local"
+           android:typeface="normal" >
+       </Button>
+   </TableRow>
 
   <TextView
       android:id="@+id/tvMountInfo" 
@@ -46,35 +53,35 @@
       android:textStyle="bold">
   </TextView>
 
-  <LinearLayout
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:orientation="horizontal" >
+  <TableRow>
 
       <Button
           android:id="@+id/btnMount"
-          android:layout_width="wrap_content"
+          android:layout_width="0dp"
           android:layout_height="match_parent"
+          android:layout_weight="1"
           android:text="@string/mount"
           android:typeface="normal" >
       </Button>
 
       <Button
           android:id="@+id/btnUnmount"
-          android:layout_width="wrap_content"
+          android:layout_width="0dp"
           android:layout_height="match_parent"
+          android:layout_weight="1"
           android:text="@string/unmount"
           android:typeface="normal" >
       </Button>
 
       <Button
           android:id="@+id/btnViewMount"
-          android:layout_width="wrap_content"
+          android:layout_width="0dp"
           android:layout_height="match_parent"
+          android:layout_weight="1"
           android:text="@string/viewmount"
           android:typeface="normal" >
       </Button>
-  </LinearLayout>
+  </TableRow>
 
   <TextView
       android:id="@+id/tvVersion" 
@@ -85,4 +92,4 @@
   </TextView>
 
 
-</LinearLayout>
+</TableLayout>

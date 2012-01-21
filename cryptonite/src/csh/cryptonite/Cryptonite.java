@@ -73,8 +73,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.dropbox.client2.DropboxAPI;
+import com.dropbox.client2.DropboxAPI.Entry;
 import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.android.AuthActivity;
+import com.dropbox.client2.exception.DropboxException;
 import com.dropbox.client2.session.AccessTokenPair;
 import com.dropbox.client2.session.AppKeyPair;
 import com.dropbox.client2.session.Session.AccessType;
@@ -85,7 +87,7 @@ public class Cryptonite extends Activity
 
     private static final int REQUEST_PREFS=0, REQUEST_CODE_PICK_FILE_OR_DIRECTORY=1;
     private static final int MOUNT_MODE=0, SELECTLOCALENCFS_MODE=1, DROPBOX_MODE=2,
-        VIEWMOUNT_MODE=3, SELECTEXPORT_MODE=4, EXPORT_MODE=5;
+        VIEWMOUNT_MODE=3, SELECTEXPORT_MODE=4, EXPORT_MODE=5, DROPBOX_AUTH_MODE=6;
     private static final int DIRPICK_MODE=0, FILEPICK_MODE=1;
     private static final int MY_PASSWORD_DIALOG_ID = 0;
     private static final int DIALOG_MARKETNOTFOUND=1, DIALOG_OI_UNAVAILABLE=2;
@@ -95,6 +97,7 @@ public class Cryptonite extends Activity
     public static final String ENCFSBIN = BINDIR + "/encfs";
     public static final String ENCFSCTLBIN = BINDIR + "/encfsctl";
     public static final String TAG = "cryptonite";
+
     private String currentDialogStartPath = "/";
     private String currentDialogLabel = "";
     private String currentDialogButtonLabel = "OK";
@@ -105,17 +108,19 @@ public class Cryptonite extends Activity
     private String encfsBrowseRoot = "/";
     private String[] currentReturnPathList = {};
     private int currentDialogMode = SelectionMode.MODE_OPEN;
+
     private String mntDir = "/sdcard" + MNTPNT;
     private TextView tv;
     private TextView tvMountInfo;
     private String encfsversion, encfsoutput;
-    private Button buttonDropbox, buttonBrowse, buttonMount, buttonUnmount, buttonViewMount;
+    private Button buttonDropbox, buttonBrowseDropbox, buttonBrowseLocal, buttonMount, buttonUnmount, buttonViewMount;
     private int opMode = -1;
     private boolean alert = false;
-
+    private String alertMsg = "";
+    
     DropboxAPI<AndroidAuthSession> mApi;
 
-    private boolean mLoggedIn;
+    private boolean mLoggedIn = false;
 
     // If you'd like to change the access type to the full Dropbox instead of
     // an app folder, change this value.
@@ -183,23 +188,35 @@ public class Cryptonite extends Activity
                     currentDialogButtonLabel = Cryptonite.this.getString(R.string.select_enc_short);
                     currentDialogMode = SelectionMode.MODE_OPEN;
                     opMode = DROPBOX_MODE;
-                    if (!externalStorageIsWritable()) {
+                    if (mLoggedIn) {
+                        logOut();
                     } else {
-                        // This logs you out if you're logged in, or vice versa
-                        if (mLoggedIn) {
-                            logOut();
-                        } else {
-                            // Start the remote authentication
-                            mApi.getSession().startAuthentication(Cryptonite.this);
-                        }
-                    }
+                        // Start the remote authentication
+                        mApi.getSession().startAuthentication(Cryptonite.this);
+                    }                        
                 }});
 
         buttonDropbox.setEnabled(true);
         
         /* Select source directory using a simple file dialog */
-        buttonBrowse = (Button)findViewById(R.id.btnBrowse);
-        buttonBrowse.setOnClickListener(new OnClickListener() {
+        buttonBrowseDropbox = (Button)findViewById(R.id.btnBrowseDropbox);
+        buttonBrowseDropbox.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
+                    currentDialogButtonLabel = Cryptonite.this.getString(
+                            R.string.select_enc_short);
+                    currentDialogMode = SelectionMode.MODE_OPEN;
+                    opMode = DROPBOX_MODE;
+                    if (mLoggedIn) {
+                        dbBrowse();
+                    }                        
+                }});
+
+        buttonBrowseDropbox.setEnabled(mLoggedIn);
+        
+        /* Select source directory using a simple file dialog */
+        buttonBrowseLocal = (Button)findViewById(R.id.btnBrowseLocal);
+        buttonBrowseLocal.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     opMode = SELECTLOCALENCFS_MODE;
                     currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
@@ -219,7 +236,7 @@ public class Cryptonite extends Activity
                     }
                 }});
 
-        buttonBrowse.setEnabled(true);
+        buttonBrowseLocal.setEnabled(true);
         
         /* Select source directory using a simple file dialog */
         buttonMount = (Button)findViewById(R.id.btnMount);
@@ -436,6 +453,7 @@ public class Cryptonite extends Activity
                 // Store it locally in our app for later use
                 TokenPair tokens = session.getAccessTokenPair();
                 storeKeys(tokens.key, tokens.secret);
+                setLoggedIn(true);
             } catch (IllegalStateException e) {
                 Toast.makeText(this, 
                         getString(R.string.dropbox_auth_fail) + ": " + e.getLocalizedMessage(), 
@@ -443,6 +461,7 @@ public class Cryptonite extends Activity
             }
         }
     }
+
     /** Copy encfs to binDir and make executable */
     public void cpEncFSBin() {
         cpEncFSBin("encfs");
@@ -698,7 +717,67 @@ public class Cryptonite extends Activity
             }).start();
             
     }
-
+    
+    private void dbRecursive(Entry dbPath, Set<String> dbTree) throws DropboxException {
+        dbTree.add(dbPath.path);
+        Log.i(TAG, dbPath.path);
+        if (dbPath != null) {
+            if (dbPath.isDir) {
+                if (dbPath.contents != null) {
+                    if (dbPath.contents.size()>0) {
+                        for (Entry dbChild : dbPath.contents) {
+                            dbChild = mApi.metadata(dbChild.path, 0, null, true, null);
+                            dbRecursive(dbChild, dbTree);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    private String[] dbRead() throws DropboxException {
+        Set<String> dbTree = new HashSet<String>();
+        
+        Entry root = mApi.metadata("/", 0, null, true, null);
+        Log.i(TAG, root.toString());
+        
+        if (root != null) {
+            dbRecursive(root, dbTree);
+        }
+        
+        return dbTree.toArray(new String[0]);
+        
+    }
+    
+    private void dbBrowse() {
+        alertMsg = "";
+        
+        final ProgressDialog pd = ProgressDialog.show(Cryptonite.this,
+                Cryptonite.this.getString(R.string.wait_msg),
+                Cryptonite.this.getString(R.string.dropbox_reading), true);
+        new Thread(new Runnable(){
+            public void run(){
+                String[] dbTree;
+                try {
+                    dbTree = dbRead();
+                } catch (DropboxException e) {
+                    alertMsg = e.toString();
+                }
+                runOnUiThread(new Runnable(){
+                    public void run() {
+                        if (pd.isShowing())
+                            pd.dismiss();
+                        if (!alertMsg.equals("")) {
+                            showAlert(getString(R.string.dropbox_read_fail),
+                                    alertMsg);
+                            alertMsg = "";
+                        }
+                    }
+                });
+            }
+        }).start();
+    }
+    
     private void nullPassword() {
         char[] fill = new char[currentPassword.length()];
         Arrays.fill(fill, '\0');
@@ -943,8 +1022,23 @@ public class Cryptonite extends Activity
         mApi.getSession().unlink();
         // Clear our stored keys
         clearKeys();
+        // Change UI state to display logged out version
+        setLoggedIn(false);
     }
 
+    /**
+     * Convenience function to change UI state based on being logged in
+     */
+    private void setLoggedIn(boolean loggedIn) {
+        mLoggedIn = loggedIn;
+        if (loggedIn) {
+            buttonDropbox.setText(R.string.dropbox_unlink);
+            buttonBrowseDropbox.setEnabled(true);
+        } else {
+            buttonDropbox.setText(R.string.dropbox_link);
+            buttonBrowseDropbox.setEnabled(false);
+        }
+    }
 
     private void clearKeys() {
         SharedPreferences prefs = getSharedPreferences(ACCOUNT_PREFS_NAME, 0);

@@ -6,7 +6,9 @@ if test -n $1; then
     fi
 fi
 
-rm -rf bin/*
+# rm -rf bin/*
+ant clean
 ant debug
 adb uninstall csh.cryptonite
 adb install bin/cryptonite-debug.apk
+adb shell "am start -a android.intent.action.MAIN -n csh.cryptonite/.Cryptonite"

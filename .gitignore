@@ -95,3 +95,4 @@ local.properties
 commit.sh
 
 cryptonite/jni/android_key.h*
+cryptonite/AndroidManifest.xml.key*
