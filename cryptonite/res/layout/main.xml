@@ -64,14 +64,14 @@
           android:typeface="normal" >
       </Button>
 
-      <Button
+      <!-- Button
           android:id="@+id/btnUnmount"
           android:layout_width="0dp"
           android:layout_height="match_parent"
           android:layout_weight="1"
           android:text="@string/unmount"
           android:typeface="normal" >
-      </Button>
+      </Button -->
 
       <Button
           android:id="@+id/btnViewMount"

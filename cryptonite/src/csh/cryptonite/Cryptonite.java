@@ -113,7 +113,7 @@ public class Cryptonite extends Activity
     private TextView tv;
     private TextView tvMountInfo;
     private String encfsversion, encfsoutput;
-    private Button buttonDropbox, buttonBrowseDropbox, buttonBrowseLocal, buttonMount, buttonUnmount, buttonViewMount;
+    private Button buttonDropbox, buttonBrowseDropbox, buttonBrowseLocal, buttonMount, buttonViewMount;
     private int opMode = -1;
     private boolean alert = false;
     private String alertMsg = "";
@@ -121,7 +121,8 @@ public class Cryptonite extends Activity
     DropboxAPI<AndroidAuthSession> mApi;
 
     private boolean mLoggedIn = false;
-
+    private boolean hasFuse = false;
+    
     // If you'd like to change the access type to the full Dropbox instead of
     // an app folder, change this value.
     final static private AccessType ACCESS_TYPE = AccessType.DROPBOX;
@@ -241,7 +242,8 @@ public class Cryptonite extends Activity
         /* Select source directory using a simple file dialog */
         buttonMount = (Button)findViewById(R.id.btnMount);
         buttonMount.setOnClickListener(new OnClickListener() {
-                public void onClick(View v) {
+            public void onClick(View v) {
+                if (!isMounted()) {
                     opMode = MOUNT_MODE;
                     currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
                     currentDialogButtonLabel = Cryptonite.this.getString(R.string.select_enc_short);
@@ -258,15 +260,20 @@ public class Cryptonite extends Activity
                     } else {
                         launchBuiltinFileBrowser();//DIRPICK_MODE);
                     }
-                }});
+                } else {
+                    String[] umountlist = {"umount", mntDir};
+                    runBinary(umountlist, BINDIR, null, true);
+                    updateButtons();                        
+                }
+            }});
 
-        buttonUnmount = (Button)findViewById(R.id.btnUnmount);
+        /*buttonUnmount = (Button)findViewById(R.id.btnUnmount);
         buttonUnmount.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     String[] umountlist = {"umount", mntDir};
                     runBinary(umountlist, BINDIR, null, true);
                     updateButtons();
-                }});
+                }});*/
 
         /* Select source directory using a simple file dialog */
         buttonViewMount = (Button)findViewById(R.id.btnViewMount);
@@ -285,6 +292,8 @@ public class Cryptonite extends Activity
                         launchFileBrowser(FILEPICK_MODE);
                     }
                 }});
+        
+        hasFuse = supportsFuse();
         updateButtons();
 
         showAlert(getString(R.string.disclaimer), getString(R.string.no_warranty));
@@ -292,11 +301,18 @@ public class Cryptonite extends Activity
 
     private void updateButtons() {
         boolean ism = isMounted();
-        boolean sf = supportsFuse();
-        Log.v(TAG, "EncFS mount state: " + ism + " FUSE support: " + sf);
-        buttonMount.setEnabled(!ism && sf);
-        buttonUnmount.setEnabled(ism && sf);
-        buttonViewMount.setEnabled(ism && sf);
+
+        Log.v(TAG, "EncFS mount state: " + ism + "; FUSE support: " + hasFuse);
+        buttonMount.setEnabled(hasFuse);
+        
+        if (ism) {
+            buttonMount.setText(R.string.unmount);            
+        } else {
+            buttonMount.setText(R.string.mount);
+        }
+        
+        /* buttonUnmount.setEnabled(ism && sf); */
+        buttonViewMount.setEnabled(ism && hasFuse);
     }
 
     private static void recTree(String currentPath, Set<String> fullList, String exportRoot) {
