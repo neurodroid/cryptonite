@@ -367,6 +367,7 @@ public class FileDialog extends ListActivity {
 
                             public void onCheckedChanged(CompoundButton buttonView,
                                                              boolean isChecked) {
+                                @SuppressWarnings("unchecked")
                                 HashMap<String, Object> element =
                                     (HashMap<String, Object>) viewHolder.checkbox
                                     .getTag();
