@@ -86,7 +86,7 @@ public class Cryptonite extends Activity
 {
 
     private static final int REQUEST_PREFS=0, REQUEST_CODE_PICK_FILE_OR_DIRECTORY=1;
-    private static final int MOUNT_MODE=0, SELECTLOCALENCFS_MODE=1, DROPBOX_MODE=2,
+    private static final int MOUNT_MODE=0, SELECTLOCALENCFS_MODE=1, SELECTDBENCFS_MODE=2,
         VIEWMOUNT_MODE=3, SELECTEXPORT_MODE=4, EXPORT_MODE=5, DROPBOX_AUTH_MODE=6;
     private static final int DIRPICK_MODE=0, FILEPICK_MODE=1;
     private static final int MY_PASSWORD_DIALOG_ID = 0;
@@ -117,9 +117,7 @@ public class Cryptonite extends Activity
     private int opMode = -1;
     private boolean alert = false;
     private String alertMsg = "";
-    
-    DropboxAPI<AndroidAuthSession> mApi;
-
+ 
     private boolean mLoggedIn = false;
     private boolean hasFuse = false;
     
@@ -138,8 +136,8 @@ public class Cryptonite extends Activity
 
         // We create a new AuthSession so that we can use the Dropbox API.
         AndroidAuthSession session = buildSession();
-        mApi = new DropboxAPI<AndroidAuthSession>(session);
-
+        // mApi = new DropboxAPI<AndroidAuthSession>(session);
+        ((CryptoniteApp) getApplication()).setDBApi(new DropboxAPI<AndroidAuthSession>(session));
         setContentView(R.layout.main);
 
         getResources();
@@ -185,15 +183,12 @@ public class Cryptonite extends Activity
         buttonDropbox = (Button)findViewById(R.id.btnDropbox);
         buttonDropbox.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-                    currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
-                    currentDialogButtonLabel = Cryptonite.this.getString(R.string.select_enc_short);
-                    currentDialogMode = SelectionMode.MODE_OPEN;
-                    opMode = DROPBOX_MODE;
                     if (mLoggedIn) {
                         logOut();
                     } else {
                         // Start the remote authentication
-                        mApi.getSession().startAuthentication(Cryptonite.this);
+                        ((CryptoniteApp) getApplication()).getDBApi()
+                            .getSession().startAuthentication(Cryptonite.this);
                     }                        
                 }});
 
@@ -203,13 +198,13 @@ public class Cryptonite extends Activity
         buttonBrowseDropbox = (Button)findViewById(R.id.btnBrowseDropbox);
         buttonBrowseDropbox.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
+                    opMode = SELECTDBENCFS_MODE;
                     currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
                     currentDialogButtonLabel = Cryptonite.this.getString(
                             R.string.select_enc_short);
-                    currentDialogMode = SelectionMode.MODE_OPEN;
-                    opMode = DROPBOX_MODE;
+                    currentDialogMode = SelectionMode.MODE_OPEN_DB;
                     if (mLoggedIn) {
-                        dbBrowse();
+                        launchBuiltinFileBrowser();
                     }                        
                 }});
 
@@ -456,7 +451,7 @@ public class Cryptonite extends Activity
     @Override
     protected void onResume() {
         super.onResume();
-        AndroidAuthSession session = mApi.getSession();
+        AndroidAuthSession session = ((CryptoniteApp) getApplication()).getDBApi().getSession();
 
         // The next part must be inserted in the onResume() method of the
         // activity from which session.startAuthentication() was called, so
@@ -743,7 +738,7 @@ public class Cryptonite extends Activity
                     if (dbPath.contents.size()>0) {
                         for (Entry dbChild : dbPath.contents) {
                             if (dbChild.isDir) {
-                                dbChild = mApi.metadata(dbChild.path, 0, null, true, null);
+                                dbChild = ((CryptoniteApp) getApplication()).getDBApi().metadata(dbChild.path, 0, null, true, null);
                                 dbRecursive(dbChild, dbTree);
                             } else {
                                 dbTree.add(dbPath.path);
@@ -759,7 +754,7 @@ public class Cryptonite extends Activity
     private String[] dbRead() throws DropboxException {
         Set<String> dbTree = new HashSet<String>();
         
-        Entry root = mApi.metadata("/", 0, null, true, null);
+        Entry root = ((CryptoniteApp) getApplication()).getDBApi().metadata("/", 0, null, true, null);
         Log.i(TAG, root.toString());
         
         if (root != null) {
@@ -1040,7 +1035,7 @@ public class Cryptonite extends Activity
     
     private void logOut() {
         // Remove credentials from the session
-        mApi.getSession().unlink();
+        ((CryptoniteApp) getApplication()).getDBApi().getSession().unlink();
         // Clear our stored keys
         clearKeys();
         // Change UI state to display logged out version

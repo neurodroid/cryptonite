@@ -40,7 +40,10 @@
     <string name="dropbox_browse">Decrypt Dropbox</string>
     <string name="dropbox_auth_fail">"Couldn\'t authenticate with Dropbox</string>
     <string name="dropbox_read_fail">"Problem reading from Dropbox"</string>
-        
+    <string name="dropbox_service_started">"db_running"</string>
+    <string name="dropbox_service_stopped">"db_stopped"</string>
+    <string name="dropbox_service_label">"Dropbox linked to Cryptonite"</string>
+    
     <!-- File Browser -->
     <string name="select">Select</string>
     <string name="select_enc">Select EncFS root directory</string>

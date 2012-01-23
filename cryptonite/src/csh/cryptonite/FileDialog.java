@@ -53,6 +53,7 @@ public class FileDialog extends ListActivity {
     public static final String BUTTON_LABEL = "BUTTON_LABEL";
     public static final String CURRENT_ROOT = "CURRENT_ROOT";
     public static final String CURRENT_ROOT_NAME = "CURRENT_ROOT_NAME";
+    public static final String DB_API = "DB_API";
 
     private String currentRoot = ROOT;
     private String currentRootLabel = ROOT;
