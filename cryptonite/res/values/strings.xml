@@ -43,6 +43,7 @@
     <string name="dropbox_service_started">"db_running"</string>
     <string name="dropbox_service_stopped">"db_stopped"</string>
     <string name="dropbox_service_label">"Dropbox linked to Cryptonite"</string>
+    <string name="dropbox_root_name">"Dropbox"</string>
     
     <!-- File Browser -->
     <string name="select">Select</string>

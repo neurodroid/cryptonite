@@ -203,6 +203,9 @@ public class Cryptonite extends Activity
                     currentDialogButtonLabel = Cryptonite.this.getString(
                             R.string.select_enc_short);
                     currentDialogMode = SelectionMode.MODE_OPEN_DB;
+                    currentDialogStartPath = getPrivateDir("dropbox").getPath();
+                    currentDialogRoot = currentDialogStartPath;
+                    currentDialogRootName = getString(R.string.dropbox_root_name);
                     if (mLoggedIn) {
                         launchBuiltinFileBrowser();
                     }                        
@@ -679,20 +682,8 @@ public class Cryptonite extends Activity
             return;
         }
 
-        /* Tear down and recreate the browse directory to make
-         * sure we have appropriate permissions */
-        final File browseDirF = getBaseContext().getDir("browse", Context.MODE_PRIVATE);
-        if (browseDirF.exists()) {
-            if (!deleteDir(browseDirF)) {
-                showAlert(getString(R.string.target_dir_cleanup_failure));
-                return;
-            }
-        }
-        if (!browseDirF.mkdirs()) {
-            showAlert(getString(R.string.target_dir_setup_failure));
-            return;
-        }
-            
+        final File browseDirF = getPrivateDir("browse");
+        
         final ProgressDialog pd = ProgressDialog.show(this,
                                                       this.getString(R.string.wait_msg),
                                                       this.getString(R.string.running_encfs), true);
@@ -729,69 +720,21 @@ public class Cryptonite extends Activity
             
     }
     
-    private void dbRecursive(Entry dbPath, Set<String> dbTree) throws DropboxException {
-        dbTree.add(dbPath.path);
-        Log.i(TAG, dbPath.path);
-        if (dbPath != null) {
-            if (dbPath.isDir) {
-                if (dbPath.contents != null) {
-                    if (dbPath.contents.size()>0) {
-                        for (Entry dbChild : dbPath.contents) {
-                            if (dbChild.isDir) {
-                                dbChild = ((CryptoniteApp) getApplication()).getDBApi().metadata(dbChild.path, 0, null, true, null);
-                                dbRecursive(dbChild, dbTree);
-                            } else {
-                                dbTree.add(dbPath.path);
-                                Log.i(TAG, dbPath.path);
-                            }
-                        }
-                    }
-                }
+    public File getPrivateDir(String label) {
+        /* Tear down and recreate the browse directory to make
+         * sure we have appropriate permissions */
+        File browseDirF = getBaseContext().getDir(label, Context.MODE_PRIVATE);
+        if (browseDirF.exists()) {
+            if (!deleteDir(browseDirF)) {
+                showAlert(getString(R.string.target_dir_cleanup_failure));
+                return null;
             }
         }
-    }
-    
-    private String[] dbRead() throws DropboxException {
-        Set<String> dbTree = new HashSet<String>();
-        
-        Entry root = ((CryptoniteApp) getApplication()).getDBApi().metadata("/", 0, null, true, null);
-        Log.i(TAG, root.toString());
-        
-        if (root != null) {
-            dbRecursive(root, dbTree);
+        if (!browseDirF.mkdirs()) {
+            showAlert(getString(R.string.target_dir_setup_failure));
+            return null;
         }
-        
-        return dbTree.toArray(new String[0]);
-        
-    }
-    
-    private void dbBrowse() {
-        alertMsg = "";
-        
-        final ProgressDialog pd = ProgressDialog.show(Cryptonite.this,
-                Cryptonite.this.getString(R.string.wait_msg),
-                Cryptonite.this.getString(R.string.dropbox_reading), true);
-        new Thread(new Runnable(){
-            public void run(){
-                String[] dbTree;
-                try {
-                    dbTree = dbRead();
-                } catch (DropboxException e) {
-                    alertMsg = e.toString();
-                }
-                runOnUiThread(new Runnable(){
-                    public void run() {
-                        if (pd.isShowing())
-                            pd.dismiss();
-                        if (!alertMsg.equals("")) {
-                            showAlert(getString(R.string.dropbox_read_fail),
-                                    alertMsg);
-                            alertMsg = "";
-                        }
-                    }
-                });
-            }
-        }).start();
+        return browseDirF;
     }
     
     private void nullPassword() {

@@ -8,6 +8,7 @@
 package csh.cryptonite;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -15,11 +16,16 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 
+import com.dropbox.client2.DropboxAPI.Entry;
+import com.dropbox.client2.exception.DropboxException;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ListActivity;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -36,6 +42,7 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class FileDialog extends ListActivity {
 
@@ -53,7 +60,6 @@ public class FileDialog extends ListActivity {
     public static final String BUTTON_LABEL = "BUTTON_LABEL";
     public static final String CURRENT_ROOT = "CURRENT_ROOT";
     public static final String CURRENT_ROOT_NAME = "CURRENT_ROOT_NAME";
-    public static final String DB_API = "DB_API";
 
     private String currentRoot = ROOT;
     private String currentRootLabel = ROOT;
@@ -69,6 +75,7 @@ public class FileDialog extends ListActivity {
     private InputMethodManager inputManager;
     private String parentPath;
     private String currentPath = currentRoot;
+    private String alertMsg = "";
     
     private int selectionMode = SelectionMode.MODE_OPEN;
 
@@ -183,6 +190,7 @@ public class FileDialog extends ListActivity {
         }
         String label = getIntent().getStringExtra(LABEL);
         this.setTitle(label);
+        
     }
 
     private void getDir(String dirPath, String rootPath, String rootName) {
@@ -204,6 +212,11 @@ public class FileDialog extends ListActivity {
         currentPath = dirPath;
         currentRoot = rootPath;
         currentRootLabel = rootName;
+        String currentPathFromRoot = currentPath.substring(currentRoot.length());
+        
+        if (selectionMode == SelectionMode.MODE_OPEN_DB) {
+            dbBuildDir(currentPathFromRoot);           
+        }
         
         final List<String> item = new ArrayList<String>();
         path = new ArrayList<String>();
@@ -218,7 +231,7 @@ public class FileDialog extends ListActivity {
             files = f.listFiles();
         }
         myPath.setText(getText(R.string.location) + ": " + currentRootLabel +
-                       currentPath.substring(currentRoot.length()));
+                       currentPathFromRoot);
 
         if (!currentPath.equals(currentRoot)) {
 
@@ -547,4 +560,99 @@ public class FileDialog extends ListActivity {
         inputManager.hideSoftInputFromWindow(v.getWindowToken(), 0);
         selectButton.setEnabled(false);
     }
+    
+    
+    private void dbRecursive(Entry dbPath, Set<String> dbTree) throws DropboxException {
+        dbTree.add(dbPath.path);
+        Log.i(Cryptonite.TAG, dbPath.path);
+        if (dbPath != null) {
+            if (dbPath.isDir) {
+                if (dbPath.contents != null) {
+                    if (dbPath.contents.size()>0) {
+                        for (Entry dbChild : dbPath.contents) {
+                            if (dbChild.isDir) {
+                                dbChild = ((CryptoniteApp) getApplication()).getDBApi().metadata(dbChild.path, 0, null, true, null);
+                                dbRecursive(dbChild, dbTree);
+                            } else {
+                                dbTree.add(dbPath.path);
+                                Log.i(Cryptonite.TAG, dbPath.path);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    private String[] dbRead() throws DropboxException {
+        Set<String> dbTree = new HashSet<String>();
+        
+        Entry root = ((CryptoniteApp) getApplication()).getDBApi().metadata("/", 0, null, true, null);
+        Log.i(Cryptonite.TAG, root.toString());
+        
+        if (root != null) {
+            dbRecursive(root, dbTree);
+        }
+        
+        return dbTree.toArray(new String[0]);
+        
+    }
+    
+    private void dbBrowse() {
+        alertMsg = "";
+        
+        final ProgressDialog pd = ProgressDialog.show(FileDialog.this,
+                getString(R.string.wait_msg),
+                getString(R.string.dropbox_reading), true);
+        new Thread(new Runnable(){
+            public void run(){
+                String[] dbTree;
+                try {
+                    dbTree = dbRead();
+                } catch (DropboxException e) {
+                    alertMsg = e.toString();
+                }
+                runOnUiThread(new Runnable(){
+                    public void run() {
+                        if (pd.isShowing())
+                            pd.dismiss();
+                        if (!alertMsg.equals("")) {
+                            Toast.makeText(FileDialog.this, getString(R.string.dropbox_read_fail) +
+                                    alertMsg, Toast.LENGTH_LONG);
+                            alertMsg = "";
+                        }
+                    }
+                });
+            }
+        }).start();
+    }
+    
+    private void dbBuildDir(String dbPath) {
+        try {
+            Entry dbEntry = ((CryptoniteApp) getApplication()).getDBApi().metadata(dbPath, 0, null, true, null);
+            if (dbEntry != null) {
+                if (dbEntry.isDir) {
+                    if (dbEntry.contents != null) {
+                        if (dbEntry.contents.size()>0) {
+                            for (Entry dbChild : dbEntry.contents) {
+                                File f = new File(currentRoot + dbChild.path);
+                                if (dbChild.isDir) {
+                                    f.mkdirs();
+                                } else {
+                                    f.createNewFile();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (DropboxException e) {
+            Toast.makeText(FileDialog.this, getString(R.string.dropbox_read_fail) +
+                    e.toString(), Toast.LENGTH_LONG);
+        } catch (IOException e) {
+            Toast.makeText(FileDialog.this, getString(R.string.dropbox_read_fail) +
+                    e.toString(), Toast.LENGTH_LONG);            
+        }
+    }
+
 }
