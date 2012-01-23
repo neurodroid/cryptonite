@@ -60,6 +60,7 @@ public class FileDialog extends ListActivity {
     public static final String BUTTON_LABEL = "BUTTON_LABEL";
     public static final String CURRENT_ROOT = "CURRENT_ROOT";
     public static final String CURRENT_ROOT_NAME = "CURRENT_ROOT_NAME";
+    public static final String CURRENT_DBROOT = "CURRENT_DBROOT";
 
     private String currentRoot = ROOT;
     private String currentRootLabel = ROOT;
@@ -75,6 +76,7 @@ public class FileDialog extends ListActivity {
     private InputMethodManager inputManager;
     private String parentPath;
     private String currentPath = currentRoot;
+    private String currentDBEncFS = "/";
     private String alertMsg = "";
     
     private int selectionMode = SelectionMode.MODE_OPEN;
@@ -97,17 +99,21 @@ public class FileDialog extends ListActivity {
 
         inputManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
 
-        String currentRoot = getIntent().getStringExtra(CURRENT_ROOT);
+        selectionMode = getIntent().getIntExtra(SELECTION_MODE, SelectionMode.MODE_OPEN);
+
+        currentRoot = getIntent().getStringExtra(CURRENT_ROOT);
         if (currentRoot == null) {
             currentRoot = ROOT;
         }
         currentPath = currentRoot;
 
-        String currentRootLabel = getIntent().getStringExtra(CURRENT_ROOT_NAME);
+        currentRootLabel = getIntent().getStringExtra(CURRENT_ROOT_NAME);
         if (currentRootLabel == null) {
             currentRootLabel = currentRoot;
         }
 
+        currentDBEncFS = getIntent().getStringExtra(CURRENT_DBROOT); 
+        
         String buttonLabel = getIntent().getStringExtra(BUTTON_LABEL);
         selectButton = (Button) findViewById(R.id.fdButtonSelect);
         selectButton.setEnabled(true);
@@ -123,7 +129,9 @@ public class FileDialog extends ListActivity {
                       } else {
                     */
                     /* get current path */
-                    if (selectionMode != SelectionMode.MODE_OPEN_MULTISELECT) {
+                    if (selectionMode == SelectionMode.MODE_OPEN
+                            || selectionMode == SelectionMode.MODE_OPEN_DB)
+                    {
                         if (currentPath != null) {
                             getIntent().putExtra(RESULT_PATH, currentPath);
                             setResult(RESULT_OK, getIntent());
@@ -137,7 +145,7 @@ public class FileDialog extends ListActivity {
                     /* } */
                 }
             });
-        selectionMode = getIntent().getIntExtra(SELECTION_MODE, SelectionMode.MODE_OPEN);
+
         // Log.v(Cryptonite.TAG, "Selection mode is " + selectionMode);
         /*
           final Button newButton = (Button) findViewById(R.id.fdButtonNew);
@@ -184,23 +192,28 @@ public class FileDialog extends ListActivity {
 
         String startPath = getIntent().getStringExtra(START_PATH);
         if (startPath != null) {
-            getDir(startPath, currentRoot, currentRootLabel);
+            getDir(startPath, currentRoot, currentRootLabel, currentDBEncFS);
         } else {
-            getDir(currentRoot, currentRoot, currentRootLabel);
+            getDir(currentRoot, currentRoot, currentRootLabel, currentDBEncFS);
         }
         String label = getIntent().getStringExtra(LABEL);
         this.setTitle(label);
         
     }
 
-    private void getDir(String dirPath, String rootPath, String rootName) {
+    private void getDir(String dirPath, String rootPath, String rootName, String dbRootPath) {
 
         boolean useAutoSelection = dirPath.length() < currentPath.length();
 
         Integer position = lastPositions.get(parentPath);
-
-        getDirImpl(dirPath, rootPath, rootName);
-
+        
+        if (selectionMode == SelectionMode.MODE_OPEN_DB
+                || selectionMode == SelectionMode.MODE_OPEN_MULTISELECT_DB)
+        {
+            dbBuildDir(dirPath, rootPath, rootName, dbRootPath);  
+        } else {
+            getDirImpl(dirPath, rootPath, rootName);
+        }
         if (position != null && useAutoSelection) {
             getListView().setSelection(position);
         }
@@ -213,10 +226,6 @@ public class FileDialog extends ListActivity {
         currentRoot = rootPath;
         currentRootLabel = rootName;
         String currentPathFromRoot = currentPath.substring(currentRoot.length());
-        
-        if (selectionMode == SelectionMode.MODE_OPEN_DB) {
-            dbBuildDir(currentPathFromRoot);           
-        }
         
         final List<String> item = new ArrayList<String>();
         path = new ArrayList<String>();
@@ -278,7 +287,9 @@ public class FileDialog extends ListActivity {
                     R.drawable.ic_launcher_file);
         }
         
-        if (selectionMode != SelectionMode.MODE_OPEN_MULTISELECT) {
+        if (selectionMode == SelectionMode.MODE_OPEN
+                || selectionMode == SelectionMode.MODE_OPEN_DB)
+        {
             SimpleAdapter fileList;
             fileList = new SimpleAdapter(this, mList,
                                          R.layout.file_dialog_row_single,
@@ -306,7 +317,9 @@ public class FileDialog extends ListActivity {
         HashMap<String, Object> item = new HashMap<String, Object>();
         item.put(ITEM_KEY, filelabel);
         item.put(ITEM_IMAGE, imageId);
-        if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT) {
+        if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT
+                || selectionMode == SelectionMode.MODE_OPEN_MULTISELECT_DB)
+        {
             item.put(ITEM_CHECK, getChecked(file));
             item.put(ITEM_FILE, file);
             item.put(ITEM_ENABLED,
@@ -498,7 +511,7 @@ public class FileDialog extends ListActivity {
         if (file.isDirectory()) {
             if (file.canRead()) {
                 lastPositions.put(currentPath, position);
-                getDir(path.get(position), currentRoot, currentRootLabel);
+                getDir(path.get(position), currentRoot, currentRootLabel, currentDBEncFS);
             } else {
                 new AlertDialog.Builder(this)
                     .setIcon(R.drawable.icon)
@@ -515,7 +528,9 @@ public class FileDialog extends ListActivity {
                                        }).show();
             }
         } else {
-            if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT) {
+            if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT
+                    || selectionMode == SelectionMode.MODE_OPEN_MULTISELECT_DB)
+            {
             } else {
                 selectedFile = file;
                 v.setSelected(true);
@@ -533,7 +548,7 @@ public class FileDialog extends ListActivity {
                 layoutSelect.setVisibility(View.VISIBLE);
             } else {
                 if (!currentPath.equals(currentRoot)) {
-                    getDir(parentPath, currentRoot, currentRootLabel);
+                    getDir(parentPath, currentRoot, currentRootLabel, currentDBEncFS);
                 } else {
                     return super.onKeyDown(keyCode, event);
                 }
@@ -598,6 +613,7 @@ public class FileDialog extends ListActivity {
         
     }
     
+    @SuppressWarnings("unused")
     private void dbBrowse() {
         alertMsg = "";
         
@@ -626,33 +642,69 @@ public class FileDialog extends ListActivity {
             }
         }).start();
     }
-    
-    private void dbBuildDir(String dbPath) {
-        try {
-            Entry dbEntry = ((CryptoniteApp) getApplication()).getDBApi().metadata(dbPath, 0, null, true, null);
-            if (dbEntry != null) {
-                if (dbEntry.isDir) {
-                    if (dbEntry.contents != null) {
-                        if (dbEntry.contents.size()>0) {
-                            for (Entry dbChild : dbEntry.contents) {
-                                File f = new File(currentRoot + dbChild.path);
-                                if (dbChild.isDir) {
-                                    f.mkdirs();
-                                } else {
-                                    f.createNewFile();
+
+    private void dbBuildDir(final String dirPath, final String rootPath, final String rootName,
+            final String dbEncFSPath)
+    {
+        alertMsg = "";
+        
+        /* TODO: re-code path names so that they can be found on Dropbox */
+        final String dbPath = "/" + dirPath.substring(rootPath.length());
+        Log.i(Cryptonite.TAG, "dbPath in dbBuildDir is " + dbPath);
+        Log.i(Cryptonite.TAG, "dirPath in dbBuildDir is " + dirPath);
+        Log.i(Cryptonite.TAG, "rootPath in dbBuildDir is " + rootPath);
+        Log.i(Cryptonite.TAG, "dbEncFSPath in dbBuildDir is " + dbEncFSPath);
+        
+        final ProgressDialog pd = ProgressDialog.show(FileDialog.this,
+                getString(R.string.wait_msg),
+                getString(R.string.dropbox_reading), true);
+        new Thread(new Runnable(){
+            public void run(){
+                try {
+                    Entry dbEntry = ((CryptoniteApp) getApplication()).getDBApi()
+                            .metadata(dbEncFSPath + dbPath, 0, null, true, null);
+                    if (dbEntry != null) {
+                        if (dbEntry.isDir) {
+                            if (dbEntry.contents != null) {
+                                if (dbEntry.contents.size()>0) {
+                                    for (Entry dbChild : dbEntry.contents) {
+                                        
+                                        if (selectionMode == SelectionMode.MODE_OPEN_DB) {
+                                            /* If we're selecting the encfs directory, we'll 
+                                             * produce undecoded files */
+                                            Cryptonite.dbTouch(dbChild, rootPath);
+                                        } else {
+                                            /* If we're selecting the files to be exported, we
+                                             * have to insert the path within the Dropbox that
+                                             * leads to the encoded folder */
+                                            Cryptonite.dbDecode(dbChild.path.substring(dbEncFSPath.length()), 
+                                                    rootPath, dbChild.isDir);
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
+                } catch (DropboxException e) {
+                    alertMsg = getString(R.string.dropbox_read_fail) + e.toString();
+                    Log.e(Cryptonite.TAG, alertMsg);
+                } catch (IOException e) {
+                    alertMsg = getString(R.string.dropbox_read_fail) + e.toString();
+                    Log.e(Cryptonite.TAG, alertMsg);
                 }
+                runOnUiThread(new Runnable(){
+                    public void run() {
+                        if (pd.isShowing())
+                            pd.dismiss();
+                        if (!alertMsg.equals("")) {
+                            Toast.makeText(FileDialog.this, alertMsg, Toast.LENGTH_LONG);
+                            alertMsg = "";
+                        }
+                        getDirImpl(dirPath, rootPath, rootName);
+                    }
+                });
             }
-        } catch (DropboxException e) {
-            Toast.makeText(FileDialog.this, getString(R.string.dropbox_read_fail) +
-                    e.toString(), Toast.LENGTH_LONG);
-        } catch (IOException e) {
-            Toast.makeText(FileDialog.this, getString(R.string.dropbox_read_fail) +
-                    e.toString(), Toast.LENGTH_LONG);            
-        }
+        }).start();
     }
 
 }

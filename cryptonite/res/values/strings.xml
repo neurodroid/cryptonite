@@ -34,6 +34,7 @@
     <string name="disclaimer">Disclaimer</string>
     <string name="no_warranty">This program is under development and is distributed WITHOUT ANY WARRANTY. Do not use it if you\'re not sure what you\'re doing. Otherwise, you may damage your file system and your phone.</string>
 
+    <!-- Dropbox -->
     <string name="dropbox_link">Link with Dropbox</string>
     <string name="dropbox_unlink">Unlink from Dropbox</string>
     <string name="dropbox_reading">Reading Dropbox&#8230;</string>

@@ -399,7 +399,7 @@ static RootPtr initRootInfo(const std::string& rootDir, const std::string& passw
 
     // clear buffer
     opts->password.assign(opts->password.length(), '\0');
-    
+
     if(!result) {
         LOGE("Unable to initialize encrypted filesystem - check path.");
     }
@@ -414,9 +414,11 @@ extern "C" {
     JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniSuccess(JNIEnv * env, jobject thiz);
     JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniIsValidEncFS(JNIEnv * env, jobject thiz, jstring srcdir);
     JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv * env, jobject thiz, jstring srcdir, jstring destdir, jstring password);
+    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniInit(JNIEnv* env, jobject thiz, jstring srcdir, jstring password);
     JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jobject thiz,
                                                                        jobjectArray exportpaths, jstring exportroot,
                                                                        jstring destdir);
+    JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniDecode(JNIEnv * env, jobject thiz, jstring encodedname);
     JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniVersion(JNIEnv * env, jobject thiz);
     JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniAppKey(JNIEnv* env, jobject thiz);
     JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniAppPw(JNIEnv* env, jobject thiz);
@@ -576,27 +578,7 @@ JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_jniIsValidEncFS(JNIEnv * e
     return res;
 }
 
-JNIEXPORT jint JNICALL
-Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv* env, jobject thiz, jstring srcdir, jstring destdir, jstring password)
-{
-    int pw_len = (int)env->GetStringLength(password);
-    if (pw_len  == 0) {
-        return EXIT_FAILURE;
-    }
-    
-    jniStringManager msrcdir(env, srcdir);
-    jniStringManager mpassword(env, password);
-    int res = EXIT_FAILURE;
-
-    if ((jint)isValidEncFS(msrcdir.str()) != EXIT_SUCCESS) {
-        LOGE("EncFS root directory is not valid");
-        return EXIT_FAILURE;
-    }
-    gRootInfo = initRootInfo(msrcdir.str(), mpassword.str());
-
-    /* clear password copy */
-    mpassword.release();
-
+int checkGRoot() {
     if(!gRootInfo) {
         LOGE("Error initialising root volume");
         return EXIT_FAILURE;
@@ -606,7 +588,40 @@ Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv* env, jobject thiz, jstring srcd
         LOGI("Wrong password");
         return EXIT_FAILURE;
     }
+
+    return EXIT_SUCCESS;
+}
+
+int setupRootDir(JNIEnv* env, jstring srcdir, jstring password) {
+
+    int pw_len = (int)env->GetStringLength(password);
+    if (pw_len  == 0) {
+        return EXIT_FAILURE;
+    }
     
+    jniStringManager msrcdir(env, srcdir);
+    jniStringManager mpassword(env, password);
+    
+    if (isValidEncFS(msrcdir.str()) != EXIT_SUCCESS) {
+        LOGE("EncFS root directory is not valid");
+        return EXIT_FAILURE;
+    }
+    gRootInfo = initRootInfo(msrcdir.str(), mpassword.str());
+
+    /* clear password copy */
+    mpassword.release();
+
+    return checkGRoot();
+}
+
+JNIEXPORT jint JNICALL
+Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv* env, jobject thiz, jstring srcdir, jstring destdir, jstring password)
+{
+    int res = setupRootDir(env, srcdir, password);
+    if (res != EXIT_SUCCESS) {
+        return res;
+    }
+
     jniStringManager mdestdir(env, destdir);
 
     // if the dir doesn't exist, then create it (with user permission)
@@ -619,20 +634,20 @@ Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv* env, jobject thiz, jstring srcd
     return res;
 }
 
+
+JNIEXPORT jint JNICALL
+Java_csh_cryptonite_Cryptonite_jniInit(JNIEnv* env, jobject thiz, jstring srcdir, jstring password)
+{
+    return setupRootDir(env, srcdir, password);
+}
+
 JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jobject thiz, jobjectArray exportpaths,
                                                                 jstring exportroot, jstring destdir)
 {
-    int res = EXIT_FAILURE;
-    
-    // TODO: put these checks back to the beginning
-    if(!gRootInfo) {
-        LOGE("No EncFS root info");
-        return EXIT_FAILURE;
-    }
+    int res = checkGRoot();
 
-    if (!gRootInfo->volumeKey) {
-        LOGI("No EncFS volume key");
-        return EXIT_FAILURE;
+    if (res != EXIT_SUCCESS) {
+        return res;
     }
 
     int npaths = env->GetArrayLength(exportpaths);
@@ -677,6 +692,26 @@ JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jo
     res = (int)exportFiles(gRootInfo, "/", mdestdir.str(), allPaths);
 
     return res;
+}
+
+JNIEXPORT jstring JNICALL
+Java_csh_cryptonite_Cryptonite_jniDecode(JNIEnv* env, jobject thiz, jstring encodedname)
+{
+    int res = checkGRoot();
+
+    if (res != EXIT_SUCCESS) {
+        return NULL;
+    }
+
+    jniStringManager mencodedname = jniStringManager(env, encodedname);
+
+    std::string name = gRootInfo->root->plainPath(mencodedname.c_str());
+
+    std::ostringstream info;
+    info << "Decoded " << mencodedname.str() << " to " << name;
+    LOGI(info.str().c_str());
+    
+    return env->NewStringUTF(name.c_str());
 }
 
 JNIEXPORT jstring JNICALL
