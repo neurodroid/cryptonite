@@ -119,6 +119,7 @@ public class Cryptonite extends Activity
     private int opMode = -1;
     private boolean alert = false;
     private String alertMsg = "";
+    private File cacheDir;
  
     private boolean mLoggedIn = false;
     private boolean hasFuse = false;
@@ -157,6 +158,8 @@ public class Cryptonite extends Activity
             }
         }
 
+        cacheDir = getPrivateDir("cache");
+        
         tvMountInfo = (TextView)findViewById(R.id.tvMountInfo);
         if (!externalStorageIsWritable() || !supportsFuse()) {
             tvMountInfo.setText(this.getString(R.string.mount_info_unsupported));
@@ -355,49 +358,94 @@ public class Cryptonite extends Activity
 
     }
     
+    private void dbDownloadDecode(Entry dbEntry, String targetDir)
+            throws IOException, DropboxException
+    {
+        String cachePath = cacheDir.getPath() + "/" + dbEntry.fileName();
+        
+        /* Download encoded file to cache dir */
+        Log.d(TAG, "Downloading " + dbEntry.path + " to " + cachePath);
+        FileOutputStream fos = new FileOutputStream(cachePath);
+        ((CryptoniteApp) getApplication()).getDBApi()
+            .getFile(dbEntry.path, null, fos, null);
+        fos.close();
+    
+        /* TODO: Decode and copy file to target dir */
+    }
 
-    private static void dbRecTree(String currentPath, String exportRoot, String destDir,
-            String dbEncFSPath) 
+    /* TODO: Use Entry rather than String for currentPath */
+    private void dbRecTree(String currentPath, String exportRoot, String destDir,
+            String dbEncFSPath) throws IOException, DropboxException 
     {
         /* normalise path names */
         String bRoot = new File(exportRoot).getPath();
         String bPath = new File(currentPath).getPath();
         String stripstr = bPath.substring(bRoot.length());
-
+        if (!stripstr.startsWith("/")) {
+            stripstr = "/" + stripstr;
+        }
+        
         /* Convert current path to encoded file name */
         String encodedPath = jniEncode(stripstr);
-        Log.v(TAG, "In dbRecTree: encodedPath is " + encodedPath);
+        String destPath = destDir + stripstr;
+        Log.d(TAG, "In dbRecTree: encodedPath is " + encodedPath);
         
         /* Remove local root directory to get Dropbox path */
         String encFSLocalRoot = Cryptonite.jniEncode("/");
-        String dbLocalRoot = encFSLocalRoot.substring(0, encFSLocalRoot.length()-dbEncFSPath.length());
+        String dbLocalRoot = encFSLocalRoot.substring(0, 
+                encFSLocalRoot.length()-dbEncFSPath.length());
+        String encFSDBRoot = encFSLocalRoot.substring(dbLocalRoot.length());
         String dbPath = "/" + encodedPath.substring(dbLocalRoot.length()) ;
         
-        Log.v(TAG, "In dbRecTree: encFSLocalRoot is " + encFSLocalRoot);
-        Log.v(TAG, "In dbRecTree: encFSDBRoot is " + dbLocalRoot);
-        Log.v(TAG, "In dbRecTree: dbPath is " + dbPath);
+        Log.d(TAG, "In dbRecTree: encFSLocalRoot is " + encFSLocalRoot);
+        Log.d(TAG, "In dbRecTree: dbLocalRoot is " + dbLocalRoot);
+        Log.d(TAG, "In dbRecTree: dbPath is " + dbPath);
+        Log.d(TAG, "In dbRecTree: bPath is " + bPath);
         
         /* TODO: Recursion through Dropbox; write files on demand */
         
-        if (new File(currentPath).exists()) {
+        /* Find file in Dropbox */
+        Log.d(TAG, "Retrieving " + dbPath + " from Dropbox");
+        Entry dbEntry = ((CryptoniteApp) getApplication()).getDBApi()
+                .metadata(dbPath, 0, null, true, null);
+        
+        if (dbEntry.isDir) {
+            /* Create the decoded directory */
+            Log.d(TAG, "Creating directory " + destPath);
+            (new File(destPath)).mkdirs();
             
-            if (new File(bPath).isDirectory()) {
-
-                /* fullList.add(stripstr); */
-
-                for (File f : new File(bPath).listFiles()) {
-                    dbRecTree(f.getPath(), exportRoot, destDir, dbEncFSPath);
+            /* fullList.add(stripstr); */
+            if (dbEntry.contents != null) {
+                if (dbEntry.contents.size()>0) {
+                    for (Entry dbChild : dbEntry.contents) {
+                        if (dbChild.isDir) {
+                            String decodedChildPath = dbLocalRoot +
+                                    jniDecode(dbChild.path.substring(dbEncFSPath.length()));
+                            Log.d(TAG, "Child " + dbChild.path + " was decoded to " + decodedChildPath);
+                            dbRecTree(decodedChildPath, exportRoot, destDir, dbEncFSPath);
+                        } else {
+                            /* Download all children non-dirs right here
+                             * so that we don't have to retrieve the metadata every time
+                             * 
+                             * Download and decode file
+                             */
+                            String destPathChild = destPath + "/" + dbChild.fileName(); 
+                            dbDownloadDecode(dbChild, destPathChild);
+                        }
+                    }
                 }
-
-            } else {
-                /* fullList.add(stripstr); */
-                // Log.v(TAG, "Adding " + stripstr + " to decoding file list");
             }
+
+        } else {
+            
+            dbDownloadDecode(dbEntry, destPath);
+            /* fullList.add(stripstr); */
+            // Log.v(TAG, "Adding " + stripstr + " to decoding file list");
         }
     }
     
-    private static void dbFullTree(String[] pathList, String exportRoot,
-            String destDir, String dbEncFSPath)
+    private void dbFullTree(String[] pathList, String exportRoot,
+            String destDir, String dbEncFSPath) throws IOException, DropboxException
     {
         for (String path : pathList) {
             dbRecTree(path, exportRoot, destDir, dbEncFSPath);
@@ -1289,7 +1337,17 @@ public class Cryptonite extends Activity
     private boolean dbExport(String[] exportPaths, String exportRoot, 
             String destDir, String dbEncFSPath) 
     {
-        dbFullTree(exportPaths, exportRoot, destDir, dbEncFSPath);
+        try {
+            dbFullTree(exportPaths, exportRoot, destDir, dbEncFSPath);
+        } catch (IOException e) {
+            Toast.makeText(getBaseContext(), getString(R.string.export_failed) + e.toString(),
+                    Toast.LENGTH_LONG);
+            return false;
+        } catch (DropboxException e) {
+            Toast.makeText(getBaseContext(), getString(R.string.export_failed) + e.toString(),
+                    Toast.LENGTH_LONG);
+            return false;
+        }
         return true;
     }
     /* Native methods are implemented by the

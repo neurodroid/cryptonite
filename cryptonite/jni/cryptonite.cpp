@@ -418,8 +418,9 @@ extern "C" {
     JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jobject thiz,
                                                                        jobjectArray exportpaths, jstring exportroot,
                                                                        jstring destdir);
+    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniCopy(JNIEnv * env, jobject thiz, jstring encodedname, jstring destdir);
     JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniDecode(JNIEnv * env, jobject thiz, jstring encodedname);
-    JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniEncode(JNIEnv * env, jobject thiz, jstring encodedname);
+    JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniEncode(JNIEnv * env, jobject thiz, jstring decodedname);
     JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniVersion(JNIEnv * env, jobject thiz);
     JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniAppKey(JNIEnv* env, jobject thiz);
     JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniAppPw(JNIEnv* env, jobject thiz);
@@ -734,6 +735,58 @@ Java_csh_cryptonite_Cryptonite_jniEncode(JNIEnv* env, jobject thiz, jstring deco
     
     return env->NewStringUTF(name.c_str());
 }
+
+JNIEXPORT jint JNICALL
+Java_csh_cryptonite_Cryptonite_jniCopy(JNIEnv* env, jobject thiz, jstring encodedname, jstring destdir)
+{
+    int res = checkGRoot();
+
+    if (res != EXIT_SUCCESS) {
+        return res;
+    }
+
+    jniStringManager mencodedname(env, encodedname);
+
+    jniStringManager mdestdir(env, destdir);
+    // if the dir doesn't exist, then create it (with user permission)
+    if(!checkDir(mdestdir.str()) && !userAllowMkdir(mdestdir.c_str(), 0700))
+	return EXIT_FAILURE;
+
+    std::string plainPath = gRootInfo->root->plainPath(mencodedname.c_str());
+    std::string destName = mdestdir.str() + plainPath;
+
+    std::ostringstream out;
+    out << "Decoding " << mencodedname.str() << " to " << plainPath << " in " << destName;
+    LOGI(out.str().c_str());
+    /*                
+                int r = EXIT_SUCCESS;
+                struct stat stBuf;
+                if( !lstat( cpath.c_str(), &stBuf ))
+                {
+                    if( S_ISDIR( stBuf.st_mode ) )
+                    {
+                        r = traverseDirs(lRootInfo, (plainPath + '/').c_str(), 
+                                         destName + '/', toWrite);
+                    } else if( S_ISLNK( stBuf.st_mode ))
+                    {
+                        r = copyLink( stBuf, lRootInfo, cpath, destName );
+                    } else
+                    {
+                        r = copyContents(lRootInfo, plainPath.c_str(), 
+                                         destName.c_str(), fake);
+                    }
+                } else
+                {
+                    r = EXIT_FAILURE;
+                }
+                if(r != EXIT_SUCCESS)
+                    return r;
+            }
+        }
+        }*/
+    return EXIT_SUCCESS;
+}
+
 
 JNIEXPORT jstring JNICALL
 Java_csh_cryptonite_Cryptonite_jniVersion(JNIEnv* env, jobject thiz)
