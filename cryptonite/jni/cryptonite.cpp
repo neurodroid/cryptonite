@@ -419,6 +419,7 @@ extern "C" {
                                                                        jobjectArray exportpaths, jstring exportroot,
                                                                        jstring destdir);
     JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniDecode(JNIEnv * env, jobject thiz, jstring encodedname);
+    JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniEncode(JNIEnv * env, jobject thiz, jstring encodedname);
     JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniVersion(JNIEnv * env, jobject thiz);
     JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniAppKey(JNIEnv* env, jobject thiz);
     JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniAppPw(JNIEnv* env, jobject thiz);
@@ -709,6 +710,26 @@ Java_csh_cryptonite_Cryptonite_jniDecode(JNIEnv* env, jobject thiz, jstring enco
 
     std::ostringstream info;
     info << "Decoded " << mencodedname.str() << " to " << name;
+    LOGI(info.str().c_str());
+    
+    return env->NewStringUTF(name.c_str());
+}
+
+JNIEXPORT jstring JNICALL
+Java_csh_cryptonite_Cryptonite_jniEncode(JNIEnv* env, jobject thiz, jstring decodedname)
+{
+    int res = checkGRoot();
+
+    if (res != EXIT_SUCCESS) {
+        return NULL;
+    }
+
+    jniStringManager mdecodedname = jniStringManager(env, decodedname);
+
+    std::string name = gRootInfo->root->cipherPath(mdecodedname.c_str());
+
+    std::ostringstream info;
+    info << "Encoded " << mdecodedname.str() << " to " << name;
     LOGI(info.str().c_str());
     
     return env->NewStringUTF(name.c_str());

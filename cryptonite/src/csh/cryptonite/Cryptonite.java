@@ -1245,6 +1245,7 @@ public class Cryptonite extends Activity
     public native int     jniInit(String srcDir, String password);
     public native int     jniExport(String[] exportPaths, String exportRoot, String destDir);
     public static native String  jniDecode(String name);
+    public static native String  jniEncode(String name);
     public native String  jniVersion();
     public native String  jniAppKey();
     public native String  jniAppPw();

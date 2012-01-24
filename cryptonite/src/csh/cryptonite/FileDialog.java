@@ -650,6 +650,13 @@ public class FileDialog extends ListActivity {
         
         /* TODO: re-code path names so that they can be found on Dropbox */
         final String dbPath = "/" + dirPath.substring(rootPath.length());
+        String encFSRoot = "";
+        if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT_DB) {
+            /* Full path of previous encFSRoot */
+            encFSRoot = Cryptonite.jniEncode("/");
+        }
+        final String prevDBRoot = encFSRoot.substring(0, encFSRoot.length()-dbEncFSPath.length());
+        Log.i(Cryptonite.TAG, "prevDBRoot in dbBuildDir is " + prevDBRoot);
         Log.i(Cryptonite.TAG, "dbPath in dbBuildDir is " + dbPath);
         Log.i(Cryptonite.TAG, "dirPath in dbBuildDir is " + dirPath);
         Log.i(Cryptonite.TAG, "rootPath in dbBuildDir is " + rootPath);
@@ -661,8 +668,17 @@ public class FileDialog extends ListActivity {
         new Thread(new Runnable(){
             public void run(){
                 try {
+                    /* If we're selecting the files to be exported, we
+                     * have to insert the path within the Dropbox that
+                     * leads to the encoded folder. dirPath will represent
+                     * a decoded file name so that we have to re-encode it */
+                    Log.i(Cryptonite.TAG, "Re-encoding " + dbPath);
+                    String encodedPath = dbPath;
+                    if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT_DB) {
+                        encodedPath = Cryptonite.jniEncode(dbPath).substring(prevDBRoot.length()-1); 
+                    }
                     Entry dbEntry = ((CryptoniteApp) getApplication()).getDBApi()
-                            .metadata(dbEncFSPath + dbPath, 0, null, true, null);
+                            .metadata(encodedPath, 0, null, true, null);
                     if (dbEntry != null) {
                         if (dbEntry.isDir) {
                             if (dbEntry.contents != null) {
@@ -674,9 +690,7 @@ public class FileDialog extends ListActivity {
                                              * produce undecoded files */
                                             Cryptonite.dbTouch(dbChild, rootPath);
                                         } else {
-                                            /* If we're selecting the files to be exported, we
-                                             * have to insert the path within the Dropbox that
-                                             * leads to the encoded folder */
+                                            
                                             Cryptonite.dbDecode(dbChild.path.substring(dbEncFSPath.length()), 
                                                     rootPath, dbChild.isDir);
                                         }
