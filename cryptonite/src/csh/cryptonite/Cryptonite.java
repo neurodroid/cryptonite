@@ -355,6 +355,55 @@ public class Cryptonite extends Activity
 
     }
     
+
+    private static void dbRecTree(String currentPath, String exportRoot, String destDir,
+            String dbEncFSPath) 
+    {
+        /* normalise path names */
+        String bRoot = new File(exportRoot).getPath();
+        String bPath = new File(currentPath).getPath();
+        String stripstr = bPath.substring(bRoot.length());
+
+        /* Convert current path to encoded file name */
+        String encodedPath = jniEncode(stripstr);
+        Log.v(TAG, "In dbRecTree: encodedPath is " + encodedPath);
+        
+        /* Remove local root directory to get Dropbox path */
+        String encFSLocalRoot = Cryptonite.jniEncode("/");
+        String dbLocalRoot = encFSLocalRoot.substring(0, encFSLocalRoot.length()-dbEncFSPath.length());
+        String dbPath = "/" + encodedPath.substring(dbLocalRoot.length()) ;
+        
+        Log.v(TAG, "In dbRecTree: encFSLocalRoot is " + encFSLocalRoot);
+        Log.v(TAG, "In dbRecTree: encFSDBRoot is " + dbLocalRoot);
+        Log.v(TAG, "In dbRecTree: dbPath is " + dbPath);
+        
+        /* TODO: Recursion through Dropbox; write files on demand */
+        
+        if (new File(currentPath).exists()) {
+            
+            if (new File(bPath).isDirectory()) {
+
+                /* fullList.add(stripstr); */
+
+                for (File f : new File(bPath).listFiles()) {
+                    dbRecTree(f.getPath(), exportRoot, destDir, dbEncFSPath);
+                }
+
+            } else {
+                /* fullList.add(stripstr); */
+                // Log.v(TAG, "Adding " + stripstr + " to decoding file list");
+            }
+        }
+    }
+    
+    private static void dbFullTree(String[] pathList, String exportRoot,
+            String destDir, String dbEncFSPath)
+    {
+        for (String path : pathList) {
+            dbRecTree(path, exportRoot, destDir, dbEncFSPath);
+        }
+    }
+
     /** Called upon exit from other activities */
     public synchronized void onActivityResult(final int requestCode,
                                               int resultCode, final Intent data) {
@@ -406,12 +455,13 @@ public class Cryptonite extends Activity
                          }
                          break;
                      case DBEXPORT_MODE:
+                         /* TODO: implement this */
                          if (currentReturnPathList != null) {
-
-                         final ProgressDialog pd = ProgressDialog.show(this,
-                                 this.getString(R.string.wait_msg),
-                                 this.getString(R.string.running_export), true);
-                         new Thread(new Runnable(){
+                             /* returnPathList is decoded */
+                             final ProgressDialog pd = ProgressDialog.show(this,
+                                     this.getString(R.string.wait_msg),
+                                     this.getString(R.string.running_export), true);
+                             new Thread(new Runnable(){
                                  public void run(){
                                      String exportName = currentReturnPath + "/Cryptonite";
                                      Log.v(TAG, "Exporting to " + exportName);
@@ -421,19 +471,21 @@ public class Cryptonite extends Activity
                                      if (!new File(exportName).exists()) {
                                          alert = true;
                                      } else {
-                                         alert = (jniExport(currentReturnPathList, encfsBrowseRoot, 
-                                                 currentReturnPath + "/Cryptonite") != jniSuccess());
+                                         alert = !dbExport(currentReturnPathList, encfsBrowseRoot, 
+                                                 currentReturnPath + "/Cryptonite", currentDialogDBEncFS);
+                                         /* alert = (jniExport(currentReturnPathList, encfsBrowseRoot, 
+                                                 currentReturnPath + "/Cryptonite") != jniSuccess());*/
                                      }
                                      runOnUiThread(new Runnable(){
-                                             public void run() {
-                                                 if (pd.isShowing())
-                                                     pd.dismiss();
-                                                 if (alert) {
-                                                     showAlert(getString(R.string.export_failed));
-                                                     alert = false;
-                                                 }
+                                         public void run() {
+                                             if (pd.isShowing())
+                                                 pd.dismiss();
+                                             if (alert) {
+                                                 showAlert(getString(R.string.export_failed));
+                                                 alert = false;
                                              }
-                                         });
+                                         }
+                                     });
                                  }
                              }).start();
                          }
@@ -474,7 +526,7 @@ public class Cryptonite extends Activity
                      }
                      currentDialogRoot = "/";
                      currentDialogRootName = currentDialogRoot;
-                     currentDialogDBEncFS = "";
+                     /* currentDialogDBEncFS = ""; Leave this untouched for dbExport */
                      switch (opMode) {
                        case SELECTLOCALEXPORT_MODE:
                          opMode = LOCALEXPORT_MODE;
@@ -1234,6 +1286,12 @@ public class Cryptonite extends Activity
         
     }
     
+    private boolean dbExport(String[] exportPaths, String exportRoot, 
+            String destDir, String dbEncFSPath) 
+    {
+        dbFullTree(exportPaths, exportRoot, destDir, dbEncFSPath);
+        return true;
+    }
     /* Native methods are implemented by the
      * 'cryptonite' native library, which is packaged
      * with this application.

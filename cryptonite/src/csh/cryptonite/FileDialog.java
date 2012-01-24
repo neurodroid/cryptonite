@@ -656,11 +656,13 @@ public class FileDialog extends ListActivity {
             encFSRoot = Cryptonite.jniEncode("/");
         }
         final String prevDBRoot = encFSRoot.substring(0, encFSRoot.length()-dbEncFSPath.length());
+        /*
         Log.i(Cryptonite.TAG, "prevDBRoot in dbBuildDir is " + prevDBRoot);
         Log.i(Cryptonite.TAG, "dbPath in dbBuildDir is " + dbPath);
         Log.i(Cryptonite.TAG, "dirPath in dbBuildDir is " + dirPath);
         Log.i(Cryptonite.TAG, "rootPath in dbBuildDir is " + rootPath);
         Log.i(Cryptonite.TAG, "dbEncFSPath in dbBuildDir is " + dbEncFSPath);
+        */
         
         final ProgressDialog pd = ProgressDialog.show(FileDialog.this,
                 getString(R.string.wait_msg),
@@ -672,11 +674,11 @@ public class FileDialog extends ListActivity {
                      * have to insert the path within the Dropbox that
                      * leads to the encoded folder. dirPath will represent
                      * a decoded file name so that we have to re-encode it */
-                    Log.i(Cryptonite.TAG, "Re-encoding " + dbPath);
                     String encodedPath = dbPath;
                     if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT_DB) {
                         encodedPath = Cryptonite.jniEncode(dbPath).substring(prevDBRoot.length()-1); 
                     }
+                    // Log.i(Cryptonite.TAG, "Retrieving " + encodedPath + " from Dropbox");
                     Entry dbEntry = ((CryptoniteApp) getApplication()).getDBApi()
                             .metadata(encodedPath, 0, null, true, null);
                     if (dbEntry != null) {
