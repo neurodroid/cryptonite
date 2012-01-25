@@ -122,6 +122,7 @@ public class Cryptonite extends Activity
  
     private boolean mLoggedIn = false;
     private boolean hasFuse = false;
+    private boolean triedLogin = false;
     
     // If you'd like to change the access type to the full Dropbox instead of
     // an app folder, change this value.
@@ -188,6 +189,7 @@ public class Cryptonite extends Activity
                     if (mLoggedIn) {
                         logOut();
                     } else {
+                        triedLogin = true;
                         // Start the remote authentication
                         ((CryptoniteApp) getApplication()).getDBApi()
                             .getSession().startAuthentication(Cryptonite.this);
@@ -301,7 +303,8 @@ public class Cryptonite extends Activity
         hasFuse = supportsFuse();
         updateButtons();
 
-        showAlert(getString(R.string.disclaimer), getString(R.string.no_warranty));
+        showAlert(getString(R.string.disclaimer), getString(R.string.no_warranty),
+                getString(R.string.understand));
     }
 
     private void updateButtons() {
@@ -338,7 +341,7 @@ public class Cryptonite extends Activity
 
             } else {
                 fullList.add(stripstr);
-                // Log.v(TAG, "Adding " + stripstr + " to decoding file list");
+                // Log.d(TAG, "Adding " + stripstr + " to decoding file list");
             }
         }
     }
@@ -363,7 +366,7 @@ public class Cryptonite extends Activity
         (new File(cachePath)).getParentFile().mkdirs();
 
         /* Download encoded file to cache dir */
-        Log.d(TAG, "Downloading " + srcPath + " to " + cachePath);
+        /* Log.d(TAG, "Downloading " + srcPath + " to " + cachePath); */
         FileOutputStream fos = new FileOutputStream(cachePath);
         ((CryptoniteApp) getApplication()).getDBApi()
             .getFile(encFSDBRoot + srcPath, null, fos, null);
@@ -388,7 +391,7 @@ public class Cryptonite extends Activity
         /* Convert current path to encoded file name */
         String encodedPath = jniEncode(stripstr);
         String destPath = destDir + stripstr;
-        Log.d(TAG, "In dbRecTree: encodedPath is " + encodedPath);
+        /* Log.d(TAG, "In dbRecTree: encodedPath is " + encodedPath); */
         
         /* Remove local root directory to get Dropbox path */
         String encFSLocalRoot = Cryptonite.jniEncode("/");
@@ -397,21 +400,21 @@ public class Cryptonite extends Activity
         String encFSDBRoot = encFSLocalRoot.substring(dbLocalRoot.length());
         String dbPath = "/" + encodedPath.substring(dbLocalRoot.length()) ;
         
-        Log.d(TAG, "In dbRecTree: encFSLocalRoot is " + encFSLocalRoot);
+        /* Log.d(TAG, "In dbRecTree: encFSLocalRoot is " + encFSLocalRoot);
         Log.d(TAG, "In dbRecTree: dbLocalRoot is " + dbLocalRoot);
         Log.d(TAG, "In dbRecTree: dbPath is " + dbPath);
-        Log.d(TAG, "In dbRecTree: bPath is " + bPath);
+        Log.d(TAG, "In dbRecTree: bPath is " + bPath); */
         
         /* TODO: Recursion through Dropbox; write files on demand */
         
         /* Find file in Dropbox */
-        Log.d(TAG, "Retrieving " + dbPath + " from Dropbox");
+        /* Log.d(TAG, "Retrieving " + dbPath + " from Dropbox"); */
         Entry dbEntry = ((CryptoniteApp) getApplication()).getDBApi()
                 .metadata(dbPath, 0, null, true, null);
         
         if (dbEntry.isDir) {
             /* Create the decoded directory */
-            Log.d(TAG, "Creating directory " + destPath);
+            /* Log.d(TAG, "Creating directory " + destPath); */
             (new File(destPath)).mkdirs();
             
             /* fullList.add(stripstr); */
@@ -421,7 +424,7 @@ public class Cryptonite extends Activity
                         if (dbChild.isDir) {
                             String decodedChildPath = dbLocalRoot +
                                     jniDecode(dbChild.path.substring(dbEncFSPath.length()));
-                            Log.d(TAG, "Child " + dbChild.path + " was decoded to " + decodedChildPath);
+                            /* Log.d(TAG, "Child " + dbChild.path + " was decoded to " + decodedChildPath); */
                             dbRecTree(decodedChildPath, exportRoot, destDir, dbEncFSPath);
                         } else {
                             /* Download all children non-dirs right here
@@ -447,7 +450,7 @@ public class Cryptonite extends Activity
                 /* TODO: add error trapping code */
             }
             /* fullList.add(stripstr); */
-            // Log.v(TAG, "Adding " + stripstr + " to decoding file list");
+            // Log.d(TAG, "Adding " + stripstr + " to decoding file list");
         }
     }
     
@@ -548,7 +551,7 @@ public class Cryptonite extends Activity
                      }
                  }
              } else if (resultCode == Activity.RESULT_CANCELED) {
-                 Log.v(TAG, "file not selected");
+                 /* Log.d(TAG, "file not selected"); */
              }
              break;
          case SelectionMode.MODE_OPEN_MULTISELECT:
@@ -560,7 +563,7 @@ public class Cryptonite extends Activity
                      /* May make the argument passed to jniExport too large */
                      /* currentReturnPathList = fullTree(currentReturnPathList, encfsBrowseRoot);
                      for (String path : currentReturnPathList) {
-                         Log.v(TAG, path);
+                         Log.d(TAG, path);
                          }*/
 
                      if (currentReturnPathList.length > MAX_JNI_SIZE) {
@@ -593,7 +596,7 @@ public class Cryptonite extends Activity
                      launchBuiltinFileBrowser();
                  }
              } else if (resultCode == Activity.RESULT_CANCELED) {
-                 Log.v(TAG, "file not selected");
+                 /* Log.d(TAG, "file not selected"); */
              }
              break;
          case REQUEST_PREFS:
@@ -637,6 +640,38 @@ public class Cryptonite extends Activity
                 Toast.makeText(this, 
                         getString(R.string.dropbox_auth_fail) + ": " + e.getLocalizedMessage(), 
                         Toast.LENGTH_LONG);
+            }
+        } else {
+            if (triedLogin) {
+                triedLogin = false;
+                AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
+                builder.setIcon(R.drawable.ic_launcher_cryptonite)
+                    .setTitle(R.string.dropbox_enable)
+                    .setMessage(R.string.dropbox_enable_email)
+                    .setPositiveButton(R.string.send_email,
+                            new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog,
+                                int which) {
+                            final Intent emailIntent = new Intent(android.content.Intent.ACTION_SEND);
+                            emailIntent.setType("plain/text");
+                            emailIntent.putExtra(android.content.Intent.EXTRA_EMAIL,
+                                    new String[]{"christoph.schmidthieber@googlemail.com"});
+                            emailIntent.putExtra(android.content.Intent.EXTRA_SUBJECT,
+                                    getString(R.string.dropbox_enable_email_subject));
+                            emailIntent.putExtra(android.content.Intent.EXTRA_TEXT,
+                                    getString(R.string.dropbox_enable_email_content));
+                            startActivity(Intent.createChooser(emailIntent, "Send mail..."));    
+                        }
+                    })
+                    .setNegativeButton(R.string.cancel,
+                            new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog,
+                                int which) {
+        
+                        }
+                    });  
+                AlertDialog dialog = builder.create();
+                dialog.show();
             }
         }
     }
@@ -760,15 +795,19 @@ public class Cryptonite extends Activity
     }
 
     private void showAlert(String alert) {
-        showAlert(alert, "");
+        showAlert(alert, "", "OK");
     }
     
     private void showAlert(String alert, String msg) {
+        showAlert(alert, msg, "OK");
+    }
+    
+    private void showAlert(String alert, String msg, String btnLabel) {
         AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
         builder.setIcon(R.drawable.ic_launcher_cryptonite)
             .setTitle(alert)
             .setMessage(msg)
-            .setPositiveButton("OK",
+            .setPositiveButton(btnLabel,
                                new DialogInterface.OnClickListener() {
                                    public void onClick(DialogInterface dialog,
                                                        int which) {

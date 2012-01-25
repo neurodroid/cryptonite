@@ -31,20 +31,25 @@
     <string name="app_oi_get">Go to Market</string>
     <string name="app_oi_builtin">Use built-in file browser</string>
     <string name="market_missing">Google Market wasn\'t found on your device</string>
-    <string name="disclaimer">Disclaimer</string>
-    <string name="no_warranty">This program is under development and is distributed WITHOUT ANY WARRANTY. Do not use it if you\'re not sure what you\'re doing. Otherwise, you may damage your file system and your phone.</string>
-
+    <string name="disclaimer">Dragons ahead!</string>
+    <string name="no_warranty">This program is under development. Use at your own risk. It is distributed WITHOUT ANY WARRANTY.</string>
+    <string name="understand">I understand</string>
+    
     <!-- Dropbox -->
     <string name="dropbox_link">Link with Dropbox</string>
     <string name="dropbox_unlink">Unlink from Dropbox</string>
     <string name="dropbox_reading">Reading Dropbox&#8230;</string>
-    <string name="dropbox_browse">Decrypt Dropbox</string>
+    <string name="dropbox_browse">Decrypt Dropbox folder</string>
     <string name="dropbox_auth_fail">"Couldn\'t authenticate with Dropbox</string>
     <string name="dropbox_read_fail">"Problem reading from Dropbox"</string>
     <string name="dropbox_service_started">"db_running"</string>
     <string name="dropbox_service_stopped">"db_stopped"</string>
     <string name="dropbox_service_label">"Dropbox linked to Cryptonite"</string>
     <string name="dropbox_root_name">"Dropbox"</string>
+    <string name="dropbox_enable">"Enable Dropbox"</string>
+    <string name="dropbox_enable_email">"Send me an email so that you can test decrypting Dropbox folders in development mode."</string>
+    <string name="dropbox_enable_email_subject">"Activate my Dropbox account"</string>
+    <string name="dropbox_enable_email_content">"Please activate my Dropbox account (your@email.com) so that I can access my Dropbox from Cryptonite."</string>
     
     <!-- File Browser -->
     <string name="select">Select</string>
@@ -67,14 +72,15 @@
     <string name="back">Back</string>
 
     <!-- Button labels -->
-    <string name="browse_local">Decrypt local</string>
+    <string name="browse_local">Decrypt local folder</string>
     <string name="mount">Mount</string>
     <string name="unmount">Unmount</string>
     <string name="viewmount">View mounted</string>
     
     <!-- Misc -->
     <string name="wait_msg">Please wait&#8230;</string>
-
+    <string name="send_email">Send email&#8230;</string>
+    
     <!-- Colours -->
     <color name="gray">#ffff0000</color>
     <color name="white">#ffffffff</color>
