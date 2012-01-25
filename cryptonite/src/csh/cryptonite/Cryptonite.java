@@ -119,7 +119,6 @@ public class Cryptonite extends Activity
     private int opMode = -1;
     private boolean alert = false;
     private String alertMsg = "";
-    private File cacheDir;
  
     private boolean mLoggedIn = false;
     private boolean hasFuse = false;
@@ -158,8 +157,6 @@ public class Cryptonite extends Activity
             }
         }
 
-        cacheDir = getPrivateDir("cache");
-        
         tvMountInfo = (TextView)findViewById(R.id.tvMountInfo);
         if (!externalStorageIsWritable() || !supportsFuse()) {
             tvMountInfo.setText(this.getString(R.string.mount_info_unsupported));
@@ -358,19 +355,21 @@ public class Cryptonite extends Activity
 
     }
     
-    private void dbDownloadDecode(Entry dbEntry, String targetDir)
+    private void dbDownloadDecode(String srcPath, String targetDir, String encFSDBRoot, String cacheDir)
             throws IOException, DropboxException
     {
-        String cachePath = cacheDir.getPath() + "/" + dbEntry.fileName();
-        
+        String cachePath = cacheDir + srcPath;
+        (new File(cachePath)).getParentFile().mkdirs();
+
         /* Download encoded file to cache dir */
-        Log.d(TAG, "Downloading " + dbEntry.path + " to " + cachePath);
+        Log.d(TAG, "Downloading " + srcPath + " to " + cachePath);
         FileOutputStream fos = new FileOutputStream(cachePath);
         ((CryptoniteApp) getApplication()).getDBApi()
-            .getFile(dbEntry.path, null, fos, null);
+            .getFile(encFSDBRoot + srcPath, null, fos, null);
         fos.close();
     
         /* TODO: Decode and copy file to target dir */
+        jniCopy(srcPath, targetDir);
     }
 
     /* TODO: Use Entry rather than String for currentPath */
@@ -429,8 +428,8 @@ public class Cryptonite extends Activity
                              * 
                              * Download and decode file
                              */
-                            String destPathChild = destPath + "/" + dbChild.fileName(); 
-                            dbDownloadDecode(dbChild, destPathChild);
+                            dbDownloadDecode(dbChild.path.substring(dbEncFSPath.length()), destDir, encFSDBRoot,
+                                    encFSLocalRoot);
                         }
                     }
                 }
@@ -438,7 +437,8 @@ public class Cryptonite extends Activity
 
         } else {
             
-            dbDownloadDecode(dbEntry, destPath);
+            dbDownloadDecode(dbEntry.path.substring(dbEncFSPath.length()), destDir, encFSDBRoot,
+                    encFSLocalRoot);
             /* fullList.add(stripstr); */
             // Log.v(TAG, "Adding " + stripstr + " to decoding file list");
         }
@@ -1360,6 +1360,7 @@ public class Cryptonite extends Activity
     public native int     jniBrowse(String srcDir, String destDir, String password);
     public native int     jniInit(String srcDir, String password);
     public native int     jniExport(String[] exportPaths, String exportRoot, String destDir);
+    public native int     jniCopy(String encodedName, String destDir);
     public static native String  jniDecode(String name);
     public static native String  jniEncode(String name);
     public native String  jniVersion();

@@ -157,6 +157,10 @@ static int processContents( const shared_ptr<EncFS_Root> &lRootInfo,
 	return errCode;
     } else
     {
+        std::ostringstream err;
+        err << "writing to " << path << "\n";
+        LOGE(err.str().c_str());
+        
 	unsigned char buf[512];
 	int blocks = (node->getSize() + sizeof(buf)-1) / sizeof(buf);
 	// read all the data in blocks
@@ -271,9 +275,9 @@ static int copyContents(const boost::shared_ptr<EncFS_Root> &lRootInfo,
 
             if (!fake) {
                 WriteOutput output(outfd);
-                /*std::ostringstream out;
+                std::ostringstream out;
                 out << "Writing to " << encfsName;
-                LOGE(out.str().c_str());*/
+                LOGE(out.str().c_str());
                 processContents( lRootInfo, encfsName, output );
             }
 
@@ -758,35 +762,30 @@ Java_csh_cryptonite_Cryptonite_jniCopy(JNIEnv* env, jobject thiz, jstring encode
     std::ostringstream out;
     out << "Decoding " << mencodedname.str() << " to " << plainPath << " in " << destName;
     LOGI(out.str().c_str());
-    /*                
-                int r = EXIT_SUCCESS;
-                struct stat stBuf;
-                if( !lstat( cpath.c_str(), &stBuf ))
-                {
-                    if( S_ISDIR( stBuf.st_mode ) )
-                    {
-                        r = traverseDirs(lRootInfo, (plainPath + '/').c_str(), 
-                                         destName + '/', toWrite);
-                    } else if( S_ISLNK( stBuf.st_mode ))
-                    {
-                        r = copyLink( stBuf, lRootInfo, cpath, destName );
-                    } else
-                    {
-                        r = copyContents(lRootInfo, plainPath.c_str(), 
-                                         destName.c_str(), fake);
-                    }
-                } else
-                {
-                    r = EXIT_FAILURE;
-                }
-                if(r != EXIT_SUCCESS)
-                    return r;
-            }
-        }
-        }*/
-    return EXIT_SUCCESS;
-}
 
+    /* TODO: As of yet, this creates empty files */
+    mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+    int outfd = creat(destName.c_str(), mode);
+
+    if (outfd == -1) {
+        if (errno == EACCES /* sic! */ || errno == EROFS || errno == ENOSPC) {
+            std::ostringstream out;
+            out << "Not creating " << destName << ": "
+                << strerror(errno);
+            LOGE(out.str().c_str());
+            return EXIT_FAILURE;
+        }
+    }
+
+    WriteOutput output(outfd);
+    out.str("");
+    out << "Writing to " << destName;
+    LOGE(out.str().c_str());
+    processContents( gRootInfo, destName.c_str(), output );
+
+    close(outfd);
+
+}
 
 JNIEXPORT jstring JNICALL
 Java_csh_cryptonite_Cryptonite_jniVersion(JNIEnv* env, jobject thiz)
