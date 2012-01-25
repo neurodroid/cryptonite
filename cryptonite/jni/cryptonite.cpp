@@ -157,9 +157,9 @@ static int processContents( const shared_ptr<EncFS_Root> &lRootInfo,
 	return errCode;
     } else
     {
-        std::ostringstream err;
+        /*std::ostringstream err;
         err << "writing to " << path << "\n";
-        LOGE(err.str().c_str());
+        LOGE(err.str().c_str());*/
         
 	unsigned char buf[512];
 	int blocks = (node->getSize() + sizeof(buf)-1) / sizeof(buf);
@@ -275,9 +275,9 @@ static int copyContents(const boost::shared_ptr<EncFS_Root> &lRootInfo,
 
             if (!fake) {
                 WriteOutput output(outfd);
-                std::ostringstream out;
+                /*std::ostringstream out;
                 out << "Writing to " << encfsName;
-                LOGE(out.str().c_str());
+                LOGE(out.str().c_str());*/
                 processContents( lRootInfo, encfsName, output );
             }
 
@@ -713,9 +713,9 @@ Java_csh_cryptonite_Cryptonite_jniDecode(JNIEnv* env, jobject thiz, jstring enco
 
     std::string name = gRootInfo->root->plainPath(mencodedname.c_str());
 
-    std::ostringstream info;
+    /*std::ostringstream info;
     info << "Decoded " << mencodedname.str() << " to " << name;
-    LOGI(info.str().c_str());
+    LOGI(info.str().c_str());*/
     
     return env->NewStringUTF(name.c_str());
 }
@@ -733,9 +733,9 @@ Java_csh_cryptonite_Cryptonite_jniEncode(JNIEnv* env, jobject thiz, jstring deco
 
     std::string name = gRootInfo->root->cipherPath(mdecodedname.c_str());
 
-    std::ostringstream info;
+    /* std::ostringstream info;
     info << "Encoded " << mdecodedname.str() << " to " << name;
-    LOGI(info.str().c_str());
+    LOGI(info.str().c_str()); */
     
     return env->NewStringUTF(name.c_str());
 }
@@ -757,34 +757,57 @@ Java_csh_cryptonite_Cryptonite_jniCopy(JNIEnv* env, jobject thiz, jstring encode
 	return EXIT_FAILURE;
 
     std::string plainPath = gRootInfo->root->plainPath(mencodedname.c_str());
-    std::string destName = mdestdir.str() + plainPath;
+    std::string destname = mdestdir.str() + plainPath;
 
-    std::ostringstream out;
-    out << "Decoding " << mencodedname.str() << " to " << plainPath << " in " << destName;
-    LOGI(out.str().c_str());
+    /* std::ostringstream out;
+    out << "Decoding " << mencodedname.str() << " to " << plainPath << " in " << destname;
+    LOGI(out.str().c_str()); */
 
     /* TODO: As of yet, this creates empty files */
-    mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
-    int outfd = creat(destName.c_str(), mode);
+    boost::shared_ptr<FileNode> node = 
+	gRootInfo->root->lookupNode( plainPath.c_str(), "encfsctl");
 
-    if (outfd == -1) {
-        if (errno == EACCES /* sic! */ || errno == EROFS || errno == ENOSPC) {
+    if(!node) {
+        std::ostringstream err;
+        err << "unable to open " << plainPath;
+        LOGE(err.str().c_str());
+        return EXIT_FAILURE;
+    } else {
+        /*std::ostringstream err;
+        err << "found node " << plainPath;
+        LOGE(err.str().c_str()); */
+
+        struct stat st;
+        
+        if(node->getAttr(&st) != 0) {
             std::ostringstream out;
-            out << "Not creating " << destName << ": "
+            out << "Not creating " << destname << ", "
+                << "couldn't read node attributes: "
                 << strerror(errno);
             LOGE(out.str().c_str());
             return EXIT_FAILURE;
         }
+        
+        int outfd = creat(destname.c_str(), st.st_mode);
+
+        if (outfd == -1) {
+            if (errno == EACCES /* sic! */ || errno == EROFS || errno == ENOSPC) {
+                std::ostringstream out;
+                out << "Not creating " << destname << ": "
+                    << strerror(errno);
+                LOGE(out.str().c_str());
+            }
+            return EXIT_FAILURE;
+        }
+        WriteOutput output(outfd);
+        /*std::ostringstream out;
+        out << "Writing to " << destname;
+        LOGE(out.str().c_str()); */
+        processContents( gRootInfo, plainPath.c_str(), output );
+        
+        close(outfd);
     }
-
-    WriteOutput output(outfd);
-    out.str("");
-    out << "Writing to " << destName;
-    LOGE(out.str().c_str());
-    processContents( gRootInfo, destName.c_str(), output );
-
-    close(outfd);
-
+    return EXIT_SUCCESS;
 }
 
 JNIEXPORT jstring JNICALL

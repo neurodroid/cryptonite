@@ -355,10 +355,11 @@ public class Cryptonite extends Activity
 
     }
     
-    private void dbDownloadDecode(String srcPath, String targetDir, String encFSDBRoot, String cacheDir)
+    private boolean dbDownloadDecode(String srcPath, String targetDir, String encFSDBRoot, 
+            String encFSLocalRoot)
             throws IOException, DropboxException
     {
-        String cachePath = cacheDir + srcPath;
+        String cachePath = encFSLocalRoot + srcPath;
         (new File(cachePath)).getParentFile().mkdirs();
 
         /* Download encoded file to cache dir */
@@ -369,7 +370,7 @@ public class Cryptonite extends Activity
         fos.close();
     
         /* TODO: Decode and copy file to target dir */
-        jniCopy(srcPath, targetDir);
+        return (jniCopy(encFSLocalRoot + srcPath, targetDir) == jniSuccess());
     }
 
     /* TODO: Use Entry rather than String for currentPath */
@@ -428,8 +429,11 @@ public class Cryptonite extends Activity
                              * 
                              * Download and decode file
                              */
-                            dbDownloadDecode(dbChild.path.substring(dbEncFSPath.length()), destDir, encFSDBRoot,
-                                    encFSLocalRoot);
+                            if (!dbDownloadDecode(dbChild.path.substring(dbEncFSPath.length()), destDir, encFSDBRoot,
+                                    encFSLocalRoot))
+                            {
+                               /* TODO: add error trapping code */
+                            }
                         }
                     }
                 }
@@ -437,8 +441,11 @@ public class Cryptonite extends Activity
 
         } else {
             
-            dbDownloadDecode(dbEntry.path.substring(dbEncFSPath.length()), destDir, encFSDBRoot,
-                    encFSLocalRoot);
+            if (!dbDownloadDecode(dbEntry.path.substring(dbEncFSPath.length()), destDir, encFSDBRoot,
+                    encFSLocalRoot))
+            {
+                /* TODO: add error trapping code */
+            }
             /* fullList.add(stripstr); */
             // Log.v(TAG, "Adding " + stripstr + " to decoding file list");
         }

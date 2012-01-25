@@ -5,11 +5,11 @@ MAJOR
 * Implement Dropbox support
 
 MINOR
-* Use same button for mount/unmount (see DBRoulette)
-  Use same button for connect / disconnect from Dropbox
-  Use 2-column table layout
 * Add symbol icons to buttons.
 
+CODE
+* Clean up path mess
+* Clean up file browser setup mess
 
 DONE
 ====
@@ -18,5 +18,8 @@ MAJOR
 X Implement multiselect export
 
 MINOR
+X Use same button for mount/unmount (see DBRoulette)
+X Use same button for connect / disconnect from Dropbox
+X Use 2-column table layout
 X Don't do a full recursion; check for labelled parent instead.
 X Check whether child directory is fully labelled
