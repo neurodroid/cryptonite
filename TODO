@@ -2,19 +2,21 @@ TODO
 ====
 
 MAJOR
-* Implement Dropbox support
+* View decrypted Dropbox files directly without exporting them first.
 
 MINOR
 * Add symbol icons to buttons.
 
 CODE
-* Clean up path mess
+* Clean up path mess. It's a disgrace to intelligent life.
 * Clean up file browser setup mess
+* Minimise Dropbox metadata calls
 
 DONE
 ====
 
 MAJOR
+X Implement Dropbox support
 X Implement multiselect export
 
 MINOR
