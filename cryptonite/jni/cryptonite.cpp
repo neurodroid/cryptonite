@@ -746,6 +746,9 @@ Java_csh_cryptonite_Cryptonite_jniCopy(JNIEnv* env, jobject thiz, jstring encode
     int res = checkGRoot();
 
     if (res != EXIT_SUCCESS) {
+        std::ostringstream err;
+        err << "EncFS root hasn't been initialized yet";
+        LOGE(err.str().c_str());
         return res;
     }
 
@@ -753,9 +756,13 @@ Java_csh_cryptonite_Cryptonite_jniCopy(JNIEnv* env, jobject thiz, jstring encode
 
     jniStringManager mdestdir(env, destdir);
     // if the dir doesn't exist, then create it (with user permission)
-    if(!checkDir(mdestdir.str()) && !userAllowMkdir(mdestdir.c_str(), 0700))
+    if(!checkDir(mdestdir.str()) && !userAllowMkdir(mdestdir.c_str(), 0700)) {
+        std::ostringstream err;
+        err << "Destination directory " << mdestdir.str() << " isn't valid";
+        LOGE(err.str().c_str());
+        
 	return EXIT_FAILURE;
-
+    }
     std::string plainPath = gRootInfo->root->plainPath(mencodedname.c_str());
     std::string destname = mdestdir.str() + plainPath;
 
@@ -788,7 +795,7 @@ Java_csh_cryptonite_Cryptonite_jniCopy(JNIEnv* env, jobject thiz, jstring encode
             return EXIT_FAILURE;
         }
         
-        int outfd = creat(destname.c_str(), st.st_mode);
+        int outfd = creat(destname.c_str(), S_IRWXU); // st.st_mode);
 
         if (outfd == -1) {
             if (errno == EACCES /* sic! */ || errno == EROFS || errno == ENOSPC) {
