@@ -70,7 +70,9 @@
     <string name="select_file_export">Select files to export</string>
     <string name="export">Export selected</string>
     <string name="back">Back</string>
-
+    <string name="context_open">Open</string>
+    <string name="context_export">Export</string>
+    
     <!-- Button labels -->
     <string name="browse_local">Decrypt local folder</string>
     <string name="mount">Mount</string>

@@ -26,12 +26,17 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -198,7 +203,11 @@ public class FileDialog extends ListActivity {
         }
         String label = getIntent().getStringExtra(LABEL);
         this.setTitle(label);
-        
+        if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT
+                || selectionMode == SelectionMode.MODE_OPEN_MULTISELECT_DB)
+        {            
+            registerForContextMenu(getListView());
+        }
     }
 
     private void getDir(String dirPath, String rootPath, String rootName, String dbRootPath) {
@@ -531,6 +540,7 @@ public class FileDialog extends ListActivity {
             if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT
                     || selectionMode == SelectionMode.MODE_OPEN_MULTISELECT_DB)
             {
+                
             } else {
                 selectedFile = file;
                 v.setSelected(true);
@@ -559,7 +569,38 @@ public class FileDialog extends ListActivity {
             return super.onKeyDown(keyCode, event);
         }
     }
-
+    
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v,
+                                    ContextMenuInfo menuInfo) {
+      super.onCreateContextMenu(menu, v, menuInfo);
+      MenuInflater inflater = getMenuInflater();
+      AdapterContextMenuInfo info = (AdapterContextMenuInfo)menuInfo;
+      if ((new File(path.get(info.position))).isDirectory()) {
+          inflater.inflate(R.menu.file_dialog_context_menu_dir, menu);          
+      } else {
+          inflater.inflate(R.menu.file_dialog_context_menu, menu);
+      }
+    }
+    
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+      AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
+      switch (item.getItemId()) {
+      case R.id.context_open:
+        /* TODO: Open file */
+        return true;
+      case R.id.context_export:
+        selectedPaths.clear();
+        selectedPaths.add(path.get(info.position));
+        getIntent().putExtra(RESULT_PATH, selectedPaths.toArray(new String[0]));
+        setResult(RESULT_OK, getIntent());
+        finish();
+        return true;
+      default:
+        return super.onContextItemSelected(item);
+      }
+    }
 //    private void setCreateVisible(View v) {
 //        layoutCreate.setVisibility(View.VISIBLE);
 //        layoutSelect.setVisibility(View.GONE);
