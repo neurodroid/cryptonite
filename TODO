@@ -3,6 +3,8 @@ TODO
 
 MAJOR
 * View decrypted Dropbox files directly without exporting them first.
+* Separate file decryption from file browsing so that volumes can
+  be re-used.
 
 MINOR
 * Add symbol icons to buttons.
