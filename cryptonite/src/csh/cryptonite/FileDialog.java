@@ -59,7 +59,8 @@ public class FileDialog extends ListActivity {
     private static final String ROOT = "/";
 
     public static final String START_PATH = "START_PATH";
-    public static final String RESULT_PATH = "RESULT_PATH";
+    public static final String RESULT_EXPORT_PATH = "RESULT_EXPORT_PATH";
+    public static final String RESULT_OPEN_PATH = "RESULT_OPEN_PATH";
     public static final String SELECTION_MODE = "SELECTION_MODE";
     public static final String LABEL = "LABEL";
     public static final String BUTTON_LABEL = "BUTTON_LABEL";
@@ -138,12 +139,12 @@ public class FileDialog extends ListActivity {
                             || selectionMode == SelectionMode.MODE_OPEN_DB)
                     {
                         if (currentPath != null) {
-                            getIntent().putExtra(RESULT_PATH, currentPath);
+                            getIntent().putExtra(RESULT_EXPORT_PATH, currentPath);
                             setResult(RESULT_OK, getIntent());
                             finish();
                         }
                     } else {
-                        getIntent().putExtra(RESULT_PATH, selectedPaths.toArray(new String[0]));
+                        getIntent().putExtra(RESULT_EXPORT_PATH, selectedPaths.toArray(new String[0]));
                         setResult(RESULT_OK, getIntent());
                         finish();
                     }
@@ -187,7 +188,7 @@ public class FileDialog extends ListActivity {
 
                 public void onClick(View v) {
                     if (mFileName.getText().length() > 0) {
-                        getIntent().putExtra(RESULT_PATH,
+                        getIntent().putExtra(RESULT_EXPORT_PATH,
                                              currentPath + "/" + mFileName.getText());
                         setResult(RESULT_OK, getIntent());
                         finish();
@@ -589,11 +590,13 @@ public class FileDialog extends ListActivity {
       switch (item.getItemId()) {
       case R.id.context_open:
         /* TODO: Open file */
+        getIntent().putExtra(RESULT_EXPORT_PATH, new String[0]);
+        getIntent().putExtra(RESULT_OPEN_PATH, path.get(info.position));
+        setResult(RESULT_OK, getIntent());
+        finish();
         return true;
       case R.id.context_export:
-        selectedPaths.clear();
-        selectedPaths.add(path.get(info.position));
-        getIntent().putExtra(RESULT_PATH, selectedPaths.toArray(new String[0]));
+        getIntent().putExtra(RESULT_EXPORT_PATH, new String[]{path.get(info.position)});
         setResult(RESULT_OK, getIntent());
         finish();
         return true;
