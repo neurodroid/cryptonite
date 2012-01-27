@@ -35,7 +35,9 @@
     <string name="no_warranty">This program is under development. Use at your own risk. It is distributed WITHOUT ANY WARRANTY.</string>
     <string name="understand">I understand</string>
     <string name="activity_not_found_title">Can\'t open this file</string>
-    <string name="activity_not_found_msg">Couldn\`t find any application for this file type"</string>
+    <string name="activity_not_found_msg">Couldn\'t find any application for this file type"</string>
+    <string name="content_type_not_found_title">Can\'t detect file type</string>
+    <string name="content_type_not_found_msg">Couldn\'t detect file type"</string>
     
     <!-- Dropbox -->
     <string name="dropbox_link">Link with Dropbox</string>

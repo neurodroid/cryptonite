@@ -69,6 +69,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 
+import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -1406,6 +1407,17 @@ public class Cryptonite extends Activity
         return true;
     }
     
+    private static String fileExt(String url) {
+        String ext = url.substring(url.lastIndexOf(".") );
+        if (ext.indexOf("?")>-1) {
+            ext = ext.substring(0,ext.indexOf("?"));
+        }
+        if (ext.indexOf("%")>-1) {
+            ext = ext.substring(0,ext.indexOf("%"));
+        }
+        return ext;
+    }
+    
     private boolean openEncFSFile(String encFSFilePath, String fileRoot, String dbEncFSPath, boolean isDB) {
         /* Log.d(TAG, "In openEncFSFile: encFSFilePath is " + encFSFilePath);
         Log.d(TAG, "In openEncFSFile: fileRoot is " + fileRoot);
@@ -1495,7 +1507,7 @@ public class Cryptonite extends Activity
             fos.write(buffer);
 
             fis.close();
-            
+            fos.close();
             /* Delete tmp directory */
             getPrivateDir("open", Context.MODE_WORLD_READABLE);
         } catch (IOException e) {
@@ -1506,25 +1518,38 @@ public class Cryptonite extends Activity
         }        
         
         /* Guess MIME type */
+        /*
         String contentType = URLConnection.guessContentTypeFromName(
-                Uri.fromFile(new File(readableFilePath)).getPath());
-        /* Log.d(TAG, "In openEncFSFile: contentType is " + contentType); */
-
+                Uri.fromFile(new File(readableFilePath)).getPath());*/
+        Uri data = Uri.fromFile(new File(readableFilePath));
+        
+        MimeTypeMap myMime = MimeTypeMap.getSingleton();
+        String contentType = myMime.getMimeTypeFromExtension(fileExt(readableFilePath).substring(1));
+               
+        Log.d(TAG, "In openEncFSFile: contentType is " + contentType);
+        
         /* This won't work because of file permission problems
         try {
-            FileInputStream fis = new FileInputStream(openFilePath);
+            FileInputStream fis = new FileInputStream(readableFilePath);
             contentType = URLConnection.guessContentTypeFromStream(fis);
             Log.d(TAG, "In openEncFSFile: contentType is " + contentType);
         } catch (IOException e) {
             // TODO Auto-generated catch block
-            Log.e(TAG, "Error while attempting to guess MIME type of " + openFilePath
+            Log.e(TAG, "Error while attempting to guess MIME type of " + readableFilePath
                     + ": " + e.toString());
             return false;
-        }*/
-        
+        } */
+
+
+        if (contentType == null) {
+            showAlert(getString(R.string.content_type_not_found_title), 
+                    getString(R.string.content_type_not_found_msg));
+            Log.e(TAG, "Couldn't find content type");
+            return false;
+        }
         Intent intent = new Intent();
         intent.setAction(android.content.Intent.ACTION_VIEW);
-        intent.setDataAndType(Uri.fromFile(new File(readableFilePath)), contentType);
+        intent.setDataAndType(data, contentType);
        
         try {
             startActivity(intent);
