@@ -26,24 +26,43 @@
        </Button>
 
        <Button
-           android:id="@+id/btnBrowseDropbox"
+           android:id="@+id/btnDropboxDecrypt"
            android:layout_width="0dp"
            android:layout_height="match_parent"
            android:layout_weight="1"
-           android:text="@string/dropbox_browse"
+           android:text="@string/dropbox_decrypt"
            android:typeface="normal" >
        </Button>
 
        <Button
-           android:id="@+id/btnBrowseLocal"
+           android:id="@+id/btnLocalDecrypt"
            android:layout_width="0dp"
            android:layout_height="match_parent"
            android:layout_weight="1"
-           android:text="@string/browse_local"
+           android:text="@string/local_decrypt"
            android:typeface="normal" >
        </Button>
    </TableRow>
+  <TableRow android:layout_width="wrap_content" >
 
+       <Button
+           android:id="@+id/btnBrowseDecrypted"
+           android:layout_width="0dp"
+           android:layout_height="match_parent"
+           android:layout_weight="1"
+           android:text="@string/browse_decrypted"
+           android:typeface="normal" >
+       </Button>
+
+       <Button
+           android:id="@+id/btnForgetDecryption"
+           android:layout_width="0dp"
+           android:layout_height="match_parent"
+           android:layout_weight="1"
+           android:text="@string/forget_decryption"
+           android:typeface="normal" >
+       </Button>
+   </TableRow>
   <TextView
       android:id="@+id/tvMountInfo" 
       android:text="@string/mount_info" 

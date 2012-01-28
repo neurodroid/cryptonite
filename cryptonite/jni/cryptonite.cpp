@@ -417,6 +417,8 @@ extern "C" {
     JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniFailure(JNIEnv * env, jobject thiz);
     JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniSuccess(JNIEnv * env, jobject thiz);
     JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniIsValidEncFS(JNIEnv * env, jobject thiz, jstring srcdir);
+    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniVolumeLoaded(JNIEnv * env, jobject thiz);
+    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniResetVolume(JNIEnv * env, jobject thiz);
     JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv * env, jobject thiz, jstring srcdir, jstring destdir, jstring password);
     JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniInit(JNIEnv* env, jobject thiz, jstring srcdir, jstring password);
     JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jobject thiz,
@@ -596,6 +598,17 @@ int checkGRoot() {
     }
 
     return EXIT_SUCCESS;
+}
+
+JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_jniVolumeLoaded(JNIEnv * env, jobject thiz)
+{
+    return checkGRoot();
+}
+
+JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_jniResetVolume(JNIEnv * env, jobject thiz)
+{
+    gRootInfo = RootPtr();
+    return checkGRoot() == EXIT_FAILURE;
 }
 
 int setupRootDir(JNIEnv* env, jstring srcdir, jstring password) {

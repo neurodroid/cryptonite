@@ -109,6 +109,8 @@ public class Cryptonite extends Activity
     private String currentDialogDBEncFS = "";
     private String currentDialogRootName = currentDialogRoot;
     private String currentReturnPath = "/";
+    private String currentBrowsePath = "/";
+    private String currentBrowseStartPath = "/";
     private String currentOpenPath = "/";
     private String currentPassword = "\0";
     private String encfsBrowseRoot = "/";
@@ -119,12 +121,17 @@ public class Cryptonite extends Activity
     private TextView tv;
     private TextView tvMountInfo;
     private String encfsversion, encfsoutput;
-    private Button buttonDropbox, buttonBrowseDropbox, buttonBrowseLocal, buttonMount, buttonViewMount;
+    private Button buttonDropbox, buttonDropboxDecrypt, buttonLocalDecrypt,
+        buttonBrowseDecrypted, buttonForgetDecryption,
+        buttonMount, buttonViewMount;
     private int opMode = -1;
+    private int prevMode = -1;
     private boolean alert = false;
     private String alertMsg = "";
  
     private boolean mLoggedIn = false;
+    private boolean mDropboxDecrypted = false;
+    private boolean mLocalDecrypted = false;
     private boolean hasFuse = false;
     private boolean triedLogin = false;
 
@@ -169,6 +176,8 @@ public class Cryptonite extends Activity
             tvMountInfo.setText(this.getString(R.string.mount_info_unsupported));
         }
         
+        boolean volumeLoaded = (jniVolumeLoaded() == jniSuccess());
+        
         /* Copy the encfs binaries to binDir and make executable.
          */
         if (!(new File(ENCFSBIN)).exists()) {
@@ -205,8 +214,8 @@ public class Cryptonite extends Activity
         buttonDropbox.setEnabled(true);
         
         /* Select source directory using a simple file dialog */
-        buttonBrowseDropbox = (Button)findViewById(R.id.btnBrowseDropbox);
-        buttonBrowseDropbox.setOnClickListener(new OnClickListener() {
+        buttonDropboxDecrypt = (Button)findViewById(R.id.btnDropboxDecrypt);
+        buttonDropboxDecrypt.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     opMode = SELECTDBENCFS_MODE;
                     currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
@@ -222,11 +231,11 @@ public class Cryptonite extends Activity
                     }                        
                 }});
 
-        buttonBrowseDropbox.setEnabled(mLoggedIn);
+        buttonDropboxDecrypt.setEnabled(mLoggedIn && !volumeLoaded);
         
         /* Select source directory using a simple file dialog */
-        buttonBrowseLocal = (Button)findViewById(R.id.btnBrowseLocal);
-        buttonBrowseLocal.setOnClickListener(new OnClickListener() {
+        buttonLocalDecrypt = (Button)findViewById(R.id.btnLocalDecrypt);
+        buttonLocalDecrypt.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     opMode = SELECTLOCALENCFS_MODE;
                     currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
@@ -246,13 +255,38 @@ public class Cryptonite extends Activity
                     }
                 }});
 
-        buttonBrowseLocal.setEnabled(true);
+        buttonLocalDecrypt.setEnabled(!volumeLoaded);
+
+        /* Select source directory using a simple file dialog */
+        buttonBrowseDecrypted = (Button)findViewById(R.id.btnBrowseDecrypted);
+        buttonBrowseDecrypted.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    if (mLocalDecrypted) {
+                        localBrowseEncFS();
+                    } else if (mDropboxDecrypted) {
+                        dbBrowseEncFS(currentBrowsePath, currentBrowseStartPath);
+                    }
+                    
+                }});
+
+        buttonBrowseDecrypted.setEnabled(volumeLoaded);
+        
+        /* Select source directory using a simple file dialog */
+        buttonForgetDecryption = (Button)findViewById(R.id.btnForgetDecryption);
+        buttonForgetDecryption.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    jniResetVolume();
+                    updateDecryptButtons();
+                }});
+
+        buttonForgetDecryption.setEnabled(volumeLoaded);
         
         /* Select source directory using a simple file dialog */
         buttonMount = (Button)findViewById(R.id.btnMount);
         buttonMount.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
                 if (!isMounted()) {
+                    prevMode = opMode;
                     opMode = MOUNT_MODE;
                     currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
                     currentDialogButtonLabel = Cryptonite.this.getString(R.string.select_enc_short);
@@ -275,7 +309,7 @@ public class Cryptonite extends Activity
                 } else {
                     String[] umountlist = {"umount", mntDir};
                     runBinary(umountlist, BINDIR, null, true);
-                    updateButtons();                        
+                    updateMountButtons();                        
                 }
             }});
 
@@ -291,6 +325,7 @@ public class Cryptonite extends Activity
         buttonViewMount = (Button)findViewById(R.id.btnViewMount);
         buttonViewMount.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
+                    prevMode = opMode;
                     opMode = VIEWMOUNT_MODE;
                     currentDialogStartPath = mntDir;
                     currentDialogRoot = "/";
@@ -304,16 +339,31 @@ public class Cryptonite extends Activity
                     } else {
                         launchFileBrowser(FILEPICK_MODE);
                     }
+                    opMode = prevMode;
                 }});
         
         hasFuse = supportsFuse();
-        updateButtons();
-
+        updateMountButtons();
+        updateDecryptButtons();
         showAlert(getString(R.string.disclaimer), getString(R.string.no_warranty),
                 getString(R.string.understand));
     }
 
-    private void updateButtons() {
+    private void updateDecryptButtons() {
+        boolean volumeLoaded = (jniVolumeLoaded() == jniSuccess());
+
+        buttonLocalDecrypt.setEnabled(!volumeLoaded);
+        buttonDropboxDecrypt.setEnabled(!volumeLoaded && mLoggedIn);
+        buttonBrowseDecrypted.setEnabled(volumeLoaded);
+        buttonForgetDecryption.setEnabled(volumeLoaded);
+        
+        if (!volumeLoaded) {
+            mDropboxDecrypted = false;
+            mLocalDecrypted = false;
+        }
+    }
+
+    private void updateMountButtons() {
         boolean ism = isMounted();
 
         Log.v(TAG, "EncFS mount state: " + ism + "; FUSE support: " + hasFuse);
@@ -665,6 +715,9 @@ public class Cryptonite extends Activity
                 dialog.show();
             }
         }
+        
+        updateMountButtons();
+        updateDecryptButtons();
     }
 
     /** Copy encfs to binDir and make executable */
@@ -856,7 +909,7 @@ public class Cryptonite extends Activity
                                     tv.setText(encfsversion + "\n" + encfsoutput);
                                 }
                                 nullPassword();
-                                updateButtons();
+                                updateMountButtons();
                             }
                         });
                 }
@@ -867,7 +920,7 @@ public class Cryptonite extends Activity
     /** This will use the encfs library to create a file tree with empty
      *  files that can be browsed.
      */
-    private void localBrowseEncFS(final String srcDir, String pwd) {
+    private void localDecryptEncFS(final String srcDir, String pwd) {
         tv.setText(encfsversion);
         tv.invalidate();
 
@@ -876,7 +929,9 @@ public class Cryptonite extends Activity
             Log.v(TAG, "Invalid EncFS");
             return;
         }
-
+        
+        alertMsg = "";
+        
         final File browseDirF = getPrivateDir("browse");
         
         final ProgressDialog pd = ProgressDialog.show(this,
@@ -885,12 +940,40 @@ public class Cryptonite extends Activity
         new Thread(new Runnable(){
                 public void run(){
                     if (jniBrowse(srcDir, browseDirF.getPath(), currentPassword) != jniSuccess()) {
-                        Log.v(TAG, getString(R.string.browse_failed));
-                        currentDialogStartPath = "";
+                        alertMsg = getString(R.string.browse_failed);
+                        Log.v(TAG, alertMsg);
                     } else {
-                        currentDialogStartPath = browseDirF.getPath();
                         Log.v(TAG, "Decoding succeeded");
-                    }
+                    }                    
+                    runOnUiThread(new Runnable(){
+                            public void run() {
+                                if (pd.isShowing())
+                                    pd.dismiss();
+                                nullPassword();
+                                updateDecryptButtons();
+                                mLocalDecrypted = true;
+                                if (alertMsg.length()!=0) {
+                                    showAlert(alertMsg);
+                                }
+                            }
+                        });
+                }
+            }).start();
+            
+    }
+
+    /** This will use the encfs library to create a file tree with empty
+     *  files that can be browsed.
+     */
+    private void localBrowseEncFS() {
+        final File browseDirF = getPrivateDir("browse");
+        
+        final ProgressDialog pd = ProgressDialog.show(this,
+                                                      this.getString(R.string.wait_msg),
+                                                      this.getString(R.string.running_encfs), true);
+        new Thread(new Runnable(){
+                public void run(){
+                    currentDialogStartPath = browseDirF.getPath();
                     currentDialogLabel = getString(R.string.select_file_export);
                     currentDialogButtonLabel = getString(R.string.export);
                     currentDialogRoot = currentDialogStartPath;
@@ -902,20 +985,15 @@ public class Cryptonite extends Activity
                             public void run() {
                                 if (pd.isShowing())
                                     pd.dismiss();
-                                nullPassword();
-                                if (!(currentDialogStartPath.length()==0)) {
-                                    opMode = SELECTLOCALEXPORT_MODE;
-                                    launchBuiltinFileBrowser();
-                                } else {
-                                    showAlert(getString(R.string.browse_failed));
-                                }
+                                opMode = SELECTLOCALEXPORT_MODE;
+                                launchBuiltinFileBrowser();
                             }
                         });
                 }
             }).start();
             
     }
-    
+
     private Entry getDBEntry(String dbPath) throws DropboxException {
         String hash = null;
         if (dbHashMap.containsKey(dbPath)) {
@@ -941,7 +1019,7 @@ public class Cryptonite extends Activity
     /** This will use the encfs library to create a file tree with empty
      *  files that can be browsed.
      */
-    private void dbBrowseEncFS(final String srcDir, String pwd) {
+    private void dbDecryptEncFS(final String srcDir, String pwd) {
         tv.setText(encfsversion);
         tv.invalidate();
 
@@ -984,7 +1062,47 @@ public class Cryptonite extends Activity
             Log.v(TAG, "Invalid EncFS");
             return;
         }
-
+        alertMsg = "";
+        final ProgressDialog pd = ProgressDialog.show(this, 
+                this.getString(R.string.wait_msg), 
+                this.getString(R.string.running_encfs), true);
+        new Thread(new Runnable(){
+                public void run(){
+                    /* Order is important here: DB root has to store
+                     * the previous state of the dialog root.
+                     */
+                    currentBrowsePath = currentReturnPath;
+                    currentBrowseStartPath = currentDialogStartPath;
+                    currentDialogDBEncFS = currentReturnPath.substring(currentDialogStartPath.length());
+                    Log.i(TAG, "Dialog DB root is " + currentReturnPath);
+                    if (jniInit(srcDir, currentPassword) != jniSuccess()) {
+                        Log.v(TAG, getString(R.string.browse_failed));
+                        alertMsg = getString(R.string.browse_failed);
+                    } else {
+                        Log.v(TAG, "Decoding succeeded");
+                    }
+                    runOnUiThread(new Runnable(){
+                            public void run() {
+                                if (pd.isShowing())
+                                    pd.dismiss();
+                                nullPassword();
+                                updateDecryptButtons();
+                                mDropboxDecrypted = true;
+                                if (alertMsg.length()!=0) {
+                                    showAlert(alertMsg);
+                                }
+                            }
+                        });
+                }
+            }).start();
+            
+    }
+ 
+    /** This will use the encfs library to create a file tree with empty
+     *  files that can be browsed.
+     */
+    private void dbBrowseEncFS(final String browsePath, final String browseStartPath) {
+ 
         final File browseDirF = getPrivateDir("dropbox");
         
         final ProgressDialog pd = ProgressDialog.show(this, 
@@ -995,15 +1113,9 @@ public class Cryptonite extends Activity
                     /* Order is important here: DB root has to store
                      * the previous state of the dialog root.
                      */
-                    currentDialogDBEncFS = currentReturnPath.substring(currentDialogStartPath.length());
-                    Log.i(TAG, "Dialog DB root is " + currentReturnPath);
-                    if (jniInit(srcDir, currentPassword) != jniSuccess()) {
-                        Log.v(TAG, getString(R.string.browse_failed));
-                        currentDialogStartPath = "";
-                    } else {
-                        currentDialogStartPath = browseDirF.getPath();
-                        Log.v(TAG, "Decoding succeeded");
-                    }
+                    currentDialogDBEncFS = browsePath.substring(browseStartPath.length());
+                    Log.i(TAG, "Dialog DB root is " + browsePath);
+                    currentDialogStartPath = browseDirF.getPath();
                     currentDialogLabel = getString(R.string.select_file_export);
                     currentDialogButtonLabel = getString(R.string.export);
                     currentDialogRoot = currentDialogStartPath;
@@ -1014,13 +1126,8 @@ public class Cryptonite extends Activity
                             public void run() {
                                 if (pd.isShowing())
                                     pd.dismiss();
-                                nullPassword();
-                                if (!(currentDialogStartPath.length()==0)) {
-                                    opMode = SELECTDBEXPORT_MODE;
-                                    launchBuiltinFileBrowser();
-                                } else {
-                                    showAlert(getString(R.string.browse_failed));
-                                }
+                                opMode = SELECTDBEXPORT_MODE;
+                                launchBuiltinFileBrowser();
                             }
                         });
                 }
@@ -1089,12 +1196,14 @@ public class Cryptonite extends Activity
                              switch (opMode) {
                               case MOUNT_MODE:
                                   mountEncFS(currentReturnPath, currentPassword);
+                                  opMode = prevMode;
                                   break;
                               case SELECTLOCALENCFS_MODE:
-                                  localBrowseEncFS(currentReturnPath, currentPassword);
+                                  localDecryptEncFS(currentReturnPath, currentPassword);
                                   break;
                               case SELECTDBENCFS_MODE:
-                                  dbBrowseEncFS(currentReturnPath, currentPassword);
+                                  dbDecryptEncFS(currentReturnPath, currentPassword);
+                                  break;
                              }
                          } else {
                              showAlert(getString(R.string.empty_password));
@@ -1307,10 +1416,14 @@ public class Cryptonite extends Activity
         mLoggedIn = loggedIn;
         if (loggedIn) {
             buttonDropbox.setText(R.string.dropbox_unlink);
-            buttonBrowseDropbox.setEnabled(true);
+            buttonDropboxDecrypt.setEnabled(true);
         } else {
             buttonDropbox.setText(R.string.dropbox_link);
-            buttonBrowseDropbox.setEnabled(false);
+            buttonDropboxDecrypt.setEnabled(false);
+            if (mDropboxDecrypted) {
+                jniResetVolume();
+                updateDecryptButtons();
+            }
         }
     }
 
@@ -1525,9 +1638,6 @@ public class Cryptonite extends Activity
         }        
         
         /* Guess MIME type */
-        /*
-        String contentType = URLConnection.guessContentTypeFromName(
-                Uri.fromFile(new File(readableFilePath)).getPath());*/
         Uri data = Uri.fromFile(new File(readableFilePath));
         
         MimeTypeMap myMime = MimeTypeMap.getSingleton();
@@ -1536,8 +1646,6 @@ public class Cryptonite extends Activity
         Log.d(TAG, "In openEncFSFile: contentType from extension is " + contentType);
         
         if (contentType == null) {
-        
-            /* This won't work because of file permission problems */
             try {
                 FileInputStream fis = new FileInputStream(readableFilePath);
                 contentType = URLConnection.guessContentTypeFromStream(fis);
@@ -1546,14 +1654,14 @@ public class Cryptonite extends Activity
                 // TODO Auto-generated catch block
                 Log.e(TAG, "Error while attempting to guess MIME type of " + readableFilePath
                         + ": " + e.toString());
-                return false;
+                contentType = null;
             }
         }
 
         if (contentType == null) {
             // Toast.makeText(getBaseContext(), getString(R.string.content_type_not_found_msg), Toast.LENGTH_LONG);
             
-            Log.e(TAG, "Couldn't find content type; trying as text/plain");
+            Log.e(TAG, "Couldn't find content type; resorting to text/plain");
             contentType = "text/plain";
         }
         
@@ -1580,6 +1688,8 @@ public class Cryptonite extends Activity
     public native int     jniFailure();
     public native int     jniSuccess();
     public native int     jniIsValidEncFS(String srcDir);
+    public native int     jniVolumeLoaded();
+    public native int     jniResetVolume();
     public native int     jniBrowse(String srcDir, String destDir, String password);
     public native int     jniInit(String srcDir, String password);
     public native int     jniExport(String[] exportPaths, String exportRoot, String destDir);

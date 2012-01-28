@@ -35,15 +35,17 @@
     <string name="no_warranty">This program is under development. Use at your own risk. It is distributed WITHOUT ANY WARRANTY.</string>
     <string name="understand">I understand</string>
     <string name="activity_not_found_title">Can\'t open this file</string>
-    <string name="activity_not_found_msg">Couldn\'t find any application for this file type"</string>
+    <string name="activity_not_found_msg">Couldn\'t find any application for this file type</string>
     <string name="content_type_not_found_title">Can\'t detect file type</string>
-    <string name="content_type_not_found_msg">Couldn\'t detect file type"</string>
+    <string name="content_type_not_found_msg">Couldn\'t detect file type</string>
+    <string name="browse_decrypted">Browse decrypted folder</string>
+    <string name="forget_decryption">Forget decryption</string>
     
     <!-- Dropbox -->
     <string name="dropbox_link">Link with Dropbox</string>
     <string name="dropbox_unlink">Unlink from Dropbox</string>
     <string name="dropbox_reading">Reading Dropbox&#8230;</string>
-    <string name="dropbox_browse">Decrypt Dropbox folder</string>
+    <string name="dropbox_decrypt">Decrypt Dropbox folder</string>
     <string name="dropbox_auth_fail">"Couldn\'t authenticate with Dropbox</string>
     <string name="dropbox_read_fail">"Problem reading from Dropbox"</string>
     <string name="dropbox_service_started">"db_running"</string>
@@ -78,7 +80,7 @@
     <string name="context_export">Export</string>
     
     <!-- Button labels -->
-    <string name="browse_local">Decrypt local folder</string>
+    <string name="local_decrypt">Decrypt local folder</string>
     <string name="mount">Mount</string>
     <string name="unmount">Unmount</string>
     <string name="viewmount">View mounted</string>
