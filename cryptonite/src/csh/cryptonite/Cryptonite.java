@@ -102,6 +102,10 @@ public class Cryptonite extends Activity
     public static final String ENCFSCTLBIN = BINDIR + "/encfsctl";
     public static final String TAG = "cryptonite";
 
+    private static final String BROWSEPNT = "browse";
+    private static final String OPENPNT = "open";
+    private static final String DROPBOXPNT = "dropbox";
+
     private String currentDialogStartPath = "/";
     private String currentDialogLabel = "";
     private String currentDialogButtonLabel = "OK";
@@ -222,7 +226,7 @@ public class Cryptonite extends Activity
                     currentDialogButtonLabel = Cryptonite.this.getString(
                             R.string.select_enc_short);
                     currentDialogMode = SelectionMode.MODE_OPEN_DB;
-                    currentDialogStartPath = getPrivateDir("browse").getPath();
+                    currentDialogStartPath = getPrivateDir(BROWSEPNT).getPath();
                     currentDialogRoot = currentDialogStartPath;
                     currentDialogRootName = getString(R.string.dropbox_root_name);
                     currentDialogDBEncFS = "";
@@ -276,6 +280,13 @@ public class Cryptonite extends Activity
         buttonForgetDecryption.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     jniResetVolume();
+                    
+                    /* Delete directories */
+                    deleteDir(getBaseContext().getFilesDir());
+                    deleteDir(getBaseContext().getDir(BROWSEPNT, Context.MODE_WORLD_READABLE));
+                    deleteDir(getBaseContext().getDir(OPENPNT, Context.MODE_WORLD_READABLE));
+                    deleteDir(getBaseContext().getDir(DROPBOXPNT, Context.MODE_WORLD_READABLE));
+                    
                     updateDecryptButtons();
                 }});
 
@@ -932,7 +943,7 @@ public class Cryptonite extends Activity
         
         alertMsg = "";
         
-        final File browseDirF = getPrivateDir("browse");
+        final File browseDirF = getPrivateDir(BROWSEPNT);
         
         final ProgressDialog pd = ProgressDialog.show(this,
                                                       this.getString(R.string.wait_msg),
@@ -966,7 +977,7 @@ public class Cryptonite extends Activity
      *  files that can be browsed.
      */
     private void localBrowseEncFS() {
-        final File browseDirF = getPrivateDir("browse");
+        final File browseDirF = getPrivateDir(BROWSEPNT);
         
         final ProgressDialog pd = ProgressDialog.show(this,
                                                       this.getString(R.string.wait_msg),
@@ -1103,7 +1114,7 @@ public class Cryptonite extends Activity
      */
     private void dbBrowseEncFS(final String browsePath, final String browseStartPath) {
  
-        final File browseDirF = getPrivateDir("dropbox");
+        final File browseDirF = getPrivateDir(DROPBOXPNT);
         
         final ProgressDialog pd = ProgressDialog.show(this, 
                 this.getString(R.string.wait_msg), 
@@ -1559,7 +1570,7 @@ public class Cryptonite extends Activity
         String encodedPath = jniEncode(stripstr);
 
         /* Set up temp dir for decrypted file */
-        File openDir = getPrivateDir("open", Context.MODE_WORLD_READABLE);
+        File openDir = getPrivateDir(OPENPNT, Context.MODE_WORLD_READABLE);
         String destPath = openDir.getPath() + (new File(bPath)).getParent().substring(bRoot.length());
 
         /* Log.d(TAG, "In openEncFSFile: encodedPath is " + encodedPath);
@@ -1629,7 +1640,7 @@ public class Cryptonite extends Activity
             fis.close();
             fos.close();
             /* Delete tmp directory */
-            getPrivateDir("open", Context.MODE_WORLD_READABLE);
+            getPrivateDir(OPENPNT, Context.MODE_WORLD_READABLE);
         } catch (IOException e) {
             // TODO Auto-generated catch block
             Log.e(TAG, "Error while attempting to open " + readableName
