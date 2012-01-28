@@ -2,9 +2,7 @@ TODO
 ====
 
 MAJOR
-* View decrypted Dropbox files directly without exporting them first.
-* Separate file decryption from file browsing so that volumes can
-  be re-used.
+* Upload files to EncFS volumes.
 
 MINOR
 * Add symbol icons to buttons.
@@ -12,12 +10,14 @@ MINOR
 CODE
 * Clean up path mess. It's a disgrace to intelligent life.
 * Clean up file browser setup mess
-* Minimise Dropbox metadata calls
 
 DONE
 ====
 
 MAJOR
+X View decrypted Dropbox files directly without exporting them first.
+X Separate file decryption from file browsing so that volumes can
+  be re-used.
 X Implement Dropbox support
 X Implement multiselect export
 
@@ -27,3 +27,7 @@ X Use same button for connect / disconnect from Dropbox
 X Use 2-column table layout
 X Don't do a full recursion; check for labelled parent instead.
 X Check whether child directory is fully labelled
+
+CODE
+
+X Minimise Dropbox metadata calls
