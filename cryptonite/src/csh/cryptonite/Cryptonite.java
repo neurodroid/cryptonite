@@ -267,7 +267,7 @@ public class Cryptonite extends Activity
         buttonBrowseDecrypted.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     if (mLocalDecrypted) {
-                        localBrowseEncFS();
+                        localBrowseEncFS(currentBrowsePath);
                     } else if (mDropboxDecrypted) {
                         dbBrowseEncFS(currentBrowsePath, currentBrowseStartPath);
                     }
@@ -952,6 +952,7 @@ public class Cryptonite extends Activity
                                                       this.getString(R.string.running_encfs), true);
         new Thread(new Runnable(){
                 public void run(){
+                    currentBrowsePath = browseDirF.getPath();
                     if (jniBrowse(srcDir, browseDirF.getPath(), currentPassword) != jniSuccess()) {
                         alertMsg = getString(R.string.browse_failed);
                         Log.v(TAG, alertMsg);
@@ -978,15 +979,13 @@ public class Cryptonite extends Activity
     /** This will use the encfs library to create a file tree with empty
      *  files that can be browsed.
      */
-    private void localBrowseEncFS() {
-        final File browseDirF = getPrivateDir(BROWSEPNT);
-        
+    private void localBrowseEncFS(final String browseDir) {
         final ProgressDialog pd = ProgressDialog.show(this,
                                                       this.getString(R.string.wait_msg),
                                                       this.getString(R.string.running_encfs), true);
         new Thread(new Runnable(){
                 public void run(){
-                    currentDialogStartPath = browseDirF.getPath();
+                    currentDialogStartPath = browseDir;
                     currentDialogLabel = getString(R.string.select_file_export);
                     currentDialogButtonLabel = getString(R.string.export);
                     currentDialogRoot = currentDialogStartPath;
