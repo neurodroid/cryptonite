@@ -368,6 +368,13 @@ public class Cryptonite extends Activity
             String encFSLocalRoot)
             throws IOException, DropboxException
     {
+        return dbDownloadDecode(srcPath, targetDir, encFSDBRoot, encFSLocalRoot, false);
+    }
+    
+    private boolean dbDownloadDecode(String srcPath, String targetDir, String encFSDBRoot, 
+                                     String encFSLocalRoot, boolean forceReadable)
+            throws IOException, DropboxException
+    {
         String cachePath = encFSLocalRoot + srcPath;
         (new File(cachePath)).getParentFile().mkdirs();
 
@@ -380,7 +387,7 @@ public class Cryptonite extends Activity
     
         /* TODO: Decode and copy file to target dir */
         // Log.d(TAG, "Copying " + encFSLocalRoot + " + " + srcPath + " to " + targetDir);
-        return (jniCopy(encFSLocalRoot + srcPath, targetDir) == jniSuccess());
+        return (jniCopy(encFSLocalRoot + srcPath, targetDir, forceReadable) == jniSuccess());
     }
 
     /* TODO: Use Entry rather than String for currentPath */
@@ -1463,7 +1470,7 @@ public class Cryptonite extends Activity
             /* TODO: implement this */
             try {
                 if (!dbDownloadDecode(dbPath.substring(dbEncFSPath.length()),
-                        openDir.getPath(), encFSDBRoot, encFSLocalRoot))
+                                      openDir.getPath(), encFSDBRoot, encFSLocalRoot, true))
                 {
                     Log.e(TAG, "Error while attempting to copy " + encodedPath);
                     return false;
@@ -1480,7 +1487,7 @@ public class Cryptonite extends Activity
         } else {
             /* Copy decrypted file */
             // Log.d(TAG, "Copying " + encodedPath + " to " + openDir.getPath());
-            if (jniCopy(encodedPath, openDir.getPath()) != jniSuccess()) {
+            if (jniCopy(encodedPath, openDir.getPath(), true) != jniSuccess()) {
                 Log.e(TAG, "Error while attempting to copy " + encodedPath);
                 return false;
             }
@@ -1573,7 +1580,7 @@ public class Cryptonite extends Activity
     public native int     jniBrowse(String srcDir, String destDir, String password);
     public native int     jniInit(String srcDir, String password);
     public native int     jniExport(String[] exportPaths, String exportRoot, String destDir);
-    public native int     jniCopy(String encodedName, String destDir);
+    public native int     jniCopy(String encodedName, String destDir, boolean forceReadable);
     public static native String  jniDecode(String name);
     public static native String  jniEncode(String name);
     public native String  jniVersion();

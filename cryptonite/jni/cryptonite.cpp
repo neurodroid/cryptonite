@@ -422,7 +422,7 @@ extern "C" {
     JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jobject thiz,
                                                                        jobjectArray exportpaths, jstring exportroot,
                                                                        jstring destdir);
-    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniCopy(JNIEnv * env, jobject thiz, jstring encodedname, jstring destdir);
+    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniCopy(JNIEnv * env, jobject thiz, jstring encodedname, jstring destdir, jboolean force_readable);
     JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniDecode(JNIEnv * env, jobject thiz, jstring encodedname);
     JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniEncode(JNIEnv * env, jobject thiz, jstring decodedname);
     JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniVersion(JNIEnv * env, jobject thiz);
@@ -741,7 +741,8 @@ Java_csh_cryptonite_Cryptonite_jniEncode(JNIEnv* env, jobject thiz, jstring deco
 }
 
 JNIEXPORT jint JNICALL
-Java_csh_cryptonite_Cryptonite_jniCopy(JNIEnv* env, jobject thiz, jstring encodedname, jstring destdir)
+Java_csh_cryptonite_Cryptonite_jniCopy(JNIEnv* env, jobject thiz, jstring encodedname,
+                                       jstring destdir, jboolean force_readable)
 {
     int res = checkGRoot();
 
@@ -794,8 +795,12 @@ Java_csh_cryptonite_Cryptonite_jniCopy(JNIEnv* env, jobject thiz, jstring encode
             LOGE(out.str().c_str());
             return EXIT_FAILURE;
         }
+
+        mode_t srcmode = st.st_mode;
+        if (force_readable)
+            srcmode = S_IRWXU;
         
-        int outfd = creat(destname.c_str(), S_IRWXU); // st.st_mode);
+        int outfd = creat(destname.c_str(), srcmode);
 
         if (outfd == -1) {
             if (errno == EACCES /* sic! */ || errno == EROFS || errno == ENOSPC) {
