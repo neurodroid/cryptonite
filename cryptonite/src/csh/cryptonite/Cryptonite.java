@@ -140,8 +140,6 @@ public class Cryptonite extends Activity
     private boolean hasFuse = false;
     private boolean triedLogin = false;
 
-    private HashMap<String, Entry> dbHashMap = new HashMap<String, Entry>();
-
     // If you'd like to change the access type to the full Dropbox instead of
     // an app folder, change this value.
     final static private AccessType ACCESS_TYPE = AccessType.DROPBOX;
@@ -163,6 +161,8 @@ public class Cryptonite extends Activity
 
         getResources();
 
+        cleanUpDecrypted();
+        
         encfsversion = "EncFS " + jniVersion();
         Log.v(TAG, encfsversion);
         tv = (TextView)findViewById(R.id.tvVersion);
@@ -280,15 +280,7 @@ public class Cryptonite extends Activity
         buttonForgetDecryption = (Button)findViewById(R.id.btnForgetDecryption);
         buttonForgetDecryption.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-                    jniResetVolume();
-                    
-                    /* Delete directories */
-                    deleteDir(getBaseContext().getFilesDir());
-                    deleteDir(getBaseContext().getDir(BROWSEPNT, Context.MODE_WORLD_READABLE));
-                    deleteDir(getBaseContext().getDir(OPENPNT, Context.MODE_WORLD_READABLE));
-                    deleteDir(getBaseContext().getDir(DROPBOXPNT, Context.MODE_WORLD_READABLE));
-                    deleteDir(getBaseContext().getDir(READPNT, Context.MODE_WORLD_READABLE));
-                    
+                    cleanUpDecrypted();
                     updateDecryptButtons();
                 }});
 
@@ -360,6 +352,17 @@ public class Cryptonite extends Activity
         updateDecryptButtons();
         showAlert(getString(R.string.disclaimer), getString(R.string.no_warranty),
                 getString(R.string.understand));
+    }
+
+    private void cleanUpDecrypted() {
+        jniResetVolume();
+        
+        /* Delete directories */
+        deleteDir(getBaseContext().getFilesDir());
+        deleteDir(getBaseContext().getDir(BROWSEPNT, Context.MODE_WORLD_READABLE));
+        deleteDir(getBaseContext().getDir(OPENPNT, Context.MODE_WORLD_READABLE));
+        deleteDir(getBaseContext().getDir(DROPBOXPNT, Context.MODE_WORLD_READABLE));
+        deleteDir(getBaseContext().getDir(READPNT, Context.MODE_WORLD_READABLE));
     }
 
     private void updateDecryptButtons() {
@@ -486,7 +489,7 @@ public class Cryptonite extends Activity
         
         /* Find file in Dropbox */
         /* Log.d(TAG, "Retrieving " + dbPath + " from Dropbox"); */
-        Entry dbEntry = getDBEntry(dbPath);
+        Entry dbEntry = ((CryptoniteApp) getApplication()).getDBEntry(dbPath);
         
         if (dbEntry.isDir) {
             /* Create the decoded directory */
@@ -687,7 +690,7 @@ public class Cryptonite extends Activity
                 TokenPair tokens = session.getAccessTokenPair();
                 storeKeys(tokens.key, tokens.secret);
                 
-                dbHashMap.clear();
+                ((CryptoniteApp) getApplication()).clearDBHashMap();
                 
                 setLoggedIn(true);
             } catch (IllegalStateException e) {
@@ -730,6 +733,7 @@ public class Cryptonite extends Activity
         }
         
         updateMountButtons();
+      
         updateDecryptButtons();
     }
 
@@ -1006,27 +1010,7 @@ public class Cryptonite extends Activity
             
     }
 
-    private Entry getDBEntry(String dbPath) throws DropboxException {
-        String hash = null;
-        if (dbHashMap.containsKey(dbPath)) {
-            Log.d(TAG, "Found hash for " + dbPath);
-            hash = dbHashMap.get(dbPath).hash;
-        }
-        try {
-            Entry dbEntry = ((CryptoniteApp) getApplication()).getDBApi()
-                    .metadata(dbPath, 0, hash, true, null);
-            if (hash == null) {
-                dbHashMap.put(dbPath, dbEntry);
-            }
-            return dbEntry;
-        } catch (DropboxServerException e) {
-            if (e.error == DropboxServerException._304_NOT_MODIFIED) {
-                return dbHashMap.get(dbPath);
-            } else {
-                throw e;
-            }
-        }
-    }
+
     
     /** This will use the encfs library to create a file tree with empty
      *  files that can be browsed.
@@ -1042,7 +1026,7 @@ public class Cryptonite extends Activity
         String encfsXmlRegex = "\\.encfs.\\.xml";
         
         try {
-            Entry dbEntry = getDBEntry(dbPath); 
+            Entry dbEntry = ((CryptoniteApp) getApplication()).getDBEntry(dbPath); 
             if (dbEntry != null) {
                 if (dbEntry.isDir) {
                     if (dbEntry.contents != null) {
@@ -1415,7 +1399,7 @@ public class Cryptonite extends Activity
         // Clear our stored keys
         clearKeys();
         
-        dbHashMap.clear();
+        ((CryptoniteApp) getApplication()).clearDBHashMap();
         
         // Change UI state to display logged out version
         setLoggedIn(false);

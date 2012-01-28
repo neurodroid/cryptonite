@@ -474,41 +474,6 @@ public class FileDialog extends ListActivity {
         }
     }
 
-    /** Avoid recursion for performance reasons */
-    /*
-    private void addChildrenRecursively(File f) {
-        selectedPaths.add(f.getPath());
-        if (f.isDirectory()) {
-            File[] fileList = f.listFiles();
-            if (fileList != null && fileList.length > 0) {
-                for (File child : fileList) {
-                    if (child.isDirectory()) {
-                        addChildrenRecursively(child);
-                    } else {
-                        selectedPaths.add(child.getPath());
-                    }
-                }
-            }
-        }
-    }
-
-    private void removeChildrenRecursively(File f) {
-        selectedPaths.remove(f.getPath());
-        if (f.isDirectory()) {
-            File[] fileList = f.listFiles();
-            if (fileList != null && fileList.length > 0) {
-                for (File child : fileList) {
-                    if (child.isDirectory()) {
-                        removeChildrenRecursively(child);
-                    } else {
-                        selectedPaths.remove(child.getPath());
-                    }
-                }
-            }
-        }
-    }
-    */
-
     @Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 
@@ -604,13 +569,6 @@ public class FileDialog extends ListActivity {
         return super.onContextItemSelected(item);
       }
     }
-//    private void setCreateVisible(View v) {
-//        layoutCreate.setVisibility(View.VISIBLE);
-//        layoutSelect.setVisibility(View.GONE);
-//
-//        inputManager.hideSoftInputFromWindow(v.getWindowToken(), 0);
-//        selectButton.setEnabled(false);
-//    }
 
     private void setSelectVisible(View v) {
         layoutCreate.setVisibility(View.GONE);
@@ -620,73 +578,6 @@ public class FileDialog extends ListActivity {
         selectButton.setEnabled(false);
     }
     
-    
-    private void dbRecursive(Entry dbPath, Set<String> dbTree) throws DropboxException {
-        dbTree.add(dbPath.path);
-        Log.i(Cryptonite.TAG, dbPath.path);
-        if (dbPath != null) {
-            if (dbPath.isDir) {
-                if (dbPath.contents != null) {
-                    if (dbPath.contents.size()>0) {
-                        for (Entry dbChild : dbPath.contents) {
-                            if (dbChild.isDir) {
-                                dbChild = ((CryptoniteApp) getApplication()).getDBApi().metadata(dbChild.path, 0, null, true, null);
-                                dbRecursive(dbChild, dbTree);
-                            } else {
-                                dbTree.add(dbPath.path);
-                                Log.i(Cryptonite.TAG, dbPath.path);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    private String[] dbRead() throws DropboxException {
-        Set<String> dbTree = new HashSet<String>();
-        
-        Entry root = ((CryptoniteApp) getApplication()).getDBApi().metadata("/", 0, null, true, null);
-        Log.i(Cryptonite.TAG, root.toString());
-        
-        if (root != null) {
-            dbRecursive(root, dbTree);
-        }
-        
-        return dbTree.toArray(new String[0]);
-        
-    }
-    
-    @SuppressWarnings("unused")
-    private void dbBrowse() {
-        alertMsg = "";
-        
-        final ProgressDialog pd = ProgressDialog.show(FileDialog.this,
-                getString(R.string.wait_msg),
-                getString(R.string.dropbox_reading), true);
-        new Thread(new Runnable(){
-            public void run(){
-                String[] dbTree;
-                try {
-                    dbTree = dbRead();
-                } catch (DropboxException e) {
-                    alertMsg = e.toString();
-                }
-                runOnUiThread(new Runnable(){
-                    public void run() {
-                        if (pd.isShowing())
-                            pd.dismiss();
-                        if (!alertMsg.equals("")) {
-                            Toast.makeText(FileDialog.this, getString(R.string.dropbox_read_fail) +
-                                    alertMsg, Toast.LENGTH_LONG);
-                            alertMsg = "";
-                        }
-                    }
-                });
-            }
-        }).start();
-    }
-
     private void dbBuildDir(final String dirPath, final String rootPath, final String rootName,
             final String dbEncFSPath)
     {
@@ -723,8 +614,8 @@ public class FileDialog extends ListActivity {
                         encodedPath = Cryptonite.jniEncode(dbPath).substring(prevDBRoot.length()-1); 
                     }
                     // Log.i(Cryptonite.TAG, "Retrieving " + encodedPath + " from Dropbox");
-                    Entry dbEntry = ((CryptoniteApp) getApplication()).getDBApi()
-                            .metadata(encodedPath, 0, null, true, null);
+                    Entry dbEntry = ((CryptoniteApp) getApplication()).getDBEntry(encodedPath);
+
                     if (dbEntry != null) {
                         if (dbEntry.isDir) {
                             if (dbEntry.contents != null) {
