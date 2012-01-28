@@ -105,6 +105,7 @@ public class Cryptonite extends Activity
     private static final String BROWSEPNT = "browse";
     private static final String OPENPNT = "open";
     private static final String DROPBOXPNT = "dropbox";
+    private static final String READPNT = "read";
 
     private String currentDialogStartPath = "/";
     private String currentDialogLabel = "";
@@ -286,6 +287,7 @@ public class Cryptonite extends Activity
                     deleteDir(getBaseContext().getDir(BROWSEPNT, Context.MODE_WORLD_READABLE));
                     deleteDir(getBaseContext().getDir(OPENPNT, Context.MODE_WORLD_READABLE));
                     deleteDir(getBaseContext().getDir(DROPBOXPNT, Context.MODE_WORLD_READABLE));
+                    deleteDir(getBaseContext().getDir(READPNT, Context.MODE_WORLD_READABLE));
                     
                     updateDecryptButtons();
                 }});
@@ -1620,14 +1622,13 @@ public class Cryptonite extends Activity
         /* Copy the resulting file to a readable folder */
         String openFilePath = openDir.getPath() + stripstr;
         String readableName = (new File(encFSFilePath)).getName();
-        String readableFilePath = "";
+        File readableDir = getPrivateDir(READPNT, Context.MODE_WORLD_READABLE);
+        String readablePath = readableDir.getPath() + "/" + readableName;
         try {
-            FileOutputStream fos = getBaseContext().openFileOutput(readableName,
-                    Context.MODE_WORLD_READABLE);
-            readableFilePath = getBaseContext().getFileStreamPath(readableName).getPath();
+            FileOutputStream fos = new FileOutputStream(new File(readablePath));
 
-            /* Log.d(TAG, "In openEncFSFile: openFilePath is " + openFilePath);
-            Log.d(TAG, "In openEncFSFile: readableFilePath is " + readableFilePath); */
+            Log.d(TAG, "In openEncFSFile: openFilePath is " + openFilePath);
+            Log.d(TAG, "In openEncFSFile: readablePath is " + readablePath);
             
             FileInputStream fis = new FileInputStream(new File(openFilePath));
 
@@ -1639,6 +1640,11 @@ public class Cryptonite extends Activity
 
             fis.close();
             fos.close();
+
+            /* Make world readable */
+            String[] chmodlist = {getChmod(), "644", readablePath};
+            runBinary(chmodlist, BINDIR);
+            
             /* Delete tmp directory */
             getPrivateDir(OPENPNT, Context.MODE_WORLD_READABLE);
         } catch (IOException e) {
@@ -1649,21 +1655,21 @@ public class Cryptonite extends Activity
         }        
         
         /* Guess MIME type */
-        Uri data = Uri.fromFile(new File(readableFilePath));
+        Uri data = Uri.fromFile(new File(readablePath));
         
         MimeTypeMap myMime = MimeTypeMap.getSingleton();
-        String contentType = myMime.getMimeTypeFromExtension(fileExt(readableFilePath).substring(1));
+        String contentType = myMime.getMimeTypeFromExtension(fileExt(readablePath).substring(1));
                
         Log.d(TAG, "In openEncFSFile: contentType from extension is " + contentType);
         
         if (contentType == null) {
             try {
-                FileInputStream fis = new FileInputStream(readableFilePath);
+                FileInputStream fis = new FileInputStream(readablePath);
                 contentType = URLConnection.guessContentTypeFromStream(fis);
                 Log.d(TAG, "In openEncFSFile: contentType from content is " + contentType);
             } catch (IOException e) {
                 // TODO Auto-generated catch block
-                Log.e(TAG, "Error while attempting to guess MIME type of " + readableFilePath
+                Log.e(TAG, "Error while attempting to guess MIME type of " + readablePath
                         + ": " + e.toString());
                 contentType = null;
             }
