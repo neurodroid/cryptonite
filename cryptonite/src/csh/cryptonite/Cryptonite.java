@@ -1533,27 +1533,30 @@ public class Cryptonite extends Activity
         MimeTypeMap myMime = MimeTypeMap.getSingleton();
         String contentType = myMime.getMimeTypeFromExtension(fileExt(readableFilePath).substring(1));
                
-        Log.d(TAG, "In openEncFSFile: contentType is " + contentType);
+        Log.d(TAG, "In openEncFSFile: contentType from extension is " + contentType);
         
-        /* This won't work because of file permission problems
-        try {
-            FileInputStream fis = new FileInputStream(readableFilePath);
-            contentType = URLConnection.guessContentTypeFromStream(fis);
-            Log.d(TAG, "In openEncFSFile: contentType is " + contentType);
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            Log.e(TAG, "Error while attempting to guess MIME type of " + readableFilePath
-                    + ": " + e.toString());
-            return false;
-        } */
-
+        if (contentType == null) {
+        
+            /* This won't work because of file permission problems */
+            try {
+                FileInputStream fis = new FileInputStream(readableFilePath);
+                contentType = URLConnection.guessContentTypeFromStream(fis);
+                Log.d(TAG, "In openEncFSFile: contentType from content is " + contentType);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                Log.e(TAG, "Error while attempting to guess MIME type of " + readableFilePath
+                        + ": " + e.toString());
+                return false;
+            }
+        }
 
         if (contentType == null) {
-            showAlert(getString(R.string.content_type_not_found_title), 
-                    getString(R.string.content_type_not_found_msg));
-            Log.e(TAG, "Couldn't find content type");
-            return false;
+            // Toast.makeText(getBaseContext(), getString(R.string.content_type_not_found_msg), Toast.LENGTH_LONG);
+            
+            Log.e(TAG, "Couldn't find content type; trying as text/plain");
+            contentType = "text/plain";
         }
+        
         Intent intent = new Intent();
         intent.setAction(android.content.Intent.ACTION_VIEW);
         intent.setDataAndType(data, contentType);
