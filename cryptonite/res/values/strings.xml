@@ -78,6 +78,7 @@
     <string name="back">Back</string>
     <string name="context_open">Open</string>
     <string name="context_export">Export</string>
+    <string name="upload">Upload here</string>
     
     <!-- Button labels -->
     <string name="local_decrypt">Decrypt local folder</string>

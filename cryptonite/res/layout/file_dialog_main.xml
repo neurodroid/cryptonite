@@ -28,6 +28,20 @@
 			</LinearLayout>
 		</LinearLayout>
 
+		<LinearLayout android:id="@+id/fdLinearLayoutUpload"
+            android:orientation="vertical" android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true" android:paddingLeft="10dp"
+            android:paddingRight="10dp" android:paddingBottom="5dp">
+
+            <LinearLayout android:orientation="horizontal"
+                android:layout_width="fill_parent" android:layout_height="fill_parent">
+                <Button android:id="@+id/fdButtonUpload" android:layout_height="wrap_content"
+                    android:layout_width="0dip" android:layout_weight="1.0"
+                    android:text="@string/upload"></Button>
+            </LinearLayout>
+        </LinearLayout>
+		
 		<LinearLayout android:id="@+id/fdLinearLayoutCreate"
 			android:orientation="vertical" android:layout_width="fill_parent"
 			android:layout_height="wrap_content"

@@ -345,9 +345,9 @@ public class Cryptonite extends Activity
         
         /* Delete directories */
         deleteDir(getBaseContext().getFilesDir());
-        deleteDir(getBaseContext().getDir(BROWSEPNT, Context.MODE_WORLD_READABLE));
-        deleteDir(getBaseContext().getDir(OPENPNT, Context.MODE_WORLD_READABLE));
-        deleteDir(getBaseContext().getDir(DROPBOXPNT, Context.MODE_WORLD_READABLE));
+        deleteDir(getBaseContext().getDir(BROWSEPNT, Context.MODE_PRIVATE));
+        deleteDir(getBaseContext().getDir(OPENPNT, Context.MODE_PRIVATE));
+        deleteDir(getBaseContext().getDir(DROPBOXPNT, Context.MODE_PRIVATE));
         deleteDir(getBaseContext().getDir(READPNT, Context.MODE_WORLD_READABLE));
     }
 
@@ -586,6 +586,9 @@ public class Cryptonite extends Activity
             break;
         case SelectionMode.MODE_OPEN_MULTISELECT:
         case SelectionMode.MODE_OPEN_MULTISELECT_DB:
+            /* delete temporary browse file tree */
+            // getPrivateDir(BROWSEPNT);
+            
             /* file dialog */
             if (resultCode == Activity.RESULT_OK && data != null) {
                 currentReturnPathList = data.getStringArrayExtra(FileDialog.RESULT_EXPORT_PATH);
@@ -1427,7 +1430,7 @@ public class Cryptonite extends Activity
         String encodedPath = jniEncode(stripstr);
 
         /* Set up temp dir for decrypted file */
-        File openDir = getPrivateDir(OPENPNT, Context.MODE_WORLD_READABLE);
+        File openDir = getPrivateDir(OPENPNT); /*, Context.MODE_WORLD_READABLE); */
         String destPath = openDir.getPath() + (new File(bPath)).getParent().substring(bRoot.length());
 
         /* Log.d(TAG, "In openEncFSFile: encodedPath is " + encodedPath);
@@ -1481,8 +1484,8 @@ public class Cryptonite extends Activity
         try {
             FileOutputStream fos = new FileOutputStream(new File(readablePath));
 
-            Log.d(TAG, "In openEncFSFile: openFilePath is " + openFilePath);
-            Log.d(TAG, "In openEncFSFile: readablePath is " + readablePath);
+            /* Log.d(TAG, "In openEncFSFile: openFilePath is " + openFilePath);
+            Log.d(TAG, "In openEncFSFile: readablePath is " + readablePath); */
             
             FileInputStream fis = new FileInputStream(new File(openFilePath));
 
@@ -1499,60 +1502,21 @@ public class Cryptonite extends Activity
             ShellUtils.chmod(readablePath, "644");
             
             /* Delete tmp directory */
-            getPrivateDir(OPENPNT, Context.MODE_WORLD_READABLE);
+            getPrivateDir(OPENPNT);
         } catch (IOException e) {
             Log.e(TAG, "Error while attempting to open " + readableName
                     + ": " + e.toString());
             return false;
-        }        
-        
-        /* Guess MIME type */
-        Uri data = Uri.fromFile(new File(readablePath));
-        
-        MimeTypeMap myMime = MimeTypeMap.getSingleton();
-        String contentType = myMime.getMimeTypeFromExtension(fileExt(readablePath).substring(1));
-               
-        Log.d(TAG, "In openEncFSFile: contentType from extension is " + contentType);
-        
-        if (contentType == null) {
-            try {
-                FileInputStream fis = new FileInputStream(readablePath);
-                contentType = URLConnection.guessContentTypeFromStream(fis);
-                Log.d(TAG, "In openEncFSFile: contentType from content is " + contentType);
-            } catch (IOException e) {
-                Log.e(TAG, "Error while attempting to guess MIME type of " + readablePath
-                        + ": " + e.toString());
-                contentType = null;
-            }
         }
+        
+        return fileOpen(readablePath);
 
-        if (contentType == null) {
-            // Toast.makeText(getBaseContext(), getString(R.string.content_type_not_found_msg), Toast.LENGTH_LONG);
-            
-            Log.e(TAG, "Couldn't find content type; resorting to text/plain");
-            contentType = "text/plain";
-        }
-        
-        Intent intent = new Intent();
-        intent.setAction(android.content.Intent.ACTION_VIEW);
-        intent.setDataAndType(data, contentType);
-       
-        try {
-            startActivity(intent);
-        } catch (ActivityNotFoundException e) {
-            showAlert(getString(R.string.activity_not_found_title), 
-                    getString(R.string.activity_not_found_msg));
-            Log.e(TAG, "Couldn't find activity: " + e.toString());
-            return false;
-        }
-        
-        return true;
     }
     
     private boolean fileOpen(String filePath) {
         /* Guess MIME type */
         Uri data = Uri.fromFile(new File(filePath));
-        
+
         MimeTypeMap myMime = MimeTypeMap.getSingleton();
         String contentType = myMime.getMimeTypeFromExtension(fileExt(filePath).substring(1));
                
@@ -1572,16 +1536,15 @@ public class Cryptonite extends Activity
         }
 
         if (contentType == null) {
-            // Toast.makeText(getBaseContext(), getString(R.string.content_type_not_found_msg), Toast.LENGTH_LONG);
-            
             Log.e(TAG, "Couldn't find content type; resorting to text/plain");
             contentType = "text/plain";
         }
         
         Intent intent = new Intent();
+        
         intent.setAction(android.content.Intent.ACTION_VIEW);
         intent.setDataAndType(data, contentType);
-       
+
         try {
             startActivity(intent);
         } catch (ActivityNotFoundException e) {

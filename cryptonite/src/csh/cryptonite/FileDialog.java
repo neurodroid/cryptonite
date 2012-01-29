@@ -79,6 +79,7 @@ public class FileDialog extends ListActivity {
 
     private LinearLayout layoutSelect;
     private LinearLayout layoutCreate;
+    private LinearLayout layoutUpload;
     private InputMethodManager inputManager;
     private String parentPath;
     private String currentPath = currentRoot;
@@ -172,6 +173,12 @@ public class FileDialog extends ListActivity {
         */
         layoutSelect = (LinearLayout) findViewById(R.id.fdLinearLayoutSelect);
         layoutCreate = (LinearLayout) findViewById(R.id.fdLinearLayoutCreate);
+        layoutUpload = (LinearLayout) findViewById(R.id.fdLinearLayoutUpload);
+        if (selectionMode != SelectionMode.MODE_OPEN_MULTISELECT 
+                && selectionMode != SelectionMode.MODE_OPEN_MULTISELECT_DB)
+        {
+            layoutUpload.setVisibility(View.GONE);
+        }
         layoutCreate.setVisibility(View.GONE);
 
         final Button cancelButton = (Button) findViewById(R.id.fdButtonCancel);
