@@ -19,6 +19,7 @@ package csh.cryptonite;
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.Arrays;
@@ -83,16 +84,15 @@ public class ShellUtils {
             ProcessBuilder pb = new ProcessBuilder(binName);
             pb.directory(binDir);
             pb.redirectErrorStream(true);
-            Process process;
             
             if (root) {
                 String[] sucmd = {"su", "-c", join(binName, " ")};
                 pb.command(sucmd);
-                process = pb.start();
             } else {
                 pb.command(binName);
-                process = pb.start();
             }
+
+            Process process = pb.start();
             
             if (toStdIn != null) {
                 BufferedWriter writer = new BufferedWriter(
@@ -122,6 +122,28 @@ public class ShellUtils {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+    
+    public static boolean isMounted(String mountName) {
+        boolean isMounted = false;
+        try {
+            /* Read mounted info */
+            FileInputStream fis = new FileInputStream("/proc/mounts");
+            Scanner scanner = new Scanner(fis);
+            try {
+                while (scanner.hasNextLine() && !isMounted) {
+                    if (!isMounted && scanner.findInLine(mountName)!=null) {
+                        isMounted = true;
+                    }
+                    scanner.nextLine();
+                }
+            } finally {
+                scanner.close();
+            }
+        } catch (IOException e) {
+            return isMounted;
+        }
+        return isMounted;
     }
 
 }

@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.net.URLConnection;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Scanner;
 import java.util.Set;
 
 import android.app.Activity;
@@ -283,7 +282,7 @@ public class Cryptonite extends Activity
         buttonMount = (Button)findViewById(R.id.btnMount);
         buttonMount.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
-                if (!isMounted()) {
+                if (!ShellUtils.isMounted("fuse.encfs")) {
                     prevMode = opMode;
                     opMode = MOUNT_MODE;
                     currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
@@ -331,12 +330,14 @@ public class Cryptonite extends Activity
                     }
                     opMode = prevMode;
                 }});
-        
+
         hasFuse = ShellUtils.supportsFuse();
         updateMountButtons();
         updateDecryptButtons();
+        
         showAlert(getString(R.string.disclaimer), getString(R.string.no_warranty),
                 getString(R.string.understand));
+
     }
 
     private void cleanUpDecrypted() {
@@ -365,7 +366,7 @@ public class Cryptonite extends Activity
     }
 
     private void updateMountButtons() {
-        boolean ism = isMounted();
+        boolean ism = ShellUtils.isMounted("fuse.encfs");
 
         Log.v(TAG, "EncFS mount state: " + ism + "; FUSE support: " + hasFuse);
         buttonMount.setEnabled(hasFuse);
@@ -376,7 +377,6 @@ public class Cryptonite extends Activity
             buttonMount.setText(R.string.mount);
         }
         
-        /* buttonUnmount.setEnabled(ism && sf); */
         buttonViewMount.setEnabled(ism && hasFuse);
     }
 
@@ -436,7 +436,6 @@ public class Cryptonite extends Activity
             .getFile(encFSDBRoot + srcPath, null, fos, null);
         fos.close();
     
-        /* TODO: Decode and copy file to target dir */
         // Log.d(TAG, "Copying " + encFSLocalRoot + " + " + srcPath + " to " + targetDir);
         return (jniCopy(encFSLocalRoot + srcPath, targetDir, forceReadable) == jniSuccess());
     }
@@ -469,8 +468,6 @@ public class Cryptonite extends Activity
         Log.d(TAG, "In dbRecTree: dbLocalRoot is " + dbLocalRoot);
         Log.d(TAG, "In dbRecTree: dbPath is " + dbPath);
         Log.d(TAG, "In dbRecTree: bPath is " + bPath); */
-        
-        /* TODO: Recursion through Dropbox; write files on demand */
         
         /* Find file in Dropbox */
         /* Log.d(TAG, "Retrieving " + dbPath + " from Dropbox"); */
@@ -1225,30 +1222,6 @@ public class Cryptonite extends Activity
         return extStorAvailable && extStorWriteable;
     }
 
-    public static boolean isMounted() {
-        boolean isMounted = false;
-        try {
-            /* Read mounted info */
-            FileInputStream fis = new FileInputStream("/proc/mounts");
-            Scanner scanner = new Scanner(fis);
-            try {
-                Log.v(TAG, "Parsing /proc/mounts for mounted encfs devices");
-                while (scanner.hasNextLine()) {
-                    if (!isMounted && scanner.findInLine("fuse.encfs")!=null) {
-                        Log.v(TAG, "Found mounted EncFS volume");
-                        isMounted = true;
-                    }
-                    Log.v(TAG, scanner.nextLine());
-                }
-            } finally {
-                scanner.close();
-            }
-        } catch (IOException e) {
-            return isMounted;
-        }
-        return isMounted;
-    }
-
     private void launchFileBrowser(int mode) {
         SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
         boolean useBuiltin = prefs.getBoolean("cb_builtin", false);
@@ -1475,7 +1448,6 @@ public class Cryptonite extends Activity
             Log.d(TAG, "In openEncFSFile: encFSDBRoot is " + encFSDBRoot);
             Log.d(TAG, "In openEncFSFile: dbPath is " + dbPath); */
             
-            /* TODO: implement this */
             try {
                 if (!dbDownloadDecode(dbPath.substring(dbEncFSPath.length()),
                                       openDir.getPath(), encFSDBRoot, encFSLocalRoot, true))
@@ -1529,7 +1501,6 @@ public class Cryptonite extends Activity
             /* Delete tmp directory */
             getPrivateDir(OPENPNT, Context.MODE_WORLD_READABLE);
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             Log.e(TAG, "Error while attempting to open " + readableName
                     + ": " + e.toString());
             return false;
@@ -1549,8 +1520,52 @@ public class Cryptonite extends Activity
                 contentType = URLConnection.guessContentTypeFromStream(fis);
                 Log.d(TAG, "In openEncFSFile: contentType from content is " + contentType);
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 Log.e(TAG, "Error while attempting to guess MIME type of " + readablePath
+                        + ": " + e.toString());
+                contentType = null;
+            }
+        }
+
+        if (contentType == null) {
+            // Toast.makeText(getBaseContext(), getString(R.string.content_type_not_found_msg), Toast.LENGTH_LONG);
+            
+            Log.e(TAG, "Couldn't find content type; resorting to text/plain");
+            contentType = "text/plain";
+        }
+        
+        Intent intent = new Intent();
+        intent.setAction(android.content.Intent.ACTION_VIEW);
+        intent.setDataAndType(data, contentType);
+       
+        try {
+            startActivity(intent);
+        } catch (ActivityNotFoundException e) {
+            showAlert(getString(R.string.activity_not_found_title), 
+                    getString(R.string.activity_not_found_msg));
+            Log.e(TAG, "Couldn't find activity: " + e.toString());
+            return false;
+        }
+        
+        return true;
+    }
+    
+    private boolean fileOpen(String filePath) {
+        /* Guess MIME type */
+        Uri data = Uri.fromFile(new File(filePath));
+        
+        MimeTypeMap myMime = MimeTypeMap.getSingleton();
+        String contentType = myMime.getMimeTypeFromExtension(fileExt(filePath).substring(1));
+               
+        Log.d(TAG, "In openEncFSFile: contentType from extension is " + contentType);
+        
+        /* Attempt to guess file type from content; seemingly very unreliable */
+        if (contentType == null) {
+            try {
+                FileInputStream fis = new FileInputStream(filePath);
+                contentType = URLConnection.guessContentTypeFromStream(fis);
+                Log.d(TAG, "In openEncFSFile: contentType from content is " + contentType);
+            } catch (IOException e) {
+                Log.e(TAG, "Error while attempting to guess MIME type of " + filePath
                         + ": " + e.toString());
                 contentType = null;
             }
