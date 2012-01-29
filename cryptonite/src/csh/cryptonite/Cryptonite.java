@@ -16,21 +16,15 @@
 
 package csh.cryptonite;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.net.URLConnection;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Scanner;
 import java.util.Set;
 
@@ -79,7 +73,6 @@ import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.DropboxAPI.Entry;
 import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.exception.DropboxException;
-import com.dropbox.client2.exception.DropboxServerException;
 import com.dropbox.client2.session.AccessTokenPair;
 import com.dropbox.client2.session.AppKeyPair;
 import com.dropbox.client2.session.Session.AccessType;
@@ -177,7 +170,7 @@ public class Cryptonite extends Activity
         }
 
         tvMountInfo = (TextView)findViewById(R.id.tvMountInfo);
-        if (!externalStorageIsWritable() || !supportsFuse()) {
+        if (!externalStorageIsWritable() || !ShellUtils.supportsFuse()) {
             tvMountInfo.setText(this.getString(R.string.mount_info_unsupported));
         }
         
@@ -313,18 +306,10 @@ public class Cryptonite extends Activity
                     
                 } else {
                     String[] umountlist = {"umount", mntDir};
-                    runBinary(umountlist, BINDIR, null, true);
+                    ShellUtils.runBinary(umountlist, BINDIR, null, true);
                     updateMountButtons();                        
                 }
             }});
-
-        /*buttonUnmount = (Button)findViewById(R.id.btnUnmount);
-        buttonUnmount.setOnClickListener(new OnClickListener() {
-                public void onClick(View v) {
-                    String[] umountlist = {"umount", mntDir};
-                    runBinary(umountlist, BINDIR, null, true);
-                    updateButtons();
-                }});*/
 
         /* Select source directory using a simple file dialog */
         buttonViewMount = (Button)findViewById(R.id.btnViewMount);
@@ -347,7 +332,7 @@ public class Cryptonite extends Activity
                     opMode = prevMode;
                 }});
         
-        hasFuse = supportsFuse();
+        hasFuse = ShellUtils.supportsFuse();
         updateMountButtons();
         updateDecryptButtons();
         showAlert(getString(R.string.disclaimer), getString(R.string.no_warranty),
@@ -776,83 +761,14 @@ public class Cryptonite extends Activity
                 }
             }
             os.close();
+
+            ShellUtils.chmod(binName, "755");
+            
         }
         catch (IOException e) {
             throw new RuntimeException(e);
         }
 
-        String[] chmodlist = {getChmod(), "755", binName};
-        runBinary(chmodlist, BINDIR);
-    }
-
-    public static String runBinary(String[] binName, String encfsHome) {
-        return runBinary(binName, encfsHome, null, false);
-    }
-
-    /** Run a binary using binDir as the wd. Return stdout
-     *  and optinally stderr
-     */
-    public static String runBinary(String[] binName, String encfsHome, String toStdIn, boolean root) {
-        try {
-            File binDir = new File(BINDIR);
-            if (!binDir.exists()) {
-                binDir.mkdirs();
-            }
-            
-            String NL = System.getProperty("line.separator");
-            ProcessBuilder pb = new ProcessBuilder(binName);
-            pb.directory(binDir);
-            pb.redirectErrorStream(true);
-            Process process;
-            
-            if (root) {
-                String[] sucmd = {"su", "-c", join(binName, " ")};
-                pb.command(sucmd);
-                process = pb.start();
-            } else {
-                pb.command(binName);
-                process = pb.start();
-            }
-            
-            if (toStdIn != null) {
-                BufferedWriter writer = new BufferedWriter(
-                                                           new OutputStreamWriter(process.getOutputStream()) );
-                writer.write(toStdIn + "\n");
-                writer.flush();
-            }
-
-            process.waitFor();
-                
-            String output = "";
-            Scanner outscanner = new Scanner(new BufferedInputStream(process.getInputStream()));
-            try {
-                while (outscanner.hasNextLine()) {
-                    output += outscanner.nextLine();
-                    output += NL;
-                }
-            }
-            finally {
-                outscanner.close();
-            }
-
-            return output;
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static String getChmod() {
-        String chmod = "/system/bin/chmod";
-        if (!(new File(chmod)).exists()) {
-            chmod = "/system/xbin/chmod";
-            if (!(new File(chmod)).exists()) {
-                throw new RuntimeException("Couldn't find chmod on your system");
-            }
-        }
-        return chmod;
     }
 
     private void showAlert(String alert) {
@@ -917,7 +833,7 @@ public class Cryptonite extends Activity
         new Thread(new Runnable(){
                 public void run(){
                     String[] cmdlist = {ENCFSBIN, "--public", "--stdinpass", srcDir, mntDir};
-                    encfsoutput = runBinary(cmdlist, BINDIR, currentPassword, true);
+                    encfsoutput = ShellUtils.runBinary(cmdlist, BINDIR, currentPassword, true);
                     runOnUiThread(new Runnable(){
                             public void run() {
                                 if (pd.isShowing())
@@ -1155,19 +1071,6 @@ public class Cryptonite extends Activity
         currentPassword = new String(fill);
     }
     
-    public static String join(String[] sa, String delimiter) {
-        Collection<String> s = Arrays.asList(sa);
-        StringBuffer buffer = new StringBuffer();
-        Iterator<String> iter = s.iterator();
-        while (iter.hasNext()) {
-            buffer.append(iter.next());
-            if (iter.hasNext()) {
-                buffer.append(delimiter);
-            }
-        }
-        return buffer.toString();
-    }
-    
     @Override protected Dialog onCreateDialog(int id) {
         switch (id) {
          case MY_PASSWORD_DIALOG_ID:
@@ -1320,10 +1223,6 @@ public class Cryptonite extends Activity
         }
 
         return extStorAvailable && extStorWriteable;
-    }
-    
-    public static boolean supportsFuse() {
-        return (new File("/dev/fuse")).exists();
     }
 
     public static boolean isMounted() {
@@ -1625,8 +1524,7 @@ public class Cryptonite extends Activity
             fos.close();
 
             /* Make world readable */
-            String[] chmodlist = {getChmod(), "644", readablePath};
-            runBinary(chmodlist, BINDIR);
+            ShellUtils.chmod(readablePath, "644");
             
             /* Delete tmp directory */
             getPrivateDir(OPENPNT, Context.MODE_WORLD_READABLE);
