@@ -1,9 +1,22 @@
-/*
-  Based on android-file-dialog
-  http://code.google.com/p/android-file-dialog/
-  alexander.ponomarev.1@gmail.com
-  New BSD License
-*/
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 2
+// of the License, or (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+// Copyright (c) 2012, Christoph Schmidt-Hieber
+
+// Based on android-file-dialog
+// http://code.google.com/p/android-file-dialog/
+// alexander.ponomarev.1@gmail.com
 
 package csh.cryptonite;
 
@@ -61,6 +74,7 @@ public class FileDialog extends ListActivity {
     public static final String START_PATH = "START_PATH";
     public static final String RESULT_EXPORT_PATH = "RESULT_EXPORT_PATH";
     public static final String RESULT_OPEN_PATH = "RESULT_OPEN_PATH";
+    public static final String RESULT_UPLOAD_PATH = "RESULT_UPLOAD_PATH";
     public static final String SELECTION_MODE = "SELECTION_MODE";
     public static final String LABEL = "LABEL";
     public static final String BUTTON_LABEL = "BUTTON_LABEL";
@@ -89,7 +103,7 @@ public class FileDialog extends ListActivity {
     private int selectionMode = SelectionMode.MODE_OPEN;
 
     @SuppressWarnings("unused")
-    private File selectedFile;
+    private CryptFile selectedFile;
     private HashMap<String, Integer> lastPositions = new HashMap<String, Integer>();
 
     private Set<String> selectedPaths = new HashSet<String>();
@@ -140,11 +154,15 @@ public class FileDialog extends ListActivity {
                             || selectionMode == SelectionMode.MODE_OPEN_DB)
                     {
                         if (currentPath != null) {
+                            getIntent().putExtra(RESULT_OPEN_PATH, new String[0]);
+                            getIntent().putExtra(RESULT_UPLOAD_PATH, new String[0]);
                             getIntent().putExtra(RESULT_EXPORT_PATH, currentPath);
                             setResult(RESULT_OK, getIntent());
                             finish();
                         }
                     } else {
+                        getIntent().putExtra(RESULT_OPEN_PATH, new String[0]);
+                        getIntent().putExtra(RESULT_UPLOAD_PATH, new String[0]);
                         getIntent().putExtra(RESULT_EXPORT_PATH, selectedPaths.toArray(new String[0]));
                         setResult(RESULT_OK, getIntent());
                         finish();
@@ -195,13 +213,28 @@ public class FileDialog extends ListActivity {
 
                 public void onClick(View v) {
                     if (mFileName.getText().length() > 0) {
+                        getIntent().putExtra(RESULT_OPEN_PATH, new String[0]);
+                        getIntent().putExtra(RESULT_UPLOAD_PATH, new String[0]);
                         getIntent().putExtra(RESULT_EXPORT_PATH,
-                                             currentPath + "/" + mFileName.getText());
+                                currentPath + "/" + mFileName.getText());
                         setResult(RESULT_OK, getIntent());
                         finish();
                     }
                 }
             });
+        
+        final Button uploadButton = (Button) findViewById(R.id.fdButtonUpload);
+        uploadButton.setOnClickListener(new OnClickListener() {
+
+            public void onClick(View v) {
+                getIntent().putExtra(RESULT_OPEN_PATH, new String[0]);
+                getIntent().putExtra(RESULT_EXPORT_PATH, new String[0]);
+                getIntent().putExtra(RESULT_UPLOAD_PATH, currentPath);
+                setResult(RESULT_OK, getIntent());
+                finish();
+            }
+            
+        });
 
         String startPath = getIntent().getStringExtra(START_PATH);
         if (startPath != null) {
@@ -248,12 +281,12 @@ public class FileDialog extends ListActivity {
         path = new ArrayList<String>();
         mList = new ArrayList<HashMap<String, Object>>();
         
-        File f = new File(currentPath);
-        File[] files = f.listFiles();
+        CryptFile f = new CryptFile(currentPath);
+        CryptFile[] files = f.listFiles();
         if (files == null) {
             // Log.v(Cryptonite.TAG, "No files in current path");
             currentPath = currentRoot;
-            f = new File(currentPath);
+            f = new CryptFile(currentPath);
             files = f.listFiles();
         }
         myPath.setText(getText(R.string.location) + ": " + currentRootLabel +
@@ -262,11 +295,11 @@ public class FileDialog extends ListActivity {
         if (!currentPath.equals(currentRoot)) {
 
             item.add(currentRoot);
-            addItem(new File(currentRoot), R.drawable.ic_launcher_folder, currentRootLabel);
+            addItem(new CryptFile(currentRoot), R.drawable.ic_launcher_folder, currentRootLabel);
             path.add(currentRoot);
 
             item.add("../");
-            addItem(new File(f.getParent()), R.drawable.ic_launcher_folder, "../");
+            addItem(new CryptFile(f.getParent()), R.drawable.ic_launcher_folder, "../");
             path.add(f.getParent());
             parentPath = f.getParent();
 
@@ -278,7 +311,7 @@ public class FileDialog extends ListActivity {
         TreeMap<String, String> filesPathMap = new TreeMap<String, String>();
 
         /* getPath() returns full path including file name */
-        for (File file : files) {
+        for (CryptFile file : files) {
             if (file.isDirectory()) {
                 String dirName = file.getName();
                 dirsMap.put(dirName, dirName);
@@ -295,12 +328,12 @@ public class FileDialog extends ListActivity {
         path.addAll(filesPathMap.tailMap("").values());
 
         for (String dirpath : dirsPathMap.tailMap("").keySet()) {
-            addItem(new File(dirsPathMap.tailMap("").get(dirpath)),
+            addItem(new CryptFile(dirsPathMap.tailMap("").get(dirpath)),
                     R.drawable.ic_launcher_folder);
         }
 
         for (String filepath : filesPathMap.tailMap("").keySet()) {
-            addItem(new File(filesPathMap.tailMap("").get(filepath)),
+            addItem(new CryptFile(filesPathMap.tailMap("").get(filepath)),
                     R.drawable.ic_launcher_file);
         }
         
@@ -326,11 +359,11 @@ public class FileDialog extends ListActivity {
 
     }
 
-    private void addItem(File file, Integer imageId) {
+    private void addItem(CryptFile file, Integer imageId) {
         addItem(file, imageId, file.getName());
     }
     
-    private void addItem(File file, Integer imageId, String filelabel) {
+    private void addItem(CryptFile file, Integer imageId, String filelabel) {
         HashMap<String, Object> item = new HashMap<String, Object>();
         item.put(ITEM_KEY, filelabel);
         item.put(ITEM_IMAGE, imageId);
@@ -341,7 +374,7 @@ public class FileDialog extends ListActivity {
             item.put(ITEM_FILE, file);
             item.put(ITEM_ENABLED,
                      (Boolean) (!file.getPath().equals(currentRoot) &&
-                                !file.getPath().equals(new File(currentPath).getParent())));
+                                !file.getPath().equals(new CryptFile(currentPath).getParent())));
         }
         mList.add(item);
     }
@@ -349,12 +382,12 @@ public class FileDialog extends ListActivity {
     /** returns true if the parent directory is checked and/or
      *  the path itself is checked
      */
-    private boolean getChecked(File file) {
+    private boolean getChecked(CryptFile file) {
         boolean allChildrenSelected = file.isDirectory();
         if (file.isDirectory()) {
-            File[] children = file.listFiles();
+            CryptFile[] children = file.listFiles();
             if (children != null) {
-                for (File child : file.listFiles()) {
+                for (CryptFile child : file.listFiles()) {
                     if (!selectedPaths.contains(child.getPath())) {
                         allChildrenSelected = false;
                         break;
@@ -416,7 +449,7 @@ public class FileDialog extends ListActivity {
                                     (HashMap<String, Object>) viewHolder.checkbox
                                     .getTag();
                                 element.put(ITEM_CHECK, buttonView.isChecked());
-                                File f = (File) element.get(ITEM_FILE);
+                                CryptFile f = (CryptFile) element.get(ITEM_FILE);
                                 /* Avoid recursion for performance reasons */
                                 if (buttonView.isChecked()) {
                                     selectedPaths.add(f.getPath());
@@ -424,7 +457,8 @@ public class FileDialog extends ListActivity {
                                 } else {
                                     // Log.v(Cryptonite.TAG, "Removing " + f.getPath());
                                     /* Is this a bug in the SDK ?? This will get fired
-                                     * upon scrolling from disabled elements.
+                                     * upon scrolling from disabled elements, which is why
+                                     * we have to check whether the item is enabled.
                                      */
                                     if ((Boolean)element.get(ITEM_ENABLED)) {
                                         removePath(f);
@@ -449,7 +483,7 @@ public class FileDialog extends ListActivity {
         }
     }
     
-    private void removePath(File f) {
+    private void removePath(CryptFile f) {
         /* Remove all paths that have f as parent */
         if (f.isDirectory()) {
             Set<String> newSelectedPaths = new HashSet<String>();
@@ -475,7 +509,7 @@ public class FileDialog extends ListActivity {
                 if (parent.equals(currentRoot)) {
                     parent = null;
                 } else {
-                    parent = new File(parent).getParent();
+                    parent = new CryptFile(parent).getParent();
                 }
             }
         }
@@ -484,7 +518,7 @@ public class FileDialog extends ListActivity {
     @Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 
-        File file = new File(path.get(position));
+        CryptFile file = new CryptFile(path.get(position));
 
         setSelectVisible(v);
 
@@ -549,7 +583,7 @@ public class FileDialog extends ListActivity {
       super.onCreateContextMenu(menu, v, menuInfo);
       MenuInflater inflater = getMenuInflater();
       AdapterContextMenuInfo info = (AdapterContextMenuInfo)menuInfo;
-      if ((new File(path.get(info.position))).isDirectory()) {
+      if ((new CryptFile(path.get(info.position))).isDirectory()) {
           inflater.inflate(R.menu.file_dialog_context_menu_dir, menu);          
       } else {
           inflater.inflate(R.menu.file_dialog_context_menu, menu);
@@ -563,11 +597,14 @@ public class FileDialog extends ListActivity {
       case R.id.context_open:
         /* TODO: Open file */
         getIntent().putExtra(RESULT_EXPORT_PATH, new String[0]);
+        getIntent().putExtra(RESULT_UPLOAD_PATH, new String[0]);
         getIntent().putExtra(RESULT_OPEN_PATH, path.get(info.position));
         setResult(RESULT_OK, getIntent());
         finish();
         return true;
       case R.id.context_export:
+        getIntent().putExtra(RESULT_OPEN_PATH, new String[0]);
+        getIntent().putExtra(RESULT_UPLOAD_PATH, new String[0]);
         getIntent().putExtra(RESULT_EXPORT_PATH, new String[]{path.get(info.position)});
         setResult(RESULT_OK, getIntent());
         finish();

@@ -3,6 +3,7 @@ TODO
 
 MAJOR
 * Upload files to EncFS volumes.
+* Use a virtual filesystem in memory when browsing decrypted folders.
 
 MINOR
 * Add symbol icons to buttons.
