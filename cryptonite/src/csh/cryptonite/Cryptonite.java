@@ -1031,12 +1031,17 @@ public class Cryptonite extends Activity
                     /* Order is important here: DB root has to store
                      * the previous state of the dialog root.
                      */
+                    /*
+                    intent.putExtra(FileDialog.CURRENT_ROOT, currentDialogRoot);
+                    intent.putExtra(FileDialog.CURRENT_DBROOT, currentDialogDBEncFS);
+                    intent.putExtra(FileDialog.START_PATH, currentDialogStartPath);
+                    */
                     currentDialogDBEncFS = browsePath.substring(browseStartPath.length());
                     Log.i(TAG, "Dialog DB root is " + browsePath);
-                    currentDialogStartPath = browseDirF.getPath();
+                    currentDialogStartPath = CryptFile.CRYPT_TAG + browseDirF.getPath();
                     currentDialogLabel = getString(R.string.select_file_export);
                     currentDialogButtonLabel = getString(R.string.export);
-                    currentDialogRoot = currentDialogStartPath;
+                    currentDialogRoot = CryptFile.CRYPT_TAG + currentDialogStartPath;
                     encfsBrowseRoot = currentDialogRoot;
                     currentDialogRootName = getString(R.string.encfs_root);
                     currentDialogMode = SelectionMode.MODE_OPEN_MULTISELECT_DB;

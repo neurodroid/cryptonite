@@ -342,14 +342,14 @@ public class FileDialog extends ListActivity {
         {
             SimpleAdapter fileList;
             fileList = new SimpleAdapter(this, mList,
-                                         R.layout.file_dialog_row_single,
-                                         new String[] { ITEM_KEY, ITEM_IMAGE }, new int[] {
-                                             R.id.fdrowtext, R.id.fdrowimage });
+                    R.layout.file_dialog_row_single,
+                    new String[] { ITEM_KEY, ITEM_IMAGE },
+                    new int[] {R.id.fdrowtext, R.id.fdrowimage });
             fileList.notifyDataSetChanged();
             setListAdapter(fileList);
         } else {
-            ArrayAdapter<HashMap<String, Object>> fileList = new FileDialogArrayAdapter(this,
-                                                                                         mList);
+            ArrayAdapter<HashMap<String, Object>> fileList = 
+                    new FileDialogArrayAdapter(this, mList);
             setListAdapter(fileList);
             getListView().setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
             fileList.notifyDataSetChanged();
