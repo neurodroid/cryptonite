@@ -15,7 +15,7 @@ public class CryptFile extends File {
         
         super(path);
         
-        if (path.startsWith("CRYPT_TAG")) {
+        if (path.startsWith(CRYPT_TAG)) {
             isCrypt = true;
             cryptPath = path.substring(CRYPT_TAG.length());
             cryptFile = new File(cryptPath);

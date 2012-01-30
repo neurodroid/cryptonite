@@ -171,7 +171,6 @@ public class FileDialog extends ListActivity {
                 }
             });
 
-        // Log.v(Cryptonite.TAG, "Selection mode is " + selectionMode);
         /*
           final Button newButton = (Button) findViewById(R.id.fdButtonNew);
           newButton.setOnClickListener(new OnClickListener() {
@@ -260,6 +259,12 @@ public class FileDialog extends ListActivity {
         if (selectionMode == SelectionMode.MODE_OPEN_DB
                 || selectionMode == SelectionMode.MODE_OPEN_MULTISELECT_DB)
         {
+            if (rootPath.startsWith(CryptFile.CRYPT_TAG)) {
+                rootPath = rootPath.substring(CryptFile.CRYPT_TAG.length());
+            }
+            if (dirPath.startsWith(CryptFile.CRYPT_TAG)) {
+                dirPath = dirPath.substring(CryptFile.CRYPT_TAG.length());
+            }
             dbBuildDir(dirPath, rootPath, rootName, dbRootPath);  
         } else {
             getDirImpl(dirPath, rootPath, rootName);
@@ -284,7 +289,6 @@ public class FileDialog extends ListActivity {
         CryptFile f = new CryptFile(currentPath);
         CryptFile[] files = f.listFiles();
         if (files == null) {
-            // Log.v(Cryptonite.TAG, "No files in current path");
             currentPath = currentRoot;
             f = new CryptFile(currentPath);
             files = f.listFiles();
@@ -404,7 +408,6 @@ public class FileDialog extends ListActivity {
             selectedPaths.contains(file.getPath()) ||
             allChildrenSelected) {
             selectedPaths.add(file.getPath());
-            // Log.v(Cryptonite.TAG, "Adding " + file.getPath() + " size is now " + selectedPaths.size());
             return true;
         } else {
             return false;
@@ -453,9 +456,7 @@ public class FileDialog extends ListActivity {
                                 /* Avoid recursion for performance reasons */
                                 if (buttonView.isChecked()) {
                                     selectedPaths.add(f.getPath());
-                                    // Log.v(Cryptonite.TAG, "Adding " + f.getPath());
                                 } else {
-                                    // Log.v(Cryptonite.TAG, "Removing " + f.getPath());
                                     /* Is this a bug in the SDK ?? This will get fired
                                      * upon scrolling from disabled elements, which is why
                                      * we have to check whether the item is enabled.
@@ -490,14 +491,11 @@ public class FileDialog extends ListActivity {
             for (String path : selectedPaths) {
                 if (path.indexOf(f.getPath()) == -1) {
                     newSelectedPaths.add(path);
-                    // Log.v(Cryptonite.TAG, "Adding " + path + " size is now " + selectedPaths.size());
                 }
             }
             selectedPaths = newSelectedPaths;
-            // Log.v(Cryptonite.TAG, "Resetting selectedPaths, size is now " + selectedPaths.size());
         } else {
             selectedPaths.remove(f.getPath());
-            // Log.v(Cryptonite.TAG, "Removing " + f.getPath() + " size is now " + selectedPaths.size());
         }
 
         /* Remove all parent directories checkmarks */
@@ -505,7 +503,6 @@ public class FileDialog extends ListActivity {
             String parent = f.getParent();
             while (parent != null) {
                 selectedPaths.remove(parent);
-                // Log.v(Cryptonite.TAG, "Removing " + parent);
                 if (parent.equals(currentRoot)) {
                     parent = null;
                 } else {
@@ -593,19 +590,19 @@ public class FileDialog extends ListActivity {
     @Override
     public boolean onContextItemSelected(MenuItem item) {
       AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
+      String pathName = path.get(info.position);
       switch (item.getItemId()) {
       case R.id.context_open:
-        /* TODO: Open file */
         getIntent().putExtra(RESULT_EXPORT_PATH, new String[0]);
         getIntent().putExtra(RESULT_UPLOAD_PATH, new String[0]);
-        getIntent().putExtra(RESULT_OPEN_PATH, path.get(info.position));
+        getIntent().putExtra(RESULT_OPEN_PATH, pathName);
         setResult(RESULT_OK, getIntent());
         finish();
         return true;
       case R.id.context_export:
         getIntent().putExtra(RESULT_OPEN_PATH, new String[0]);
         getIntent().putExtra(RESULT_UPLOAD_PATH, new String[0]);
-        getIntent().putExtra(RESULT_EXPORT_PATH, new String[]{path.get(info.position)});
+        getIntent().putExtra(RESULT_EXPORT_PATH, new String[]{pathName});
         setResult(RESULT_OK, getIntent());
         finish();
         return true;
@@ -635,13 +632,6 @@ public class FileDialog extends ListActivity {
             encFSRoot = Cryptonite.jniEncode("/");
         }
         final String prevDBRoot = encFSRoot.substring(0, encFSRoot.length()-dbEncFSPath.length());
-        /*
-        Log.i(Cryptonite.TAG, "prevDBRoot in dbBuildDir is " + prevDBRoot);
-        Log.i(Cryptonite.TAG, "dbPath in dbBuildDir is " + dbPath);
-        Log.i(Cryptonite.TAG, "dirPath in dbBuildDir is " + dirPath);
-        Log.i(Cryptonite.TAG, "rootPath in dbBuildDir is " + rootPath);
-        Log.i(Cryptonite.TAG, "dbEncFSPath in dbBuildDir is " + dbEncFSPath);
-        */
         
         final ProgressDialog pd = ProgressDialog.show(FileDialog.this,
                 getString(R.string.wait_msg),
@@ -657,7 +647,6 @@ public class FileDialog extends ListActivity {
                     if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT_DB) {
                         encodedPath = Cryptonite.jniEncode(dbPath).substring(prevDBRoot.length()-1); 
                     }
-                    // Log.i(Cryptonite.TAG, "Retrieving " + encodedPath + " from Dropbox");
                     Entry dbEntry = ((CryptoniteApp) getApplication()).getDBEntry(encodedPath);
 
                     if (dbEntry != null) {

@@ -632,11 +632,13 @@ public class Cryptonite extends Activity
                     currentOpenPath = data.getStringExtra(FileDialog.RESULT_OPEN_PATH);
                     if (currentOpenPath != null && currentOpenPath.length() > 0) {
                         // Log.d(TAG, "Request to view " + currentOpenPath);
-                        openEncFSFile(currentOpenPath, encfsBrowseRoot, currentDialogDBEncFS, (opMode == SELECTDBEXPORT_MODE));
+                        openEncFSFile(currentOpenPath, encfsBrowseRoot.substring(CryptFile.CRYPT_TAG.length()),
+                                currentDialogDBEncFS, (opMode == SELECTDBEXPORT_MODE));
                     } else {
                         currentUploadPath = data.getStringExtra(FileDialog.RESULT_UPLOAD_PATH);
                         if (currentUploadPath != null && currentUploadPath.length() > 0) {
-                            uploadEncFSFile(currentUploadPath, encfsBrowseRoot, currentDialogDBEncFS, (opMode == SELECTDBEXPORT_MODE));
+                            uploadEncFSFile(currentUploadPath, encfsBrowseRoot.substring(CryptFile.CRYPT_TAG.length()),
+                                    currentDialogDBEncFS, (opMode == SELECTDBEXPORT_MODE));
                         }
                     }
                 }
@@ -1041,7 +1043,7 @@ public class Cryptonite extends Activity
                     currentDialogStartPath = CryptFile.CRYPT_TAG + browseDirF.getPath();
                     currentDialogLabel = getString(R.string.select_file_export);
                     currentDialogButtonLabel = getString(R.string.export);
-                    currentDialogRoot = CryptFile.CRYPT_TAG + currentDialogStartPath;
+                    currentDialogRoot = currentDialogStartPath;
                     encfsBrowseRoot = currentDialogRoot;
                     currentDialogRootName = getString(R.string.encfs_root);
                     currentDialogMode = SelectionMode.MODE_OPEN_MULTISELECT_DB;
