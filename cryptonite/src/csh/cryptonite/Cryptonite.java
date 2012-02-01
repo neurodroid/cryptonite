@@ -148,8 +148,8 @@ public class Cryptonite extends Activity
 
         // We create a new AuthSession so that we can use the Dropbox API.
         AndroidAuthSession session = buildSession();
-        // mApi = new DropboxAPI<AndroidAuthSession>(session);
         ((CryptoniteApp) getApplication()).setDBApi(new DropboxAPI<AndroidAuthSession>(session));
+        
         setContentView(R.layout.main);
 
         getResources();
@@ -632,12 +632,12 @@ public class Cryptonite extends Activity
                     currentOpenPath = data.getStringExtra(FileDialog.RESULT_OPEN_PATH);
                     if (currentOpenPath != null && currentOpenPath.length() > 0) {
                         // Log.d(TAG, "Request to view " + currentOpenPath);
-                        openEncFSFile(currentOpenPath, encfsBrowseRoot.substring(CryptFile.CRYPT_TAG.length()),
+                        openEncFSFile(currentOpenPath, encfsBrowseRoot.substring(VirtualFile.VIRTUAL_TAG.length()),
                                 currentDialogDBEncFS, (opMode == SELECTDBEXPORT_MODE));
                     } else {
                         currentUploadPath = data.getStringExtra(FileDialog.RESULT_UPLOAD_PATH);
                         if (currentUploadPath != null && currentUploadPath.length() > 0) {
-                            uploadEncFSFile(currentUploadPath, encfsBrowseRoot.substring(CryptFile.CRYPT_TAG.length()),
+                            uploadEncFSFile(currentUploadPath, encfsBrowseRoot.substring(VirtualFile.VIRTUAL_TAG.length()),
                                     currentDialogDBEncFS, (opMode == SELECTDBEXPORT_MODE));
                         }
                     }
@@ -1040,7 +1040,7 @@ public class Cryptonite extends Activity
                     */
                     currentDialogDBEncFS = browsePath.substring(browseStartPath.length());
                     Log.i(TAG, "Dialog DB root is " + browsePath);
-                    currentDialogStartPath = CryptFile.CRYPT_TAG + browseDirF.getPath();
+                    currentDialogStartPath = VirtualFile.VIRTUAL_TAG + browseDirF.getPath();
                     currentDialogLabel = getString(R.string.select_file_export);
                     currentDialogButtonLabel = getString(R.string.export);
                     currentDialogRoot = currentDialogStartPath;
@@ -1384,7 +1384,7 @@ public class Cryptonite extends Activity
         String decodedPath = jniDecode(encodedPath);
         
         Log.i(TAG, "Creating new file" + destRoot + "/" + decodedPath);
-        File file = new File(destRoot + "/" + decodedPath);
+        VirtualFile file = new VirtualFile(destRoot + "/" + decodedPath);
         if (isDir) {
             file.mkdirs();
         } else {

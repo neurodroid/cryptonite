@@ -103,7 +103,7 @@ public class FileDialog extends ListActivity {
     private int selectionMode = SelectionMode.MODE_OPEN;
 
     @SuppressWarnings("unused")
-    private CryptFile selectedFile;
+    private VirtualFile selectedFile;
     private HashMap<String, Integer> lastPositions = new HashMap<String, Integer>();
 
     private Set<String> selectedPaths = new HashSet<String>();
@@ -259,11 +259,11 @@ public class FileDialog extends ListActivity {
         if (selectionMode == SelectionMode.MODE_OPEN_DB
                 || selectionMode == SelectionMode.MODE_OPEN_MULTISELECT_DB)
         {
-            if (rootPath.startsWith(CryptFile.CRYPT_TAG)) {
-                rootPath = rootPath.substring(CryptFile.CRYPT_TAG.length());
+            if (rootPath.startsWith(VirtualFile.VIRTUAL_TAG)) {
+                rootPath = rootPath.substring(VirtualFile.VIRTUAL_TAG.length());
             }
-            if (dirPath.startsWith(CryptFile.CRYPT_TAG)) {
-                dirPath = dirPath.substring(CryptFile.CRYPT_TAG.length());
+            if (dirPath.startsWith(VirtualFile.VIRTUAL_TAG)) {
+                dirPath = dirPath.substring(VirtualFile.VIRTUAL_TAG.length());
             }
             dbBuildDir(dirPath, rootPath, rootName, dbRootPath);  
         } else {
@@ -286,11 +286,11 @@ public class FileDialog extends ListActivity {
         path = new ArrayList<String>();
         mList = new ArrayList<HashMap<String, Object>>();
         
-        CryptFile f = new CryptFile(currentPath);
-        CryptFile[] files = f.listFiles();
+        VirtualFile f = new VirtualFile(currentPath);
+        VirtualFile[] files = f.listFiles();
         if (files == null) {
             currentPath = currentRoot;
-            f = new CryptFile(currentPath);
+            f = new VirtualFile(currentPath);
             files = f.listFiles();
         }
         myPath.setText(getText(R.string.location) + ": " + currentRootLabel +
@@ -299,11 +299,11 @@ public class FileDialog extends ListActivity {
         if (!currentPath.equals(currentRoot)) {
 
             item.add(currentRoot);
-            addItem(new CryptFile(currentRoot), R.drawable.ic_launcher_folder, currentRootLabel);
+            addItem(new VirtualFile(currentRoot), R.drawable.ic_launcher_folder, currentRootLabel);
             path.add(currentRoot);
 
             item.add("../");
-            addItem(new CryptFile(f.getParent()), R.drawable.ic_launcher_folder, "../");
+            addItem(new VirtualFile(f.getParent()), R.drawable.ic_launcher_folder, "../");
             path.add(f.getParent());
             parentPath = f.getParent();
 
@@ -315,7 +315,7 @@ public class FileDialog extends ListActivity {
         TreeMap<String, String> filesPathMap = new TreeMap<String, String>();
 
         /* getPath() returns full path including file name */
-        for (CryptFile file : files) {
+        for (VirtualFile file : files) {
             if (file.isDirectory()) {
                 String dirName = file.getName();
                 dirsMap.put(dirName, dirName);
@@ -332,12 +332,12 @@ public class FileDialog extends ListActivity {
         path.addAll(filesPathMap.tailMap("").values());
 
         for (String dirpath : dirsPathMap.tailMap("").keySet()) {
-            addItem(new CryptFile(dirsPathMap.tailMap("").get(dirpath)),
+            addItem(new VirtualFile(dirsPathMap.tailMap("").get(dirpath)),
                     R.drawable.ic_launcher_folder);
         }
 
         for (String filepath : filesPathMap.tailMap("").keySet()) {
-            addItem(new CryptFile(filesPathMap.tailMap("").get(filepath)),
+            addItem(new VirtualFile(filesPathMap.tailMap("").get(filepath)),
                     R.drawable.ic_launcher_file);
         }
         
@@ -363,11 +363,11 @@ public class FileDialog extends ListActivity {
 
     }
 
-    private void addItem(CryptFile file, Integer imageId) {
+    private void addItem(VirtualFile file, Integer imageId) {
         addItem(file, imageId, file.getName());
     }
     
-    private void addItem(CryptFile file, Integer imageId, String filelabel) {
+    private void addItem(VirtualFile file, Integer imageId, String filelabel) {
         HashMap<String, Object> item = new HashMap<String, Object>();
         item.put(ITEM_KEY, filelabel);
         item.put(ITEM_IMAGE, imageId);
@@ -378,7 +378,7 @@ public class FileDialog extends ListActivity {
             item.put(ITEM_FILE, file);
             item.put(ITEM_ENABLED,
                      (Boolean) (!file.getPath().equals(currentRoot) &&
-                                !file.getPath().equals(new CryptFile(currentPath).getParent())));
+                                !file.getPath().equals(new VirtualFile(currentPath).getParent())));
         }
         mList.add(item);
     }
@@ -386,12 +386,12 @@ public class FileDialog extends ListActivity {
     /** returns true if the parent directory is checked and/or
      *  the path itself is checked
      */
-    private boolean getChecked(CryptFile file) {
+    private boolean getChecked(VirtualFile file) {
         boolean allChildrenSelected = file.isDirectory();
         if (file.isDirectory()) {
-            CryptFile[] children = file.listFiles();
+            VirtualFile[] children = file.listFiles();
             if (children != null) {
-                for (CryptFile child : file.listFiles()) {
+                for (VirtualFile child : file.listFiles()) {
                     if (!selectedPaths.contains(child.getPath())) {
                         allChildrenSelected = false;
                         break;
@@ -452,7 +452,7 @@ public class FileDialog extends ListActivity {
                                     (HashMap<String, Object>) viewHolder.checkbox
                                     .getTag();
                                 element.put(ITEM_CHECK, buttonView.isChecked());
-                                CryptFile f = (CryptFile) element.get(ITEM_FILE);
+                                VirtualFile f = (VirtualFile) element.get(ITEM_FILE);
                                 /* Avoid recursion for performance reasons */
                                 if (buttonView.isChecked()) {
                                     selectedPaths.add(f.getPath());
@@ -484,7 +484,7 @@ public class FileDialog extends ListActivity {
         }
     }
     
-    private void removePath(CryptFile f) {
+    private void removePath(VirtualFile f) {
         /* Remove all paths that have f as parent */
         if (f.isDirectory()) {
             Set<String> newSelectedPaths = new HashSet<String>();
@@ -506,7 +506,7 @@ public class FileDialog extends ListActivity {
                 if (parent.equals(currentRoot)) {
                     parent = null;
                 } else {
-                    parent = new CryptFile(parent).getParent();
+                    parent = new VirtualFile(parent).getParent();
                 }
             }
         }
@@ -515,7 +515,7 @@ public class FileDialog extends ListActivity {
     @Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 
-        CryptFile file = new CryptFile(path.get(position));
+        VirtualFile file = new VirtualFile(path.get(position));
 
         setSelectVisible(v);
 
@@ -580,7 +580,7 @@ public class FileDialog extends ListActivity {
       super.onCreateContextMenu(menu, v, menuInfo);
       MenuInflater inflater = getMenuInflater();
       AdapterContextMenuInfo info = (AdapterContextMenuInfo)menuInfo;
-      if ((new CryptFile(path.get(info.position))).isDirectory()) {
+      if ((new VirtualFile(path.get(info.position))).isDirectory()) {
           inflater.inflate(R.menu.file_dialog_context_menu_dir, menu);          
       } else {
           inflater.inflate(R.menu.file_dialog_context_menu, menu);
