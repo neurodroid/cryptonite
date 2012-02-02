@@ -176,8 +176,7 @@ public class Cryptonite extends Activity
         
         boolean volumeLoaded = (jniVolumeLoaded() == jniSuccess());
         
-        /* Copy the encfs binaries to binDir and make executable.
-         */
+        /* Copy the encfs binaries to binDir and make executable. */
         if (!(new File(ENCFSBIN)).exists()) {
             final ProgressDialog pd = ProgressDialog.show(this,
                                                           this.getString(R.string.wait_msg),
@@ -195,7 +194,7 @@ public class Cryptonite extends Activity
                 }).start();
         }
         
-        /* Select source directory using a simple file dialog */
+        /* Link with Dropbox */
         buttonDropbox = (Button)findViewById(R.id.btnDropbox);
         buttonDropbox.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
@@ -211,7 +210,7 @@ public class Cryptonite extends Activity
 
         buttonDropbox.setEnabled(true);
         
-        /* Select source directory using a simple file dialog */
+        /* Decrypt EncFS volume on Dropbox */
         buttonDropboxDecrypt = (Button)findViewById(R.id.btnDropboxDecrypt);
         buttonDropboxDecrypt.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
@@ -231,7 +230,7 @@ public class Cryptonite extends Activity
 
         buttonDropboxDecrypt.setEnabled(mLoggedIn && !volumeLoaded);
         
-        /* Select source directory using a simple file dialog */
+        /* Decrypt local encFS volume */
         buttonLocalDecrypt = (Button)findViewById(R.id.btnLocalDecrypt);
         buttonLocalDecrypt.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
@@ -247,7 +246,7 @@ public class Cryptonite extends Activity
                     currentDialogRoot = "/";
                     currentDialogRootName = currentDialogRoot;
                     if (!externalStorageIsWritable()) {
-                        showAlert(getString(R.string.sdcard_not_writable));
+                        showAlert(R.string.error, R.string.sdcard_not_writable);
                     } else {
                         launchBuiltinFileBrowser(); //DIRPICK_MODE);
                     }
@@ -255,7 +254,7 @@ public class Cryptonite extends Activity
 
         buttonLocalDecrypt.setEnabled(!volumeLoaded);
 
-        /* Select source directory using a simple file dialog */
+        /* Browse decrypted volume */
         buttonBrowseDecrypted = (Button)findViewById(R.id.btnBrowseDecrypted);
         buttonBrowseDecrypted.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
@@ -269,7 +268,7 @@ public class Cryptonite extends Activity
 
         buttonBrowseDecrypted.setEnabled(volumeLoaded);
         
-        /* Select source directory using a simple file dialog */
+        /* Clear decryption information */
         buttonForgetDecryption = (Button)findViewById(R.id.btnForgetDecryption);
         buttonForgetDecryption.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
@@ -279,7 +278,7 @@ public class Cryptonite extends Activity
 
         buttonForgetDecryption.setEnabled(volumeLoaded);
         
-        /* Select source directory using a simple file dialog */
+        /* Mount local EncFS volume */
         buttonMount = (Button)findViewById(R.id.btnMount);
         buttonMount.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
@@ -299,7 +298,7 @@ public class Cryptonite extends Activity
                     currentDialogDBEncFS = "";
                     
                     if (!externalStorageIsWritable()) {
-                        showAlert(getString(R.string.sdcard_not_writable));
+                        showAlert(R.string.error, R.string.sdcard_not_writable);
                     } else {
                         launchBuiltinFileBrowser();//DIRPICK_MODE);
                     }
@@ -311,7 +310,7 @@ public class Cryptonite extends Activity
                 }
             }});
 
-        /* Select source directory using a simple file dialog */
+        /* View mounted EncFS volume */
         buttonViewMount = (Button)findViewById(R.id.btnViewMount);
         buttonViewMount.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
@@ -325,7 +324,7 @@ public class Cryptonite extends Activity
                     currentDialogButtonLabel = Cryptonite.this.getString(R.string.back);
                     currentDialogMode = SelectionMode.MODE_OPEN;
                     if (!externalStorageIsWritable()) {
-                        showAlert(getString(R.string.sdcard_not_writable));
+                        showAlert(R.string.error, R.string.sdcard_not_writable);
                     } else {
                         launchFileBrowser(FILEPICK_MODE);
                     }
@@ -340,11 +339,12 @@ public class Cryptonite extends Activity
         vfs.init();
         
         /* Test local EncFS volume */
+        /*
         currentDialogStartPath = Environment.getExternalStorageDirectory().getPath();
         currentDialogRoot = "/";
         currentReturnPath = "/mnt/sdcard/.AAEncfs3"; 
         localDecryptEncFS(currentReturnPath, "password");
- 
+        */
         showAlert(getString(R.string.disclaimer), getString(R.string.no_warranty),
                 getString(R.string.understand));
     }
@@ -392,149 +392,6 @@ public class Cryptonite extends Activity
         buttonViewMount.setEnabled(ism && hasFuse);
     }
 
-    private static void recTree(String currentPath, Set<String> fullList, String exportRoot) {
-        if (new File(currentPath).exists()) {
-
-            /* normalise path names */
-            String bRoot = new File(exportRoot).getPath();
-            String bPath = new File(currentPath).getPath();
-            String stripstr = bPath.substring(bRoot.length());
-
-            if (new File(bPath).isDirectory()) {
-
-                fullList.add(stripstr);
-
-                for (File f : new File(bPath).listFiles()) {
-                    recTree(f.getPath(), fullList, exportRoot);
-                }
-
-            } else {
-                fullList.add(stripstr);
-                // Log.d(TAG, "Adding " + stripstr + " to decoding file list");
-            }
-        }
-    }
-    
-    private static String[] fullTree(String[] pathList, String exportRoot) {
-        Set<String> fullList = new HashSet<String>();
-        fullList.add("/");
-
-        for (String path : pathList) {
-            recTree(path, fullList, exportRoot);
-        }
-        
-        return fullList.toArray(new String[0]);
-
-    }
-    
-    private boolean dbDownloadDecode(String srcPath, String targetDir, String encFSDBRoot, 
-            String encFSLocalRoot)
-            throws IOException, DropboxException
-    {
-        return dbDownloadDecode(srcPath, targetDir, encFSDBRoot, encFSLocalRoot, false);
-    }
-    
-    private boolean dbDownloadDecode(String srcPath, String targetDir, String encFSDBRoot, 
-                                     String encFSLocalRoot, boolean forceReadable)
-            throws IOException, DropboxException
-    {
-        String cachePath = encFSLocalRoot + srcPath;
-        (new File(cachePath)).getParentFile().mkdirs();
-
-        /* Download encoded file to cache dir */
-        // Log.d(TAG, "Downloading " + srcPath + " to " + cachePath);
-        FileOutputStream fos = new FileOutputStream(cachePath);
-        ((CryptoniteApp) getApplication()).getDBApi()
-            .getFile(encFSDBRoot + srcPath, null, fos, null);
-        fos.close();
-    
-        // Log.d(TAG, "Copying " + encFSLocalRoot + " + " + srcPath + " to " + targetDir);
-        return (jniCopy(encFSLocalRoot + srcPath, targetDir, forceReadable) == jniSuccess());
-    }
-
-    /* TODO: Use Entry rather than String for currentPath */
-    private void dbRecTree(String currentPath, String exportRoot, String destDir,
-            String dbEncFSPath) throws IOException, DropboxException 
-    {
-        /* normalise path names */
-        String bRoot = new File(exportRoot).getPath();
-        String bPath = new File(currentPath).getPath();
-        String stripstr = bPath.substring(bRoot.length());
-        if (!stripstr.startsWith("/")) {
-            stripstr = "/" + stripstr;
-        }
-        
-        /* Convert current path to encoded file name */
-        String encodedPath = jniEncode(stripstr);
-        String destPath = destDir + stripstr;
-        /* Log.d(TAG, "In dbRecTree: encodedPath is " + encodedPath); */
-        
-        /* Remove local root directory to get Dropbox path */
-        String encFSLocalRoot = Cryptonite.jniEncode("/");
-        String dbLocalRoot = encFSLocalRoot.substring(0, 
-                encFSLocalRoot.length()-dbEncFSPath.length());
-        String encFSDBRoot = encFSLocalRoot.substring(dbLocalRoot.length());
-        String dbPath = "/" + encodedPath.substring(dbLocalRoot.length()) ;
-        
-        /* Log.d(TAG, "In dbRecTree: encFSLocalRoot is " + encFSLocalRoot);
-        Log.d(TAG, "In dbRecTree: dbLocalRoot is " + dbLocalRoot);
-        Log.d(TAG, "In dbRecTree: dbPath is " + dbPath);
-        Log.d(TAG, "In dbRecTree: bPath is " + bPath); */
-        
-        /* Find file in Dropbox */
-        /* Log.d(TAG, "Retrieving " + dbPath + " from Dropbox"); */
-        Entry dbEntry = ((CryptoniteApp) getApplication()).getDBEntry(dbPath);
-        
-        if (dbEntry.isDir) {
-            /* Create the decoded directory */
-            /* Log.d(TAG, "Creating directory " + destPath); */
-            (new File(destPath)).mkdirs();
-            
-            /* fullList.add(stripstr); */
-            if (dbEntry.contents != null) {
-                if (dbEntry.contents.size()>0) {
-                    for (Entry dbChild : dbEntry.contents) {
-                        if (dbChild.isDir) {
-                            String decodedChildPath = dbLocalRoot +
-                                    jniDecode(dbChild.path.substring(dbEncFSPath.length()));
-                            /* Log.d(TAG, "Child " + dbChild.path + " was decoded to " + decodedChildPath); */
-                            dbRecTree(decodedChildPath, exportRoot, destDir, dbEncFSPath);
-                        } else {
-                            /* Download all children non-dirs right here
-                             * so that we don't have to retrieve the metadata every time
-                             * 
-                             * Download and decode file
-                             */
-                            if (!dbDownloadDecode(dbChild.path.substring(dbEncFSPath.length()), destDir, encFSDBRoot,
-                                    encFSLocalRoot))
-                            {
-                               /* TODO: add error trapping code */
-                            }
-                        }
-                    }
-                }
-            }
-
-        } else {
-            
-            if (!dbDownloadDecode(dbEntry.path.substring(dbEncFSPath.length()), destDir, encFSDBRoot,
-                    encFSLocalRoot))
-            {
-                /* TODO: add error trapping code */
-            }
-            /* fullList.add(stripstr); */
-            // Log.d(TAG, "Adding " + stripstr + " to decoding file list");
-        }
-    }
-    
-    private void dbFullTree(String[] pathList, String exportRoot,
-            String destDir, String dbEncFSPath) throws IOException, DropboxException
-    {
-        for (String path : pathList) {
-            dbRecTree(path, exportRoot, destDir, dbEncFSPath);
-        }
-    }
-
     /** Called upon exit from other activities */
     public synchronized void onActivityResult(final int requestCode,
                                               int resultCode, final Intent data) {
@@ -569,8 +426,10 @@ public class Cryptonite extends Activity
                                         alert = true;
                                     } else {
                                         if (opMode == LOCALEXPORT_MODE) {
-                                            alert = (jniExport(currentReturnPathList, encfsBrowseRoot, 
-                                                    currentReturnPath + "/Cryptonite") != jniSuccess());
+                                            alert = !localExport(currentReturnPathList, encfsBrowseRoot, 
+                                                    currentReturnPath + "/Cryptonite", currentDialogDBEncFS);
+                                            /* alert = (jniExport(currentReturnPathList, encfsBrowseRoot, 
+                                                    currentReturnPath + "/Cryptonite") != jniSuccess()); */
                                         } else {
                                             alert = !dbExport(currentReturnPathList, encfsBrowseRoot, 
                                                     currentReturnPath + "/Cryptonite", currentDialogDBEncFS);
@@ -581,7 +440,7 @@ public class Cryptonite extends Activity
                                             if (pd.isShowing())
                                                 pd.dismiss();
                                             if (alert) {
-                                                showAlert(getString(R.string.export_failed));
+                                                showAlert(R.string.error, R.string.export_failed);
                                                 alert = false;
                                             }
                                         }
@@ -598,21 +457,13 @@ public class Cryptonite extends Activity
             break;
         case SelectionMode.MODE_OPEN_MULTISELECT:
         case SelectionMode.MODE_OPEN_MULTISELECT_DB:
-            /* delete temporary browse file tree */
-            // getPrivateDir(BROWSEPNT);
-            
             /* file dialog */
             if (resultCode == Activity.RESULT_OK && data != null) {
                 currentReturnPathList = data.getStringArrayExtra(FileDialog.RESULT_EXPORT_PATH);
                 if (currentReturnPathList != null && currentReturnPathList.length > 0) {
-                    /* May make the argument passed to jniExport too large */
-                    /* currentReturnPathList = fullTree(currentReturnPathList, encfsBrowseRoot);
-                     for (String path : currentReturnPathList) {
-                         Log.d(TAG, path);
-                         }*/
 
                     if (currentReturnPathList.length > MAX_JNI_SIZE) {
-                        showAlert(getString(R.string.jni_arg_too_large));
+                        showAlert(R.string.error, R.string.jni_arg_too_large);
                         break;
                     }
 
@@ -654,7 +505,7 @@ public class Cryptonite extends Activity
                     }
                 }
             } else if (resultCode == Activity.RESULT_CANCELED) {
-                /* Log.d(TAG, "file not selected"); */
+
             }
             break;
         case REQUEST_PREFS:
@@ -790,8 +641,12 @@ public class Cryptonite extends Activity
 
     }
 
-    private void showAlert(String alert) {
-        showAlert(alert, "", "OK");
+    private void showAlert(int alert_id, int msg_id) {
+        showAlert(getString(alert_id), getString(msg_id));
+    }
+    
+    private void showAlert(int alert_id, String msg) {
+        showAlert(getString(alert_id), msg);
     }
     
     private void showAlert(String alert, String msg) {
@@ -840,7 +695,7 @@ public class Cryptonite extends Activity
         tv.invalidate();
 
         if (jniIsValidEncFS(srcDir) != jniSuccess()) {
-            showAlert(getString(R.string.invalid_encfs));
+            showAlert(R.string.error, R.string.invalid_encfs);
             Log.v(TAG, "Invalid EncFS");
             return;
         }
@@ -869,13 +724,17 @@ public class Cryptonite extends Activity
             
     }
     
-    /** This will use the encfs library to create a file tree with empty
-     *  files that can be browsed.
+    /** Initialize a local EncFS volume. This will check
+     * whether the EncFS volume is valid an initialize the EncFS
+     * root information
+     * 
+     * @param srcDir Path to EncFS volume
+     * @param pwd password
      */
-    private void localDecryptEncFS(final String srcDir, final String pwd) {
+     private void localDecryptEncFS(final String srcDir, final String pwd) {
         
         if (jniIsValidEncFS(srcDir) != jniSuccess()) {
-            showAlert(getString(R.string.invalid_encfs));
+            showAlert(R.string.error, R.string.invalid_encfs);
             Log.v(TAG, "Invalid EncFS");
             return;
         }
@@ -907,7 +766,7 @@ public class Cryptonite extends Activity
                                 updateDecryptButtons();
                                 mLocalDecrypted = true;
                                 if (alertMsg.length()!=0) {
-                                    showAlert(alertMsg);
+                                    showAlert(R.string.error, alertMsg);
                                 }
                             }
                         });
@@ -916,10 +775,12 @@ public class Cryptonite extends Activity
             
     }
 
-    /** This will use the encfs library to create a file tree with empty
-     *  files that can be browsed.
+    /** Browse a local encFS directory using a virtual file system.
+     * File names are queried on demand when a directory is opened.
+     * @param browsePath EncFS path 
+     * @param browseStartPath Root path
      */
-    private void localBrowseEncFS(final String browsePath, final String browseStartPath) {
+     private void localBrowseEncFS(final String browsePath, final String browseStartPath) {
         final VirtualFile browseDirF = new VirtualFile(VirtualFile.VIRTUAL_TAG + "/" + BROWSEPNT);
         browseDirF.mkdirs();
         
@@ -949,11 +810,13 @@ public class Cryptonite extends Activity
             }).start();
             
     }
-
-
     
-    /** This will use the encfs library to create a file tree with empty
-     *  files that can be browsed.
+    /** Initialize an EncFS volume on Dropbox. This will check
+     * whether the EncFS volume is valid an initialize the EncFS
+     * root information
+     * 
+     * @param srcDir Path to EncFS volume
+     * @param pwd password
      */
     private void dbDecryptEncFS(final String srcDir, String pwd) {
         tv.setText(encfsversion);
@@ -987,14 +850,15 @@ public class Cryptonite extends Activity
                 }
             }
         } catch (DropboxException e) {
-            showAlert(getString(R.string.dropbox_read_fail) + e.toString());
+            showAlert(R.string.error, getString(R.string.dropbox_read_fail) + e.toString());
             return;
         } catch (FileNotFoundException e) {
-            showAlert(getString(R.string.dropbox_read_fail) + e.toString());
+            showAlert(R.string.error, getString(R.string.dropbox_read_fail) + e.toString());
+            return;
         }
         
         if (jniIsValidEncFS(srcDir) != jniSuccess()) {
-            showAlert(getString(R.string.invalid_encfs));
+            showAlert(R.string.error, getString(R.string.invalid_encfs));
             Log.v(TAG, "Invalid EncFS");
             return;
         }
@@ -1025,7 +889,7 @@ public class Cryptonite extends Activity
                                 updateDecryptButtons();
                                 mDropboxDecrypted = true;
                                 if (alertMsg.length()!=0) {
-                                    showAlert(alertMsg);
+                                    showAlert(R.string.error, alertMsg);
                                 }
                             }
                         });
@@ -1034,8 +898,11 @@ public class Cryptonite extends Activity
             
     }
  
-    /** This will use the encfs library to create a file tree with empty
-     *  files that can be browsed.
+    /** Browse an encFS directory on Dropbox using a virtual file system.
+     * File names are queried on demand when a directory is opened.
+     * See https://www.dropbox.com/developers/reference/bestpractice
+     * @param browsePath EncFS path 
+     * @param browseStartPath Dropbox path
      */
     private void dbBrowseEncFS(final String browsePath, final String browseStartPath) {
  
@@ -1050,11 +917,6 @@ public class Cryptonite extends Activity
                     /* Order is important here: DB root has to store
                      * the previous state of the dialog root.
                      */
-                    /*
-                    intent.putExtra(FileDialog.CURRENT_ROOT, currentDialogRoot);
-                    intent.putExtra(FileDialog.CURRENT_DBROOT, currentDialogDBEncFS);
-                    intent.putExtra(FileDialog.START_PATH, currentDialogStartPath);
-                    */
                     currentDialogDBEncFS = browsePath.substring(browseStartPath.length());
                     Log.i(TAG, "Dialog DB root is " + browsePath);
                     currentDialogStartPath = browseDirF.getPath();
@@ -1087,7 +949,7 @@ public class Cryptonite extends Activity
         File browseDirF = getBaseContext().getDir(label, mode);
         if (browseDirF.exists()) {
             if (!deleteDir(browseDirF)) {
-                showAlert(getString(R.string.target_dir_cleanup_failure));
+                showAlert(R.string.error, R.string.target_dir_cleanup_failure);
                 return null;
             }
         }
@@ -1135,7 +997,7 @@ public class Cryptonite extends Activity
                                   break;
                              }
                          } else {
-                             showAlert(getString(R.string.empty_password));
+                             showAlert(R.string.error, R.string.empty_password);
                          }
                      }
                  });
@@ -1384,6 +1246,12 @@ public class Cryptonite extends Activity
         return session;
     }
 
+    /** Create an empty file in a local destination directory
+     * preserving relative file paths from Dropbox
+     * @param dbEntry Dropbox entry
+     * @param destRoot Destination target root path
+     * @throws IOException
+     */
     public static void dbTouch(Entry dbEntry, String destRoot) throws IOException {
         File file = new File(destRoot + dbEntry.path);
         if (dbEntry.isDir) {
@@ -1393,15 +1261,13 @@ public class Cryptonite extends Activity
         }
     }
     
-    public static void localTouch(VirtualFile srcFile, String destRoot) throws IOException {
-        VirtualFile file = new VirtualFile(destRoot + srcFile.getPath());
-        if (srcFile.isDirectory()) {
-            file.mkdirs();
-        } else {
-            file.createNewFile();
-        }
-    }
-    
+    /** Create an empty file with a decoded file name
+     * 
+     * @param encodedPath The full encoded source path
+     * @param destRoot Root destination directory path
+     * @param isDir true for directories
+     * @throws IOException
+     */
     public static void decode(String encodedPath, String destRoot, boolean isDir) throws IOException {
 
         Log.i(TAG, "encodedPath is " + encodedPath);
@@ -1419,11 +1285,151 @@ public class Cryptonite extends Activity
         
     }
     
+    /** Download an encrypted file from Dropbox and save a decoded
+     * version to a local directory.
+     * 
+     * @param srcPath Full encoded source path
+     * @param targetDir Target root directory
+     * @param encFSDBRoot encFS path from Dropbox root
+     * @param encFSLocalRoot encFS path from local root
+     * @return true upon success
+     * @throws IOException
+     * @throws DropboxException
+     */
+    private boolean dbDownloadDecode(String srcPath, String targetDir, String encFSDBRoot, 
+            String encFSLocalRoot)
+            throws IOException, DropboxException
+    {
+        return dbDownloadDecode(srcPath, targetDir, encFSDBRoot, encFSLocalRoot, false);
+    }
+    
+    /** Download an encrypted file from Dropbox and save a decoded
+     * version to a local directory.
+     * 
+     * @param srcPath Full encoded source path
+     * @param targetDir Target root directory
+     * @param encFSDBRoot encFS path from Dropbox root
+     * @param encFSLocalRoot encFS path from local root
+     * @param forceReadable enforce readable file creation mode
+     * @return true upon success
+     * @throws IOException
+     * @throws DropboxException
+     */
+    private boolean dbDownloadDecode(String srcPath, String targetDir, String encFSDBRoot, 
+                                     String encFSLocalRoot, boolean forceReadable)
+            throws IOException, DropboxException
+    {
+        String cachePath = encFSLocalRoot + srcPath;
+        (new File(cachePath)).getParentFile().mkdirs();
+
+        /* Download encoded file to cache dir */
+        FileOutputStream fos = new FileOutputStream(cachePath);
+        ((CryptoniteApp) getApplication()).getDBApi()
+            .getFile(encFSDBRoot + srcPath, null, fos, null);
+        fos.close();
+    
+        return (jniCopy(encFSLocalRoot + srcPath, targetDir, forceReadable) == jniSuccess());
+    }
+
+    /** Walks a Dropbox file tree, copying decrypted files to a local
+     * directory (recursive part).
+     * Recursion is only used within encrypted subfolders!
+     * See https://www.dropbox.com/developers/reference/bestpractice
+     * 
+     * @param currentPath Decoded file path
+     * @param exportRoot Root path up to encFS volume
+     * @param destDir Destination directory
+     * @param dbEncFSPath encFS path from Dropbox root
+     * @throws IOException
+     * @throws DropboxException
+     */
+    private void dbRecTree(String currentPath, String exportRoot, String destDir,
+            String dbEncFSPath) throws IOException, DropboxException 
+    {
+        /* normalise path names */
+        String bRoot = new File(exportRoot).getPath();
+        String bPath = new File(currentPath).getPath();
+        String stripstr = bPath.substring(bRoot.length());
+        if (!stripstr.startsWith("/")) {
+            stripstr = "/" + stripstr;
+        }
+        
+        /* Convert current path to encoded file name */
+        String encodedPath = jniEncode(stripstr);
+        String destPath = destDir + stripstr;
+        
+        /* Remove local root directory to get Dropbox path */
+        String encFSLocalRoot = Cryptonite.jniEncode("/");
+        String dbLocalRoot = encFSLocalRoot.substring(0, 
+                encFSLocalRoot.length()-dbEncFSPath.length());
+        String encFSDBRoot = encFSLocalRoot.substring(dbLocalRoot.length());
+        String dbPath = "/" + encodedPath.substring(dbLocalRoot.length()) ;
+                
+        /* Find file in Dropbox */
+        Entry dbEntry = ((CryptoniteApp) getApplication()).getDBEntry(dbPath);
+        
+        if (dbEntry.isDir) {
+            /* Create the decoded directory */
+            (new File(destPath)).mkdirs();
+            
+            /* fullList.add(stripstr); */
+            if (dbEntry.contents != null) {
+                if (dbEntry.contents.size()>0) {
+                    for (Entry dbChild : dbEntry.contents) {
+                        if (dbChild.isDir) {
+                            String decodedChildPath = dbLocalRoot +
+                                    jniDecode(dbChild.path.substring(dbEncFSPath.length()));
+                            dbRecTree(decodedChildPath, exportRoot, destDir, dbEncFSPath);
+                        } else {
+                            /* Download all children non-dirs right here
+                             * so that we don't have to retrieve the metadata every time
+                             * 
+                             * Download and decode file
+                             */
+                            if (!dbDownloadDecode(dbChild.path.substring(dbEncFSPath.length()), destDir, encFSDBRoot,
+                                    encFSLocalRoot))
+                            {
+                                Toast.makeText(getBaseContext(), 
+                                        getString(R.string.file_not_found) + dbChild.path,
+                                        Toast.LENGTH_LONG);
+                            }
+                        }
+                    }
+                }
+            }
+
+        } else {
+            
+            if (!dbDownloadDecode(dbEntry.path.substring(dbEncFSPath.length()), destDir, encFSDBRoot,
+                    encFSLocalRoot))
+            {
+                Toast.makeText(getBaseContext(), 
+                        getString(R.string.file_not_found) + dbEncFSPath,
+                        Toast.LENGTH_LONG);
+            }
+        }
+    }
+    
+    /** Walks a Dropbox file tree, copying decrypted files to a local
+     * directory.
+     * Recursion is only used within encrypted subfolders!
+     * See https://www.dropbox.com/developers/reference/bestpractice
+     * 
+     * @param exportPaths Decoded file path array
+     * @param exportRoot Root path up to encFS volume
+     * @param destDir Destination directory
+     * @param dbEncFSPath encFS path from Dropbox root
+     * @return true upon success
+     * @throws IOException
+     * @throws DropboxException
+     */
     private boolean dbExport(String[] exportPaths, String exportRoot, 
             String destDir, String dbEncFSPath) 
     {
         try {
-            dbFullTree(exportPaths, exportRoot, destDir, dbEncFSPath);
+            for (String path : exportPaths) {
+                dbRecTree(path, exportRoot, destDir, dbEncFSPath);
+            }
         } catch (IOException e) {
             Toast.makeText(getBaseContext(), getString(R.string.export_failed) + e.toString(),
                     Toast.LENGTH_LONG);
@@ -1434,6 +1440,70 @@ public class Cryptonite extends Activity
             return false;
         }
         return true;
+    }
+
+    /** Walks a local file tree, copying decrypted files to a local
+     * directory.
+     * 
+     * @param currentPath Decoded file path
+     * @param errorList File paths that couldn't be copied
+     * @param exportRoot Root path up to encFS volume
+     * @param destDir Destination directory
+     * @param localEncFSPath encFS path from local root
+     */
+    private void localRecTree(String currentPath, Set<String> errorList, String exportRoot,
+            String destDir, String localEncFSPath)
+    {
+        if (new VirtualFile(currentPath).exists()) {
+
+            /* normalise path names */
+            String bRoot = new VirtualFile(exportRoot).getPath();
+            String bPath = new VirtualFile(currentPath).getPath();
+            String stripstr = bPath.substring(bRoot.length());
+
+            if (new VirtualFile(bPath).isDirectory()) {
+
+                for (VirtualFile f : new VirtualFile(bPath).listFiles()) {
+                    localRecTree(f.getPath(), errorList, exportRoot, destDir, localEncFSPath);
+                }
+
+            } else {
+                /* Set up dir for decrypted file */
+                String finalPath = destDir + (new File(bPath)).getParent().substring(bRoot.length());
+                File finalDir = new File(finalPath);
+                if (!finalDir.exists()) {
+                    finalDir.mkdirs();
+                }
+                /* Convert current path to encoded file name */
+                String encodedPath = jniEncode(stripstr);
+
+                if (jniCopy(encodedPath, destDir, false) != jniSuccess()) {
+                    errorList.add(stripstr);
+                    Log.e(TAG, "Couldn't copy " + encodedPath + " to " + destDir);
+                }
+            }
+        }
+    }
+    
+    /** Walks a local file tree, copying decrypted files to a local
+     * directory.
+     * 
+     * @param exportPaths Decoded file path array
+     * @param exportRoot Root path up to encFS volume
+     * @param destDir Destination directory
+     * @param localEncFSPath encFS path from local root
+     * @return true upon success
+     */
+    private boolean localExport(String[] exportPaths, String exportRoot, 
+            String destDir, String localEncFSPath) 
+    {
+        Set<String> errorList = new HashSet<String>();
+
+        for (String path : exportPaths) {
+            localRecTree(path, errorList, exportRoot, destDir, localEncFSPath);
+        }
+
+        return errorList.size() == 0;
     }
     
     private static String fileExt(String url) {
@@ -1482,17 +1552,20 @@ public class Cryptonite extends Activity
                     return false;
                 }
             } catch (IOException e) {
-                showAlert(getString(R.string.dropbox_read_fail));
+                showAlert(R.string.error, 
+                        getString(R.string.dropbox_read_fail) + " " + e.toString());
                 Log.e(TAG, "Dropbox read fail: " + e.toString());
                 return false;
             } catch (DropboxException e) {
-                showAlert(getString(R.string.dropbox_read_fail));
+                showAlert(R.string.error, 
+                        getString(R.string.dropbox_read_fail) + " " + e.toString());
                 Log.e(TAG, "Dropbox read fail: " + e.toString());
                 return false;
             }
         } else {
             /* Copy decrypted file */
             if (jniCopy(encodedPath, openDir.getPath(), true) != jniSuccess()) {
+                showAlert(R.string.error, R.string.local_read_fail);
                 Log.e(TAG, "Error while attempting to copy " + encodedPath);
                 return false;
             }
@@ -1583,84 +1656,14 @@ public class Cryptonite extends Activity
             stripstr = "/" + stripstr;
         }
         
-        /* Convert current path to encoded target directory */
-        String encodedPath = jniEncode(stripstr);
+        /* Convert current path to encoded target directory
+         * String encodedPath = jniEncode(stripstr); 
+         * TODO: Implement this
+         */
         
         return true;
 
-//        /* Set up temp dir for decrypted file */
-//        File openDir = getPrivateDir(OPENPNT); /*, Context.MODE_WORLD_READABLE); */
-//        String destPath = openDir.getPath() + (new File(bPath)).getParent().substring(bRoot.length());
-//
-//        (new File(destPath)).mkdirs();
-//       
-//        if (isDB) {
-//            /* Remove local root directory to get Dropbox path */
-//            String encFSLocalRoot = Cryptonite.jniEncode("/");
-//            String dbLocalRoot = encFSLocalRoot.substring(0, 
-//                    encFSLocalRoot.length()-dbEncFSPath.length());
-//            String encFSDBRoot = encFSLocalRoot.substring(dbLocalRoot.length());
-//            String dbPath = "/" + encodedPath.substring(dbLocalRoot.length()) ;
-//            
-//            try {
-//                if (!dbDownloadDecode(dbPath.substring(dbEncFSPath.length()),
-//                                      openDir.getPath(), encFSDBRoot, encFSLocalRoot, true))
-//                {
-//                    Log.e(TAG, "Error while attempting to copy " + encodedPath);
-//                    return false;
-//                }
-//            } catch (IOException e) {
-//                showAlert(getString(R.string.dropbox_read_fail));
-//                Log.e(TAG, "Dropbox read fail: " + e.toString());
-//                return false;
-//            } catch (DropboxException e) {
-//                showAlert(getString(R.string.dropbox_read_fail));
-//                Log.e(TAG, "Dropbox read fail: " + e.toString());
-//                return false;
-//            }
-//        } else {
-//            /* Copy decrypted file */
-//            // Log.d(TAG, "Copying " + encodedPath + " to " + openDir.getPath());
-//            if (jniCopy(encodedPath, openDir.getPath(), true) != jniSuccess()) {
-//                Log.e(TAG, "Error while attempting to copy " + encodedPath);
-//                return false;
-//            }
-//        }
-//
-//        /* Copy the resulting file to a readable folder */
-//        String openFilePath = openDir.getPath() + stripstr;
-//        String readableName = (new File(encFSFilePath)).getName();
-//        File readableDir = getPrivateDir(READPNT, Context.MODE_WORLD_READABLE);
-//        String readablePath = readableDir.getPath() + "/" + readableName;
-//        try {
-//            FileOutputStream fos = new FileOutputStream(new File(readablePath));
-//
-//            /* Log.d(TAG, "In openEncFSFile: openFilePath is " + openFilePath);
-//            Log.d(TAG, "In openEncFSFile: readablePath is " + readablePath); */
-//            
-//            FileInputStream fis = new FileInputStream(new File(openFilePath));
-//
-//            byte[] buffer = new byte[fis.available()]; 
-//
-//            fis.read(buffer);
-//
-//            fos.write(buffer);
-//
-//            fis.close();
-//            fos.close();
-//
-//            /* Make world readable */
-//            ShellUtils.chmod(readablePath, "644");
-//            
-//            /* Delete tmp directory */
-//            getPrivateDir(OPENPNT);
-//        } catch (IOException e) {
-//            Log.e(TAG, "Error while attempting to open " + readableName
-//                    + ": " + e.toString());
-//            return false;
-//        }
-//        
-//        return fileOpen(readablePath);
+
 
     }
         

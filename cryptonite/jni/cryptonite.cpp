@@ -414,22 +414,56 @@ static RootPtr initRootInfo(const std::string& rootDir, const std::string& passw
 #ifdef __cplusplus
 extern "C" {
 #endif
-    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniFailure(JNIEnv * env, jobject thiz);
-    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniSuccess(JNIEnv * env, jobject thiz);
-    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniIsValidEncFS(JNIEnv * env, jobject thiz, jstring srcdir);
-    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniVolumeLoaded(JNIEnv * env, jobject thiz);
-    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniResetVolume(JNIEnv * env, jobject thiz);
-    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv * env, jobject thiz, jstring srcdir, jstring destdir, jstring password);
-    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniInit(JNIEnv* env, jobject thiz, jstring srcdir, jstring password);
-    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jobject thiz,
-                                                                       jobjectArray exportpaths, jstring exportroot,
-                                                                       jstring destdir);
-    JNIEXPORT jint    JNICALL Java_csh_cryptonite_Cryptonite_jniCopy(JNIEnv * env, jobject thiz, jstring encodedname, jstring destdir, jboolean force_readable);
-    JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniDecode(JNIEnv * env, jobject thiz, jstring encodedname);
-    JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniEncode(JNIEnv * env, jobject thiz, jstring decodedname);
-    JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniVersion(JNIEnv * env, jobject thiz);
-    JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniAppKey(JNIEnv* env, jobject thiz);
-    JNIEXPORT jstring JNICALL Java_csh_cryptonite_Cryptonite_jniAppPw(JNIEnv* env, jobject thiz);
+    JNIEXPORT jint JNICALL
+    Java_csh_cryptonite_Cryptonite_jniFailure(JNIEnv * env, jobject thiz);
+    
+    JNIEXPORT jint JNICALL
+    Java_csh_cryptonite_Cryptonite_jniSuccess(JNIEnv * env, jobject thiz);
+
+    JNIEXPORT jint JNICALL
+    Java_csh_cryptonite_Cryptonite_jniIsValidEncFS(JNIEnv * env, jobject thiz,
+                                                   jstring srcdir);
+
+    JNIEXPORT jint JNICALL
+    Java_csh_cryptonite_Cryptonite_jniVolumeLoaded(JNIEnv * env, jobject thiz);
+
+    JNIEXPORT jint JNICALL
+    Java_csh_cryptonite_Cryptonite_jniResetVolume(JNIEnv * env, jobject thiz);
+
+    JNIEXPORT jint JNICALL
+    Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv * env, jobject thiz,
+                                             jstring srcdir, jstring destdir, jstring password);
+
+    JNIEXPORT jint JNICALL
+    Java_csh_cryptonite_Cryptonite_jniInit(JNIEnv* env, jobject thiz,
+                                           jstring srcdir, jstring password);
+
+    JNIEXPORT jint JNICALL
+    Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jobject thiz,
+                                             jobjectArray exportpaths, jstring exportroot,
+                                             jstring destdir);
+    
+    JNIEXPORT jint JNICALL
+    Java_csh_cryptonite_Cryptonite_jniCopy(JNIEnv * env, jobject thiz,
+                                           jstring encodedname, jstring destdir,
+                                           jboolean force_readable);
+    
+    JNIEXPORT jstring JNICALL
+    Java_csh_cryptonite_Cryptonite_jniDecode(JNIEnv * env, jobject thiz,
+                                             jstring encodedname);
+
+    JNIEXPORT jstring JNICALL
+    Java_csh_cryptonite_Cryptonite_jniEncode(JNIEnv * env, jobject thiz,
+                                             jstring decodedname);
+
+    JNIEXPORT jstring JNICALL
+    Java_csh_cryptonite_Cryptonite_jniVersion(JNIEnv * env, jobject thiz);
+
+    JNIEXPORT jstring JNICALL
+    Java_csh_cryptonite_Cryptonite_jniAppKey(JNIEnv* env, jobject thiz);
+
+    JNIEXPORT jstring JNICALL
+    Java_csh_cryptonite_Cryptonite_jniAppPw(JNIEnv* env, jobject thiz);
 #ifdef __cplusplus
 };
 #endif
@@ -689,8 +723,9 @@ JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jo
         }
     }
 
-    std::set<std::string> allPaths(fullTree(std_exportpaths, mexportroot.str()));
-
+    // std::set<std::string> allPaths(fullTree(std_exportpaths, mexportroot.str()));
+    std::set<std::string> allPaths(std_exportpaths);
+    
     // info.str("");
     // info << "Full size of tree is " << allPaths.size();
     // LOGI(info.str().c_str());

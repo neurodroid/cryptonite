@@ -41,6 +41,10 @@
     <string name="browse_decrypted">Browse decrypted folder</string>
     <string name="forget_decryption">Forget decryption</string>
     <string name="local_read_fail">Problem reading from local folder</string>
+    <string name="error">Error</string>
+    <string name="warning">Warning</string>
+    <string name="file_not_found">File not found: </string>
+    <string name="export_warning">Exporting files can be slow and will copy decrypted files to your phone. Are you sure you want to proceed?</string>
     
     <!-- Dropbox -->
     <string name="dropbox_link">Link with Dropbox</string>
@@ -76,6 +80,7 @@
     <string name="cant_read_folder">folder can\'t be read!</string>
     <string name="select_file_export">Select files to export</string>
     <string name="export">Export selected</string>
+    <string name="export_short">Export</string>
     <string name="back">Back</string>
     <string name="context_open">Open</string>
     <string name="context_export">Export</string>

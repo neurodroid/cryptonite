@@ -141,14 +141,7 @@ public class FileDialog extends ListActivity {
         selectButton.setOnClickListener(new OnClickListener() {
 
                 public void onClick(View v) {
-                    /*
-                      if (selectedFile != null) {
-                      getIntent().putExtra(RESULT_PATH, selectedFile.getPath());
-                      setResult(RESULT_OK, getIntent());
-                      finish();
-                      } else {
-                    */
-                    /* get current path */
+
                     if (selectionMode == SelectionMode.MODE_OPEN
                             || selectionMode == SelectionMode.MODE_OPEN_DB)
                     {
@@ -160,13 +153,8 @@ public class FileDialog extends ListActivity {
                             finish();
                         }
                     } else {
-                        getIntent().putExtra(RESULT_OPEN_PATH, new String[0]);
-                        getIntent().putExtra(RESULT_UPLOAD_PATH, new String[0]);
-                        getIntent().putExtra(RESULT_EXPORT_PATH, selectedPaths.toArray(new String[0]));
-                        setResult(RESULT_OK, getIntent());
-                        finish();
+                        showExportWarning(selectedPaths.toArray(new String[0]));
                     }
-                    /* } */
                 }
             });
 
@@ -190,11 +178,13 @@ public class FileDialog extends ListActivity {
         layoutSelect = (LinearLayout) findViewById(R.id.fdLinearLayoutSelect);
         layoutCreate = (LinearLayout) findViewById(R.id.fdLinearLayoutCreate);
         layoutUpload = (LinearLayout) findViewById(R.id.fdLinearLayoutUpload);
+        /* Disable upload at this time 
         if (selectionMode != SelectionMode.MODE_OPEN_MULTISELECT 
                 && selectionMode != SelectionMode.MODE_OPEN_MULTISELECT_DB)
         {
             layoutUpload.setVisibility(View.GONE);
-        }
+        }*/
+        layoutUpload.setVisibility(View.GONE);
         layoutCreate.setVisibility(View.GONE);
 
         final Button cancelButton = (Button) findViewById(R.id.fdButtonCancel);
@@ -597,12 +587,8 @@ public class FileDialog extends ListActivity {
         finish();
         return true;
       case R.id.context_export:
-        getIntent().putExtra(RESULT_OPEN_PATH, new String[0]);
-        getIntent().putExtra(RESULT_UPLOAD_PATH, new String[0]);
-        getIntent().putExtra(RESULT_EXPORT_PATH, new String[]{pathName});
-        setResult(RESULT_OK, getIntent());
-        finish();
-        return true;
+          showExportWarning(new String[]{pathName});
+          return true;
       default:
         return super.onContextItemSelected(item);
       }
@@ -719,12 +705,7 @@ public class FileDialog extends ListActivity {
                         if (localEntry.listFiles().length > 0) {
                             for (VirtualFile localChild : localEntry.listFiles()) {
 
-                                if (selectionMode == SelectionMode.MODE_OPEN) {
-                                    /* If we're selecting the encfs directory, we'll 
-                                     * produce undecoded files */
-                                    Cryptonite.localTouch(localChild, rootPath);
-                                } else {
-
+                                if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT) {
                                     Cryptonite.decode(localChild.getPath().substring(encFSRoot.length()), 
                                             rootPath, localChild.isDirectory());
                                 }
@@ -743,5 +724,30 @@ public class FileDialog extends ListActivity {
         }
         getDirImpl(dirPath, rootPath, rootName);
     }
-
+    
+    private void showExportWarning(final String[] exportPaths) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(FileDialog.this);
+        builder.setIcon(R.drawable.ic_launcher_cryptonite)
+            .setTitle(R.string.warning)
+            .setMessage(R.string.export_warning)
+            .setPositiveButton(R.string.export_short,
+                    new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog,
+                        int which) {
+                    getIntent().putExtra(RESULT_OPEN_PATH, new String[0]);
+                    getIntent().putExtra(RESULT_UPLOAD_PATH, new String[0]);
+                    getIntent().putExtra(RESULT_EXPORT_PATH, exportPaths);
+                    setResult(RESULT_OK, getIntent());
+                    finish();
+                }
+            })
+            .setNegativeButton(R.string.cancel,
+                    new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog,
+                        int which) {
+                }
+            });  
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
 }
