@@ -1,32 +1,35 @@
 package csh.cryptonite;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 /** Singleton Virtual File System */
 public enum VirtualFileSystem {
-    VFS;
+    INSTANCE;
     
     private VirtualFile root;
+    private boolean isInit = false;
     
-    VirtualFileSystem() {
+    public void init() {
         root = new VirtualFile(VirtualFile.VIRTUAL_TAG + "/");
-        root.mkdirs();
+        root.setIsDir(true);
+        isInit = true;
     }
     
-    public boolean exists(VirtualFile file) {
-        return (findFile(file, root) != null);
+    public boolean exists(String filepath) {
+        return (findFile(filepath, root) != null);
     }
     
-    private VirtualFile findFile(VirtualFile file, VirtualFile currentFile) {
-        if (file.getPath() == currentFile.getPath()) {
+    private VirtualFile findFile(String filepath, VirtualFile currentFile) {
+        if (filepath.equals(currentFile.getPath())) {
             return currentFile;
         }
         
         if (currentFile.isDirectory()) {
             for (VirtualFile child : currentFile.listFiles()) {
-                VirtualFile res = findFile(file, child);
+                VirtualFile res = findFile(filepath, child);
                 
                 if (res != null) {
                     return res;
@@ -46,46 +49,37 @@ public enum VirtualFileSystem {
         return root;
     }
     
-    private void recMkDir(VirtualFile dir, VirtualFile currentFile, boolean isDir) {
-        if (dir.getPath() == currentFile.getPath()) {
-            return;
-        }
-        for (VirtualFile child : currentFile.listFiles()) {
-            if (child.isDirectory()) {
-                if (child.getPath() == dir.getParent()) {
-                    dir.setIsDir(isDir);
-                    child.addChild(dir);
-                    return;
-                } else {
-                    recMkDir(dir, child, isDir);
-                }
-            }
-        }
-    }
-    
     public boolean mkdirs(VirtualFile file, boolean isDir) {
-        String currentFilePath = file.getPath();
+        String filePath = file.getPath();
         List<String> chain = new ArrayList<String>();
         boolean existed = true;
         
-        while (currentFilePath != root.getPath()) {
-            chain.add(currentFilePath);
-            currentFilePath = new VirtualFile(currentFilePath).getParent();
+        String rootPath = root.getPath();
+        
+        while (!filePath.equals(rootPath)) {
+            chain.add(filePath);
+            filePath = new VirtualFile(filePath).getParent();
         }
+
+        Collections.reverse(chain);
         
         for (String createPath : chain) {
             VirtualFile currentFile = new VirtualFile(createPath);
             if (!currentFile.exists()) {
                 existed = false;
-                recMkDir(currentFile, root, isDir);
+                VirtualFile parentFile = findFile(currentFile.getParent(), root);
+                if (!currentFile.getPath().equals(file.getPath()) || isDir) {
+                    currentFile.setIsDir(true);
+                }
+                parentFile.addChild(currentFile);
             }
         }
         
         return existed;
     }
 
-    public Set<VirtualFile> listFiles(VirtualFile file) {
-        VirtualFile fromRoot = findFile(file, root);
+    public Set<VirtualFile> listFiles(String filepath) {
+        VirtualFile fromRoot = findFile(filepath, root);
         if (fromRoot == null) {
             return null;
         } else {
@@ -93,12 +87,22 @@ public enum VirtualFileSystem {
         }
     }
     
-    public boolean isDirectory(VirtualFile file) {
-        VirtualFile fromRoot = findFile(file, root);
+    public boolean isDirectory(String filepath) {
+        VirtualFile fromRoot = findFile(filepath, root);
         if (fromRoot == null) {
             return false;
         } else {
             return fromRoot.isDirectory();
+        }
+    }
+    
+    public boolean isInitialized() {
+        return isInit;
+    }
+    
+    public void clear() {
+        if (isInit) {
+            root.getChildren().clear();
         }
     }
 }

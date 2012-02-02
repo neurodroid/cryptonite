@@ -260,7 +260,7 @@ public class Cryptonite extends Activity
         buttonBrowseDecrypted.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     if (mLocalDecrypted) {
-                        localBrowseEncFS(currentBrowsePath);
+                        localBrowseEncFS(currentBrowsePath, currentBrowseStartPath);
                     } else if (mDropboxDecrypted) {
                         dbBrowseEncFS(currentBrowsePath, currentBrowseStartPath);
                     }
@@ -336,9 +336,17 @@ public class Cryptonite extends Activity
         updateMountButtons();
         updateDecryptButtons();
         
+        VirtualFileSystem vfs = VirtualFileSystem.INSTANCE;
+        vfs.init();
+        
+        /* Test local EncFS volume */
+        currentDialogStartPath = Environment.getExternalStorageDirectory().getPath();
+        currentDialogRoot = "/";
+        currentReturnPath = "/mnt/sdcard/.AAEncfs3"; 
+        localDecryptEncFS(currentReturnPath, "password");
+ 
         showAlert(getString(R.string.disclaimer), getString(R.string.no_warranty),
                 getString(R.string.understand));
-
     }
 
     private void cleanUpDecrypted() {
@@ -350,6 +358,9 @@ public class Cryptonite extends Activity
         deleteDir(getBaseContext().getDir(OPENPNT, Context.MODE_PRIVATE));
         deleteDir(getBaseContext().getDir(DROPBOXPNT, Context.MODE_PRIVATE));
         deleteDir(getBaseContext().getDir(READPNT, Context.MODE_WORLD_READABLE));
+        
+        /* Delete virtual file system */
+        VirtualFileSystem.INSTANCE.clear();
     }
 
     private void updateDecryptButtons() {
@@ -632,12 +643,12 @@ public class Cryptonite extends Activity
                     currentOpenPath = data.getStringExtra(FileDialog.RESULT_OPEN_PATH);
                     if (currentOpenPath != null && currentOpenPath.length() > 0) {
                         // Log.d(TAG, "Request to view " + currentOpenPath);
-                        openEncFSFile(currentOpenPath, encfsBrowseRoot.substring(VirtualFile.VIRTUAL_TAG.length()),
+                        openEncFSFile(currentOpenPath, encfsBrowseRoot,
                                 currentDialogDBEncFS, (opMode == SELECTDBEXPORT_MODE));
                     } else {
                         currentUploadPath = data.getStringExtra(FileDialog.RESULT_UPLOAD_PATH);
                         if (currentUploadPath != null && currentUploadPath.length() > 0) {
-                            uploadEncFSFile(currentUploadPath, encfsBrowseRoot.substring(VirtualFile.VIRTUAL_TAG.length()),
+                            uploadEncFSFile(currentUploadPath, encfsBrowseRoot,
                                     currentDialogDBEncFS, (opMode == SELECTDBEXPORT_MODE));
                         }
                     }
@@ -861,32 +872,33 @@ public class Cryptonite extends Activity
     /** This will use the encfs library to create a file tree with empty
      *  files that can be browsed.
      */
-    private void localDecryptEncFS(final String srcDir, String pwd) {
-        tv.setText(encfsversion);
-        tv.invalidate();
-
+    private void localDecryptEncFS(final String srcDir, final String pwd) {
+        
         if (jniIsValidEncFS(srcDir) != jniSuccess()) {
             showAlert(getString(R.string.invalid_encfs));
             Log.v(TAG, "Invalid EncFS");
             return;
         }
-        
         alertMsg = "";
-        
-        final File browseDirF = getPrivateDir(BROWSEPNT);
-        
+
         final ProgressDialog pd = ProgressDialog.show(this,
                                                       this.getString(R.string.wait_msg),
                                                       this.getString(R.string.running_encfs), true);
         new Thread(new Runnable(){
                 public void run(){
-                    currentBrowsePath = browseDirF.getPath();
-                    if (jniBrowse(srcDir, browseDirF.getPath(), currentPassword) != jniSuccess()) {
+                    /* Order is important here: DB root has to store
+                     * the previous state of the dialog root.
+                     */
+                    currentBrowsePath = currentReturnPath;
+                    currentBrowseStartPath = currentDialogStartPath;
+                    currentDialogDBEncFS = currentReturnPath.substring(currentDialogStartPath.length());
+                    Log.i(TAG, "Dialog DB root is " + currentReturnPath);
+                    if (jniInit(srcDir, pwd) != jniSuccess()) {
+                        Log.v(TAG, getString(R.string.browse_failed));
                         alertMsg = getString(R.string.browse_failed);
-                        Log.v(TAG, alertMsg);
                     } else {
                         Log.v(TAG, "Decoding succeeded");
-                    }                    
+                    }
                     runOnUiThread(new Runnable(){
                             public void run() {
                                 if (pd.isShowing())
@@ -907,17 +919,21 @@ public class Cryptonite extends Activity
     /** This will use the encfs library to create a file tree with empty
      *  files that can be browsed.
      */
-    private void localBrowseEncFS(final String browseDir) {
+    private void localBrowseEncFS(final String browsePath, final String browseStartPath) {
+        final VirtualFile browseDirF = new VirtualFile(VirtualFile.VIRTUAL_TAG + "/" + BROWSEPNT);
+        browseDirF.mkdirs();
+        
         final ProgressDialog pd = ProgressDialog.show(this,
                                                       this.getString(R.string.wait_msg),
                                                       this.getString(R.string.running_encfs), true);
         new Thread(new Runnable(){
                 public void run(){
-                    currentDialogStartPath = browseDir;
+                    currentDialogDBEncFS = browsePath.substring(browseStartPath.length());
+                    Log.i(TAG, "Dialog DB root is " + browsePath);
+                    currentDialogStartPath = browseDirF.getPath();
                     currentDialogLabel = getString(R.string.select_file_export);
                     currentDialogButtonLabel = getString(R.string.export);
                     currentDialogRoot = currentDialogStartPath;
-                    currentDialogDBEncFS = "";
                     encfsBrowseRoot = currentDialogRoot;
                     currentDialogRootName = getString(R.string.encfs_root);
                     currentDialogMode = SelectionMode.MODE_OPEN_MULTISELECT;
@@ -1023,7 +1039,8 @@ public class Cryptonite extends Activity
      */
     private void dbBrowseEncFS(final String browsePath, final String browseStartPath) {
  
-        final File browseDirF = getPrivateDir(DROPBOXPNT);
+        final VirtualFile browseDirF = new VirtualFile(VirtualFile.VIRTUAL_TAG + "/" + DROPBOXPNT);
+        browseDirF.mkdirs();
         
         final ProgressDialog pd = ProgressDialog.show(this, 
                 this.getString(R.string.wait_msg), 
@@ -1040,7 +1057,7 @@ public class Cryptonite extends Activity
                     */
                     currentDialogDBEncFS = browsePath.substring(browseStartPath.length());
                     Log.i(TAG, "Dialog DB root is " + browsePath);
-                    currentDialogStartPath = VirtualFile.VIRTUAL_TAG + browseDirF.getPath();
+                    currentDialogStartPath = browseDirF.getPath();
                     currentDialogLabel = getString(R.string.select_file_export);
                     currentDialogButtonLabel = getString(R.string.export);
                     currentDialogRoot = currentDialogStartPath;
@@ -1376,7 +1393,16 @@ public class Cryptonite extends Activity
         }
     }
     
-    public static void dbDecode(String encodedPath, String destRoot, boolean isDir) throws IOException {
+    public static void localTouch(VirtualFile srcFile, String destRoot) throws IOException {
+        VirtualFile file = new VirtualFile(destRoot + srcFile.getPath());
+        if (srcFile.isDirectory()) {
+            file.mkdirs();
+        } else {
+            file.createNewFile();
+        }
+    }
+    
+    public static void decode(String encodedPath, String destRoot, boolean isDir) throws IOException {
 
         Log.i(TAG, "encodedPath is " + encodedPath);
         

@@ -40,6 +40,7 @@
     <string name="content_type_not_found_msg">Couldn\'t detect file type</string>
     <string name="browse_decrypted">Browse decrypted folder</string>
     <string name="forget_decryption">Forget decryption</string>
+    <string name="local_read_fail">Problem reading from local folder</string>
     
     <!-- Dropbox -->
     <string name="dropbox_link">Link with Dropbox</string>

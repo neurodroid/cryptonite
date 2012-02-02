@@ -3,6 +3,7 @@ package csh.cryptonite;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -24,18 +25,20 @@ public class VirtualFile extends File {
         if (path.startsWith(VIRTUAL_TAG)) {
             isVirtual = true;
             /* normalise path name */
-            // virtualPath = this.getPath().substring(VIRTUAL_TAG.length());
-            isDir = VirtualFileSystem.VFS.isDirectory(this);
-            children = VirtualFileSystem.VFS.listFiles(this);
+            if (VirtualFileSystem.INSTANCE.isInitialized()) {
+                // virtualPath = this.getPath().substring(VIRTUAL_TAG.length());
+                isDir = VirtualFileSystem.INSTANCE.isDirectory(path);
+                children = VirtualFileSystem.INSTANCE.listFiles(path);
+            }
         }
     }
 
     @Override
     public boolean exists() {
-        if (isVirtual) {
+        if (!isVirtual) {
             return super.exists();
         } else {
-            return VirtualFileSystem.VFS.exists(this);
+            return VirtualFileSystem.INSTANCE.exists(this.getPath());
         }
     }
     
@@ -101,9 +104,9 @@ public class VirtualFile extends File {
         if (!isVirtual) {
             return super.mkdirs();
         } else {
-            isDir = VirtualFileSystem.VFS.mkdirs(this, true);
+            boolean res = VirtualFileSystem.INSTANCE.mkdirs(this, true);
             
-            return isDir;
+            return res;
         }
     }
  
@@ -120,7 +123,7 @@ public class VirtualFile extends File {
             if (!getParentFile().exists()) {
                 return false;
             }
-            VirtualFileSystem.VFS.mkdirs(this, true);
+            VirtualFileSystem.INSTANCE.mkdirs(this, true);
             return false;
         }
         
@@ -131,7 +134,6 @@ public class VirtualFile extends File {
         if (!isVirtual) {
             return super.createNewFile();
         } else {
-            isDir = false;
             if (exists()) {
                 return false;
             }
@@ -139,9 +141,8 @@ public class VirtualFile extends File {
             if (!getParentFile().exists()) {
                 throw new IOException("parent directory doesn't exist");
             }
-            /* TODO: implement this in VFS walking the tree from root */
-            VirtualFileSystem.VFS.mkdirs(this, false);
-            return false;
+
+            return VirtualFileSystem.INSTANCE.mkdirs(this, false);
         }
         
     }
@@ -155,6 +156,7 @@ public class VirtualFile extends File {
     }
     
     protected void setIsDir(boolean setDir) {
+        children = new HashSet<VirtualFile>();
         isDir = setDir;
     }
     

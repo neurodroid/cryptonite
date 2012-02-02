@@ -20,7 +20,6 @@
 
 package csh.cryptonite;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -256,17 +255,15 @@ public class FileDialog extends ListActivity {
 
         Integer position = lastPositions.get(parentPath);
         
-        if (selectionMode == SelectionMode.MODE_OPEN_DB
-                || selectionMode == SelectionMode.MODE_OPEN_MULTISELECT_DB)
-        {
-            if (rootPath.startsWith(VirtualFile.VIRTUAL_TAG)) {
-                rootPath = rootPath.substring(VirtualFile.VIRTUAL_TAG.length());
-            }
-            if (dirPath.startsWith(VirtualFile.VIRTUAL_TAG)) {
-                dirPath = dirPath.substring(VirtualFile.VIRTUAL_TAG.length());
-            }
+        switch (selectionMode) {
+        case SelectionMode.MODE_OPEN_DB:
+        case SelectionMode.MODE_OPEN_MULTISELECT_DB:
             dbBuildDir(dirPath, rootPath, rootName, dbRootPath);  
-        } else {
+            break;
+        case SelectionMode.MODE_OPEN_MULTISELECT:
+            localBuildDir(dirPath, rootPath, rootName, dbRootPath);
+            break;
+        default:
             getDirImpl(dirPath, rootPath, rootName);
         }
         if (position != null && useAutoSelection) {
@@ -661,7 +658,7 @@ public class FileDialog extends ListActivity {
                                             Cryptonite.dbTouch(dbChild, rootPath);
                                         } else {
                                             
-                                            Cryptonite.dbDecode(dbChild.path.substring(dbEncFSPath.length()), 
+                                            Cryptonite.decode(dbChild.path.substring(dbEncFSPath.length()), 
                                                     rootPath, dbChild.isDir);
                                         }
                                     }
@@ -689,6 +686,62 @@ public class FileDialog extends ListActivity {
                 });
             }
         }).start();
+    }
+
+    private void localBuildDir(final String dirPath, final String rootPath, final String rootName,
+            final String localEncFSPath)
+    {
+        alertMsg = "";
+        
+        /* TODO: re-code path names so that they can be found on Dropbox */
+        final String localPath = "/" + dirPath.substring(rootPath.length());
+        String encFSRoot = "";
+        if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT) {
+            /* Full path of previous encFSRoot */
+            encFSRoot = Cryptonite.jniEncode("/");
+        }
+        String prevLocalRoot = encFSRoot.substring(0, encFSRoot.length()-localEncFSPath.length());
+
+        try {
+            /* If we're selecting the files to be exported, we
+             * have to insert the path within the Dropbox that
+             * leads to the encoded folder. dirPath will represent
+             * a decoded file name so that we have to re-encode it */
+            String encodedPath = localPath;
+            if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT) {
+                encodedPath = Cryptonite.jniEncode(localPath).substring(prevLocalRoot.length()-1); 
+            }
+            VirtualFile localEntry = new VirtualFile(prevLocalRoot + encodedPath);
+
+            if (localEntry.exists()) {
+                if (localEntry.isDirectory()) {
+                    if (localEntry.listFiles() != null) {
+                        if (localEntry.listFiles().length > 0) {
+                            for (VirtualFile localChild : localEntry.listFiles()) {
+
+                                if (selectionMode == SelectionMode.MODE_OPEN) {
+                                    /* If we're selecting the encfs directory, we'll 
+                                     * produce undecoded files */
+                                    Cryptonite.localTouch(localChild, rootPath);
+                                } else {
+
+                                    Cryptonite.decode(localChild.getPath().substring(encFSRoot.length()), 
+                                            rootPath, localChild.isDirectory());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            alertMsg = getString(R.string.local_read_fail) + e.toString();
+            Log.e(Cryptonite.TAG, alertMsg);
+        }
+        if (!alertMsg.equals("")) {
+            Toast.makeText(FileDialog.this, alertMsg, Toast.LENGTH_LONG);
+            alertMsg = "";
+        }
+        getDirImpl(dirPath, rootPath, rootName);
     }
 
 }
