@@ -338,15 +338,15 @@ public class Cryptonite extends Activity
         VirtualFileSystem vfs = VirtualFileSystem.INSTANCE;
         vfs.init();
         
-        /* Test local EncFS volume */
-        /*
+        /* TODO: Remove this after testing
+         * Test local EncFS volume */
         currentDialogStartPath = Environment.getExternalStorageDirectory().getPath();
         currentDialogRoot = "/";
         currentReturnPath = "/mnt/sdcard/.AAEncfs3"; 
         localDecryptEncFS(currentReturnPath, "password");
-        */
-        showAlert(getString(R.string.disclaimer), getString(R.string.no_warranty),
-                getString(R.string.understand));
+                        
+        /* showAlert(getString(R.string.disclaimer), getString(R.string.no_warranty),
+                getString(R.string.understand)); */
     }
 
     private void cleanUpDecrypted() {
@@ -401,7 +401,7 @@ public class Cryptonite extends Activity
         case SelectionMode.MODE_OPEN_DB:
             /* file dialog */
             if (resultCode == Activity.RESULT_OK && data != null) {
-                currentReturnPath = data.getStringExtra(FileDialog.RESULT_EXPORT_PATH);
+                currentReturnPath = data.getStringExtra(FileDialog.RESULT_EXPORT_PATHS);
                 if (currentReturnPath != null ) {
                     switch (opMode) {
                     case MOUNT_MODE:
@@ -459,7 +459,7 @@ public class Cryptonite extends Activity
         case SelectionMode.MODE_OPEN_MULTISELECT_DB:
             /* file dialog */
             if (resultCode == Activity.RESULT_OK && data != null) {
-                currentReturnPathList = data.getStringArrayExtra(FileDialog.RESULT_EXPORT_PATH);
+                currentReturnPathList = data.getStringArrayExtra(FileDialog.RESULT_EXPORT_PATHS);
                 if (currentReturnPathList != null && currentReturnPathList.length > 0) {
 
                     if (currentReturnPathList.length > MAX_JNI_SIZE) {
@@ -500,7 +500,8 @@ public class Cryptonite extends Activity
                         currentUploadPath = data.getStringExtra(FileDialog.RESULT_UPLOAD_PATH);
                         if (currentUploadPath != null && currentUploadPath.length() > 0) {
                             uploadEncFSFile(currentUploadPath, encfsBrowseRoot,
-                                    currentDialogDBEncFS, (opMode == SELECTDBEXPORT_MODE));
+                                    currentDialogDBEncFS, "/mnt/sdcard/2012-01-21-24-52-07.jpg", 
+                                    (opMode == SELECTDBEXPORT_MODE));
                         }
                     }
                 }
@@ -764,6 +765,10 @@ public class Cryptonite extends Activity
                                     pd.dismiss();
                                 nullPassword();
                                 updateDecryptButtons();
+                                /* TODO: remove this after testing */
+                                uploadEncFSFile("<virtual>/browse/artur", "<virtual>/browse", 
+                                        "/.AAEncfs3", "/mnt/sdcard/2012-01-21-24-52-07.jpg", false);
+
                                 mLocalDecrypted = true;
                                 if (alertMsg.length()!=0) {
                                     showAlert(R.string.error, alertMsg);
@@ -1328,7 +1333,7 @@ public class Cryptonite extends Activity
             .getFile(encFSDBRoot + srcPath, null, fos, null);
         fos.close();
     
-        return (jniCopy(encFSLocalRoot + srcPath, targetDir, forceReadable) == jniSuccess());
+        return (jniDecrypt(encFSLocalRoot + srcPath, targetDir, forceReadable) == jniSuccess());
     }
 
     /** Walks a Dropbox file tree, copying decrypted files to a local
@@ -1477,7 +1482,7 @@ public class Cryptonite extends Activity
                 /* Convert current path to encoded file name */
                 String encodedPath = jniEncode(stripstr);
 
-                if (jniCopy(encodedPath, destDir, false) != jniSuccess()) {
+                if (jniDecrypt(encodedPath, destDir, false) != jniSuccess()) {
                     errorList.add(stripstr);
                     Log.e(TAG, "Couldn't copy " + encodedPath + " to " + destDir);
                 }
@@ -1564,7 +1569,7 @@ public class Cryptonite extends Activity
             }
         } else {
             /* Copy decrypted file */
-            if (jniCopy(encodedPath, openDir.getPath(), true) != jniSuccess()) {
+            if (jniDecrypt(encodedPath, openDir.getPath(), true) != jniSuccess()) {
                 showAlert(R.string.error, R.string.local_read_fail);
                 Log.e(TAG, "Error while attempting to copy " + encodedPath);
                 return false;
@@ -1646,12 +1651,16 @@ public class Cryptonite extends Activity
         return true;
     }
 
-    private boolean uploadEncFSFile(String encFSFilePath, String fileRoot, String dbEncFSPath, boolean isDB) {
+    private boolean uploadEncFSFile(String encFSFilePath, String fileRoot, 
+            String dbEncFSPath, String srcPath, boolean isDB) {
+        
+        File srcFile = new File(srcPath);
+        String srcFileName = srcFile.getName();
         
         /* normalise path names */
         String bRoot = new File(fileRoot).getPath();
         String bPath = new File(encFSFilePath).getPath();
-        String stripstr = bPath.substring(bRoot.length());
+        String stripstr = bPath.substring(bRoot.length()) + "/" + srcFileName;
         if (!stripstr.startsWith("/")) {
             stripstr = "/" + stripstr;
         }
@@ -1661,12 +1670,10 @@ public class Cryptonite extends Activity
          * TODO: Implement this
          */
         
-        return true;
-
-
+        return (jniEncrypt(stripstr, dbEncFSPath, false) == jniSuccess());
 
     }
-        
+
     /* Native methods are implemented by the
      * 'cryptonite' native library, which is packaged
      * with this application.
@@ -1679,13 +1686,14 @@ public class Cryptonite extends Activity
     public native int     jniBrowse(String srcDir, String destDir, String password);
     public native int     jniInit(String srcDir, String password);
     public native int     jniExport(String[] exportPaths, String exportRoot, String destDir);
-    public native int     jniCopy(String encodedName, String destDir, boolean forceReadable);
+    public native int     jniDecrypt(String encodedName, String destDir, boolean forceReadable);
+    public native int     jniEncrypt(String decodedPath, String destDir, boolean forceReadable);
     public static native String  jniDecode(String name);
     public static native String  jniEncode(String name);
     public native String  jniVersion();
     public native String  jniAppKey();
     public native String  jniAppPw();
-    
+
     /* this is used to load the 'cryptonite' library on application
      * startup. The library has already been unpacked into
      * /data/data/csh.cryptonite/lib/libcryptonite.so at

@@ -71,7 +71,7 @@ public class FileDialog extends ListActivity {
     private static final String ROOT = "/";
 
     public static final String START_PATH = "START_PATH";
-    public static final String RESULT_EXPORT_PATH = "RESULT_EXPORT_PATH";
+    public static final String RESULT_EXPORT_PATHS = "RESULT_EXPORT_PATHS";
     public static final String RESULT_OPEN_PATH = "RESULT_OPEN_PATH";
     public static final String RESULT_UPLOAD_PATH = "RESULT_UPLOAD_PATH";
     public static final String SELECTION_MODE = "SELECTION_MODE";
@@ -146,9 +146,9 @@ public class FileDialog extends ListActivity {
                             || selectionMode == SelectionMode.MODE_OPEN_DB)
                     {
                         if (currentPath != null) {
-                            getIntent().putExtra(RESULT_OPEN_PATH, new String[0]);
-                            getIntent().putExtra(RESULT_UPLOAD_PATH, new String[0]);
-                            getIntent().putExtra(RESULT_EXPORT_PATH, currentPath);
+                            getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
+                            getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
+                            getIntent().putExtra(RESULT_EXPORT_PATHS, currentPath);
                             setResult(RESULT_OK, getIntent());
                             finish();
                         }
@@ -178,13 +178,13 @@ public class FileDialog extends ListActivity {
         layoutSelect = (LinearLayout) findViewById(R.id.fdLinearLayoutSelect);
         layoutCreate = (LinearLayout) findViewById(R.id.fdLinearLayoutCreate);
         layoutUpload = (LinearLayout) findViewById(R.id.fdLinearLayoutUpload);
-        /* Disable upload at this time 
+        /* Disable upload at this time */ 
         if (selectionMode != SelectionMode.MODE_OPEN_MULTISELECT 
                 && selectionMode != SelectionMode.MODE_OPEN_MULTISELECT_DB)
         {
             layoutUpload.setVisibility(View.GONE);
-        }*/
-        layoutUpload.setVisibility(View.GONE);
+        }
+        // layoutUpload.setVisibility(View.GONE);
         layoutCreate.setVisibility(View.GONE);
 
         final Button cancelButton = (Button) findViewById(R.id.fdButtonCancel);
@@ -201,9 +201,9 @@ public class FileDialog extends ListActivity {
 
                 public void onClick(View v) {
                     if (mFileName.getText().length() > 0) {
-                        getIntent().putExtra(RESULT_OPEN_PATH, new String[0]);
-                        getIntent().putExtra(RESULT_UPLOAD_PATH, new String[0]);
-                        getIntent().putExtra(RESULT_EXPORT_PATH,
+                        getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
+                        getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
+                        getIntent().putExtra(RESULT_EXPORT_PATHS,
                                 currentPath + "/" + mFileName.getText());
                         setResult(RESULT_OK, getIntent());
                         finish();
@@ -215,8 +215,8 @@ public class FileDialog extends ListActivity {
         uploadButton.setOnClickListener(new OnClickListener() {
 
             public void onClick(View v) {
-                getIntent().putExtra(RESULT_OPEN_PATH, new String[0]);
-                getIntent().putExtra(RESULT_EXPORT_PATH, new String[0]);
+                getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
+                getIntent().putExtra(RESULT_EXPORT_PATHS, (String[])null);
                 getIntent().putExtra(RESULT_UPLOAD_PATH, currentPath);
                 setResult(RESULT_OK, getIntent());
                 finish();
@@ -580,8 +580,8 @@ public class FileDialog extends ListActivity {
       String pathName = path.get(info.position);
       switch (item.getItemId()) {
       case R.id.context_open:
-        getIntent().putExtra(RESULT_EXPORT_PATH, new String[0]);
-        getIntent().putExtra(RESULT_UPLOAD_PATH, new String[0]);
+        getIntent().putExtra(RESULT_EXPORT_PATHS, (String[])null);
+        getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
         getIntent().putExtra(RESULT_OPEN_PATH, pathName);
         setResult(RESULT_OK, getIntent());
         finish();
@@ -734,9 +734,9 @@ public class FileDialog extends ListActivity {
                     new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog,
                         int which) {
-                    getIntent().putExtra(RESULT_OPEN_PATH, new String[0]);
-                    getIntent().putExtra(RESULT_UPLOAD_PATH, new String[0]);
-                    getIntent().putExtra(RESULT_EXPORT_PATH, exportPaths);
+                    getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
+                    getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
+                    getIntent().putExtra(RESULT_EXPORT_PATHS, exportPaths);
                     setResult(RESULT_OK, getIntent());
                     finish();
                 }

@@ -41,6 +41,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
+#include <rlog/Error.h>
 #include <encfs.h>
 #include <FileNode.h>
 #include <DirNode.h>
@@ -432,7 +433,8 @@ extern "C" {
 
     JNIEXPORT jint JNICALL
     Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv * env, jobject thiz,
-                                             jstring srcdir, jstring destdir, jstring password);
+                                             jstring srcdir, jstring destdir,
+                                             jstring password);
 
     JNIEXPORT jint JNICALL
     Java_csh_cryptonite_Cryptonite_jniInit(JNIEnv* env, jobject thiz,
@@ -444,9 +446,14 @@ extern "C" {
                                              jstring destdir);
     
     JNIEXPORT jint JNICALL
-    Java_csh_cryptonite_Cryptonite_jniCopy(JNIEnv * env, jobject thiz,
-                                           jstring encodedname, jstring destdir,
-                                           jboolean force_readable);
+    Java_csh_cryptonite_Cryptonite_jniDecrypt(JNIEnv * env, jobject thiz,
+                                              jstring encodedname, jstring destdir,
+                                              jboolean force_readable);
+    
+    JNIEXPORT jint JNICALL
+    Java_csh_cryptonite_Cryptonite_jniEncrypt(JNIEnv * env, jobject thiz,
+                                              jstring plainpath, jstring destdir,
+                                              jboolean force_readable);
     
     JNIEXPORT jstring JNICALL
     Java_csh_cryptonite_Cryptonite_jniDecode(JNIEnv * env, jobject thiz,
@@ -622,7 +629,7 @@ JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_jniIsValidEncFS(JNIEnv * e
 
 int checkGRoot() {
     if(!gRootInfo) {
-        LOGE("Error initialising root volume");
+        LOGI("checkGRoot(): Root volume is NULL");
         return EXIT_FAILURE;
     }
 
@@ -651,10 +658,10 @@ int setupRootDir(JNIEnv* env, jstring srcdir, jstring password) {
     if (pw_len  == 0) {
         return EXIT_FAILURE;
     }
-    
+
     jniStringManager msrcdir(env, srcdir);
     jniStringManager mpassword(env, password);
-    
+
     if (isValidEncFS(msrcdir.str()) != EXIT_SUCCESS) {
         LOGE("EncFS root directory is not valid");
         return EXIT_FAILURE;
@@ -683,7 +690,7 @@ Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv* env, jobject thiz, jstring srcd
 
     std::set<std::string> empty;
     res = traverseDirs(gRootInfo, "/", mdestdir.str(), empty);
-    
+
     return res;
 }
 
@@ -764,7 +771,7 @@ Java_csh_cryptonite_Cryptonite_jniDecode(JNIEnv* env, jobject thiz, jstring enco
     /*std::ostringstream info;
     info << "Decoded " << mencodedname.str() << " to " << name;
     LOGI(info.str().c_str());*/
-    
+
     return env->NewStringUTF(name.c_str());
 }
 
@@ -784,13 +791,13 @@ Java_csh_cryptonite_Cryptonite_jniEncode(JNIEnv* env, jobject thiz, jstring deco
     /* std::ostringstream info;
     info << "Encoded " << mdecodedname.str() << " to " << name;
     LOGI(info.str().c_str()); */
-    
+
     return env->NewStringUTF(name.c_str());
 }
 
 JNIEXPORT jint JNICALL
-Java_csh_cryptonite_Cryptonite_jniCopy(JNIEnv* env, jobject thiz, jstring encodedname,
-                                       jstring destdir, jboolean force_readable)
+Java_csh_cryptonite_Cryptonite_jniDecrypt(JNIEnv* env, jobject thiz, jstring encodedname,
+                                          jstring destdir, jboolean force_readable)
 {
     int res = checkGRoot();
 
@@ -819,7 +826,6 @@ Java_csh_cryptonite_Cryptonite_jniCopy(JNIEnv* env, jobject thiz, jstring encode
     out << "Decoding " << mencodedname.str() << " to " << plainPath << " in " << destname;
     LOGI(out.str().c_str()); */
 
-    /* TODO: As of yet, this creates empty files */
     boost::shared_ptr<FileNode> node = 
 	gRootInfo->root->lookupNode( plainPath.c_str(), "encfsctl");
 
@@ -868,6 +874,98 @@ Java_csh_cryptonite_Cryptonite_jniCopy(JNIEnv* env, jobject thiz, jstring encode
         close(outfd);
     }
     return EXIT_SUCCESS;
+}
+
+JNIEXPORT jint JNICALL
+Java_csh_cryptonite_Cryptonite_jniEncrypt(JNIEnv * env, jobject thiz,
+                                          jstring plainpath, jstring destdir,
+                                          jboolean force_readable)
+{
+    int res = checkGRoot();
+
+    if (res != EXIT_SUCCESS) {
+        std::ostringstream err;
+        err << "EncFS root hasn't been initialized yet";
+        LOGE(err.str().c_str());
+        return res;
+    }
+
+    jniStringManager mplainpath(env, plainpath);
+    jniStringManager mdestdir(env, destdir);
+
+    boost::shared_ptr<FileNode> node = 
+	gRootInfo->root->lookupNode( mplainpath.c_str(), "encfsctl");
+
+    if(!node) {
+        std::ostringstream err;
+        err << "unable to open " << mplainpath.str();
+        LOGE(err.str().c_str());
+        return EXIT_FAILURE;
+    }
+
+    /* TODO: get parent directly without back-engineering from
+     * plain parent
+     */
+    std::string plainparentpath = node->plaintextParent();
+    std::string encodedparentpath = gRootInfo->root->cipherPath(plainparentpath.c_str());
+    std::string encodedpath = gRootInfo->root->cipherPath(mplainpath.c_str());
+        
+    std::ostringstream out;
+    out << "Encrypting " << mplainpath.str() << " to " << encodedpath << " in " << encodedparentpath;
+    LOGI(out.str().c_str());
+
+    // if the dir doesn't exist, then create it (with user permission)
+    if(!checkDir(encodedparentpath) && !userAllowMkdir(encodedparentpath.c_str(), 0700)) {
+        std::ostringstream err;
+        err << "Destination directory " << encodedparentpath << " isn't valid";
+        LOGE(err.str().c_str());
+        
+	return EXIT_FAILURE;
+    }
+
+#if 0
+
+        /*std::ostringstream err;
+        err << "found node " << plainPath;
+        LOGE(err.str().c_str()); */
+
+        struct stat st;
+        
+        if(node->getAttr(&st) != 0) {
+            std::ostringstream out;
+            out << "Not creating " << destname << ", "
+                << "couldn't read node attributes: "
+                << strerror(errno);
+            LOGE(out.str().c_str());
+            return EXIT_FAILURE;
+        }
+
+        mode_t srcmode = st.st_mode;
+        if (force_readable)
+            srcmode = S_IRWXU;
+        
+        int outfd = creat(destname.c_str(), srcmode);
+
+        if (outfd == -1) {
+            if (errno == EACCES /* sic! */ || errno == EROFS || errno == ENOSPC) {
+                std::ostringstream out;
+                out << "Not creating " << destname << ": "
+                    << strerror(errno);
+                LOGE(out.str().c_str());
+            }
+            return EXIT_FAILURE;
+        }
+        WriteOutput output(outfd);
+        /*std::ostringstream out;
+        out << "Writing to " << destname;
+        LOGE(out.str().c_str()); */
+        processContents( gRootInfo, plainPath.c_str(), output );
+        
+        close(outfd);
+#endif
+
+    return EXIT_SUCCESS;
+
 }
 
 JNIEXPORT jstring JNICALL
