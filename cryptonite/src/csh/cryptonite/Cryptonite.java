@@ -1655,6 +1655,7 @@ public class Cryptonite extends Activity
             String dbEncFSPath, String srcPath, boolean isDB) {
         
         File srcFile = new File(srcPath);
+        String srcParent = srcFile.getParent();
         String srcFileName = srcFile.getName();
         
         /* normalise path names */
@@ -1670,7 +1671,7 @@ public class Cryptonite extends Activity
          * TODO: Implement this
          */
         
-        return (jniEncrypt(stripstr, dbEncFSPath, false) == jniSuccess());
+        return (jniEncrypt(stripstr, srcPath, false) == jniSuccess());
 
     }
 
@@ -1687,7 +1688,7 @@ public class Cryptonite extends Activity
     public native int     jniInit(String srcDir, String password);
     public native int     jniExport(String[] exportPaths, String exportRoot, String destDir);
     public native int     jniDecrypt(String encodedName, String destDir, boolean forceReadable);
-    public native int     jniEncrypt(String decodedPath, String destDir, boolean forceReadable);
+    public native int     jniEncrypt(String decodedPath, String srcPathk, boolean forceReadable);
     public static native String  jniDecode(String name);
     public static native String  jniEncode(String name);
     public native String  jniVersion();

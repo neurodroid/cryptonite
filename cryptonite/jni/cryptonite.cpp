@@ -452,7 +452,7 @@ extern "C" {
     
     JNIEXPORT jint JNICALL
     Java_csh_cryptonite_Cryptonite_jniEncrypt(JNIEnv * env, jobject thiz,
-                                              jstring plainpath, jstring destdir,
+                                              jstring plainpath, jstring srcpath,
                                               jboolean force_readable);
     
     JNIEXPORT jstring JNICALL
@@ -878,7 +878,7 @@ Java_csh_cryptonite_Cryptonite_jniDecrypt(JNIEnv* env, jobject thiz, jstring enc
 
 JNIEXPORT jint JNICALL
 Java_csh_cryptonite_Cryptonite_jniEncrypt(JNIEnv * env, jobject thiz,
-                                          jstring plainpath, jstring destdir,
+                                          jstring plainpath, jstring srcpath,
                                           jboolean force_readable)
 {
     int res = checkGRoot();
@@ -891,8 +891,8 @@ Java_csh_cryptonite_Cryptonite_jniEncrypt(JNIEnv * env, jobject thiz,
     }
 
     jniStringManager mplainpath(env, plainpath);
-    jniStringManager mdestdir(env, destdir);
-
+    jniStringManager msrcpath(env, srcpath);
+    
     boost::shared_ptr<FileNode> node = 
 	gRootInfo->root->lookupNode( mplainpath.c_str(), "encfsctl");
 
@@ -909,9 +909,9 @@ Java_csh_cryptonite_Cryptonite_jniEncrypt(JNIEnv * env, jobject thiz,
     std::string plainparentpath = node->plaintextParent();
     std::string encodedparentpath = gRootInfo->root->cipherPath(plainparentpath.c_str());
     std::string encodedpath = gRootInfo->root->cipherPath(mplainpath.c_str());
-        
+    
     std::ostringstream out;
-    out << "Encrypting " << mplainpath.str() << " to " << encodedpath << " in " << encodedparentpath;
+    out << "Encrypting " << msrcpath.str() << " to " << encodedpath << " in " << encodedparentpath;
     LOGI(out.str().c_str());
 
     // if the dir doesn't exist, then create it (with user permission)
@@ -923,26 +923,40 @@ Java_csh_cryptonite_Cryptonite_jniEncrypt(JNIEnv * env, jobject thiz,
 	return EXIT_FAILURE;
     }
 
-#if 0
+    struct stat st;
 
-        /*std::ostringstream err;
-        err << "found node " << plainPath;
-        LOGE(err.str().c_str()); */
+    if(stat(msrcpath.c_str(), &st) != 0) {
+        std::ostringstream out;
+        out << "Not creating " << encodedpath << ", "
+            << "couldn't read attributes of "
+            << msrcpath.str() << ": "
+            << strerror(errno);
+        LOGE(out.str().c_str());
+        return EXIT_FAILURE;
+    }
 
-        struct stat st;
-        
-        if(node->getAttr(&st) != 0) {
-            std::ostringstream out;
-            out << "Not creating " << destname << ", "
-                << "couldn't read node attributes: "
-                << strerror(errno);
-            LOGE(out.str().c_str());
-            return EXIT_FAILURE;
-        }
+    mode_t srcmode = st.st_mode;
+    if (force_readable)
+        srcmode = S_IRWXU;
 
-        mode_t srcmode = st.st_mode;
-        if (force_readable)
-            srcmode = S_IRWXU;
+    /* Open source file */
+    FILE* fp = fopen(msrcpath.c_str(), "rb");
+    fseek(fp, 0L, SEEK_END);
+    long sz = ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
+    unsigned char buf[512];
+    int blocks = (sz + sizeof(buf)-1) / sizeof(buf);
+
+    // read all the data in blocks
+    for(int i=0; i<blocks; ++i)
+    {
+        int bytes = fread(buf, sizeof(buf), 1, fp);
+        // int bytes = node->read(i*sizeof(buf), buf, sizeof(buf));
+        bool succ = node->write(i*sizeof(buf), buf, sizeof(buf));
+        // int res = node->op(buf, bytes);
+    }
+    
+#if 0    
         
         int outfd = creat(destname.c_str(), srcmode);
 
