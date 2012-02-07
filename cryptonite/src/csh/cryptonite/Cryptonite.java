@@ -83,7 +83,7 @@ public class Cryptonite extends Activity
     private static final int REQUEST_PREFS=0, REQUEST_CODE_PICK_FILE_OR_DIRECTORY=1;
     private static final int MOUNT_MODE=0, SELECTLOCALENCFS_MODE=1, SELECTDBENCFS_MODE=2,
         VIEWMOUNT_MODE=3, SELECTLOCALEXPORT_MODE=4, LOCALEXPORT_MODE=5, DROPBOX_AUTH_MODE=6,
-        SELECTDBEXPORT_MODE=7, DBEXPORT_MODE=8;
+        SELECTDBEXPORT_MODE=7, DBEXPORT_MODE=8, SELECTLOCALUPLOAD_MODE=9, SELECTDBUPLOAD_MODE=10;
     private static final int DIRPICK_MODE=0, FILEPICK_MODE=1;
     private static final int MY_PASSWORD_DIALOG_ID = 0;
     private static final int DIALOG_MARKETNOTFOUND=1, DIALOG_OI_UNAVAILABLE=2;
@@ -449,6 +449,14 @@ public class Cryptonite extends Activity
                             }).start();
                         }
                         break;
+                    case SELECTDBUPLOAD_MODE:
+                    case SELECTLOCALUPLOAD_MODE:
+                        String srcPath = data.getStringExtra(FileDialog.RESULT_SELECTED_FILE);
+                        /* TODO: make currentReturnPath return file path rather than parent directory */
+                        uploadEncFSFile(currentUploadPath, encfsBrowseRoot,
+                                currentDialogDBEncFS, srcPath, 
+                                (opMode == SELECTDBUPLOAD_MODE));
+                        break;
                     }
                 }
             } else if (resultCode == Activity.RESULT_CANCELED) {
@@ -489,19 +497,36 @@ public class Cryptonite extends Activity
                         opMode = DBEXPORT_MODE;
                         break;
                     }
-                    launchBuiltinFileBrowser();
                 } else {
                     currentOpenPath = data.getStringExtra(FileDialog.RESULT_OPEN_PATH);
                     if (currentOpenPath != null && currentOpenPath.length() > 0) {
-                        // Log.d(TAG, "Request to view " + currentOpenPath);
                         openEncFSFile(currentOpenPath, encfsBrowseRoot,
                                 currentDialogDBEncFS, (opMode == SELECTDBEXPORT_MODE));
                     } else {
                         currentUploadPath = data.getStringExtra(FileDialog.RESULT_UPLOAD_PATH);
                         if (currentUploadPath != null && currentUploadPath.length() > 0) {
-                            uploadEncFSFile(currentUploadPath, encfsBrowseRoot,
-                                    currentDialogDBEncFS, "/mnt/sdcard/2012-01-21-24-52-07.jpg", 
-                                    (opMode == SELECTDBEXPORT_MODE));
+                            /* select file to upload */
+                            currentDialogLabel = Cryptonite.this.getString(R.string.select_upload);
+                            currentDialogButtonLabel = Cryptonite.this.getString(R.string.select_upload_short);
+                            currentDialogMode = SelectionMode.MODE_OPEN;
+                            if (externalStorageIsWritable()) {
+                                currentDialogStartPath = Environment
+                                        .getExternalStorageDirectory()
+                                        .getPath();
+                            } else {
+                                currentDialogStartPath = "/";
+                            }
+                            currentDialogRoot = "/";
+                            currentDialogRootName = currentDialogRoot;
+                            switch (opMode) {
+                            case SELECTLOCALEXPORT_MODE:
+                                opMode = SELECTLOCALUPLOAD_MODE;
+                                break;
+                            case SELECTDBEXPORT_MODE:
+                                opMode = SELECTDBUPLOAD_MODE;
+                                break;
+                            }
+                            launchBuiltinFileBrowser();
                         }
                     }
                 }
@@ -765,9 +790,9 @@ public class Cryptonite extends Activity
                                     pd.dismiss();
                                 nullPassword();
                                 updateDecryptButtons();
-                                /* TODO: remove this after testing */
+                                /* TODO: remove this after testing
                                 uploadEncFSFile("<virtual>/browse/artur", "<virtual>/browse", 
-                                        "/.AAEncfs3", "/mnt/sdcard/2012-01-21-24-52-07.jpg", false);
+                                        "/.AAEncfs3", "/mnt/sdcard/F2.large.jpg", false);*/
 
                                 mLocalDecrypted = true;
                                 if (alertMsg.length()!=0) {
@@ -1652,10 +1677,13 @@ public class Cryptonite extends Activity
     }
 
     private boolean uploadEncFSFile(String encFSFilePath, String fileRoot, 
-            String dbEncFSPath, String srcPath, boolean isDB) {
+            String dbEncFSPath, String srcPath, boolean isDB) 
+    {
         
         File srcFile = new File(srcPath);
-        String srcParent = srcFile.getParent();
+        if (!srcFile.isFile()) {
+            showAlert(R.string.error, R.string.only_files);
+        }
         String srcFileName = srcFile.getName();
         
         /* normalise path names */
@@ -1665,11 +1693,6 @@ public class Cryptonite extends Activity
         if (!stripstr.startsWith("/")) {
             stripstr = "/" + stripstr;
         }
-        
-        /* Convert current path to encoded target directory
-         * String encodedPath = jniEncode(stripstr); 
-         * TODO: Implement this
-         */
         
         return (jniEncrypt(stripstr, srcPath, false) == jniSuccess());
 

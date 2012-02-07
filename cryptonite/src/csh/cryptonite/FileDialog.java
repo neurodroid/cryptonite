@@ -74,6 +74,7 @@ public class FileDialog extends ListActivity {
     public static final String RESULT_EXPORT_PATHS = "RESULT_EXPORT_PATHS";
     public static final String RESULT_OPEN_PATH = "RESULT_OPEN_PATH";
     public static final String RESULT_UPLOAD_PATH = "RESULT_UPLOAD_PATH";
+    public static final String RESULT_SELECTED_FILE = "RESULT_SELECTED_FILE";
     public static final String SELECTION_MODE = "SELECTION_MODE";
     public static final String LABEL = "LABEL";
     public static final String BUTTON_LABEL = "BUTTON_LABEL";
@@ -149,6 +150,11 @@ public class FileDialog extends ListActivity {
                             getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
                             getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
                             getIntent().putExtra(RESULT_EXPORT_PATHS, currentPath);
+                            if (selectedFile != null) {
+                                getIntent().putExtra(RESULT_SELECTED_FILE, selectedFile.getPath());
+                            } else {
+                                getIntent().putExtra(RESULT_SELECTED_FILE, (String)null);
+                            }
                             setResult(RESULT_OK, getIntent());
                             finish();
                         }

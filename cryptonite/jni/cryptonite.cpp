@@ -941,43 +941,57 @@ Java_csh_cryptonite_Cryptonite_jniEncrypt(JNIEnv * env, jobject thiz,
 
     /* Open source file */
     FILE* fp = fopen(msrcpath.c_str(), "rb");
+    if (fp == NULL) {
+        std::ostringstream out;
+        out << "Couldn't open "
+            << msrcpath.str() << ": "
+            << strerror(errno);
+        LOGE(out.str().c_str());
+        return EXIT_FAILURE;
+    }
     fseek(fp, 0L, SEEK_END);
     long sz = ftell(fp);
     fseek(fp, 0L, SEEK_SET);
+
     unsigned char buf[512];
     int blocks = (sz + sizeof(buf)-1) / sizeof(buf);
 
-    // read all the data in blocks
+    /* Create destination file */
+    int outfd = creat(encodedpath.c_str(), srcmode);
+
+    if (outfd == -1) {
+        std::ostringstream out;
+        out << "Not creating " << encodedpath << ": "
+            << strerror(errno);
+        LOGE(out.str().c_str());
+        return EXIT_FAILURE;
+    }
+
+    if (node->open(O_CREAT | O_EXCL | O_WRONLY) < 0) {
+        std::ostringstream out;
+        out << "Couldn't open "
+            << encodedpath << ": "
+            << strerror(errno);
+        LOGE(out.str().c_str());
+        return EXIT_FAILURE;
+    }
+
+    /* write all the encrypted data in blocks */
     for(int i=0; i<blocks; ++i)
     {
         int bytes = fread(buf, sizeof(buf), 1, fp);
-        // int bytes = node->read(i*sizeof(buf), buf, sizeof(buf));
         bool succ = node->write(i*sizeof(buf), buf, sizeof(buf));
-        // int res = node->op(buf, bytes);
-    }
-    
-#if 0    
-        
-        int outfd = creat(destname.c_str(), srcmode);
-
-        if (outfd == -1) {
-            if (errno == EACCES /* sic! */ || errno == EROFS || errno == ENOSPC) {
-                std::ostringstream out;
-                out << "Not creating " << destname << ": "
-                    << strerror(errno);
-                LOGE(out.str().c_str());
-            }
+        if (!succ) {
+            std::ostringstream out;
+            out << "Couldn't write to "
+                << encodedpath;
+            LOGE(out.str().c_str());
             return EXIT_FAILURE;
         }
-        WriteOutput output(outfd);
-        /*std::ostringstream out;
-        out << "Writing to " << destname;
-        LOGE(out.str().c_str()); */
-        processContents( gRootInfo, plainPath.c_str(), output );
-        
-        close(outfd);
-#endif
-
+    }
+    close(outfd);
+    fclose(fp);
+    
     return EXIT_SUCCESS;
 
 }

@@ -45,6 +45,7 @@
     <string name="warning">Warning</string>
     <string name="file_not_found">File not found: </string>
     <string name="export_warning">Exporting files can be slow and will copy decrypted files to your phone. Are you sure you want to proceed?</string>
+    <string name="only_files">Can only upload single files at this time</string>
     
     <!-- Dropbox -->
     <string name="dropbox_link">Link with Dropbox</string>
@@ -68,6 +69,8 @@
     <string name="select_enc_short">Select current folder</string>
     <string name="select_exp">Select export directory</string>
     <string name="select_exp_short">Export to current folder</string>
+    <string name="select_upload">Select file to upload</string>
+    <string name="select_upload_short">Upload selected file</string>
     <string name="encfs_root">EncFS root</string>
     <string name="fb_name">File Browser</string>
     <string name="nnew">New</string>
@@ -84,7 +87,7 @@
     <string name="back">Back</string>
     <string name="context_open">Open</string>
     <string name="context_export">Export</string>
-    <string name="upload">Upload here</string>
+    <string name="upload">Upload file to this folder</string>
     
     <!-- Button labels -->
     <string name="local_decrypt">Decrypt local folder</string>
