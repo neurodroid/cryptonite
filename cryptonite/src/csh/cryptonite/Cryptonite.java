@@ -1694,7 +1694,31 @@ public class Cryptonite extends Activity
             stripstr = "/" + stripstr;
         }
         
-        return (jniEncrypt(stripstr, srcPath, false) == jniSuccess());
+        if (isDB) {
+            /* Convert current path to encoded file name */
+            String encodedPath = jniEncode(stripstr);
+            File encodedFile = new File(encodedPath);
+
+            /* Create temporary cache dirs for Dropbox upload */
+            getPrivateDir(BROWSEPNT, Context.MODE_PRIVATE);
+            encodedFile.getParentFile().mkdirs();
+
+            /* Encrypt file to temporary cache */
+            if (jniEncrypt(stripstr, srcPath, true) != jniSuccess()) {
+                return false;
+            }
+            
+            /* Upload file to DB */
+            File browseRoot = getBaseContext().getDir(BROWSEPNT, Context.MODE_PRIVATE);
+            String targetPath = encodedPath.substring(browseRoot.getPath().length());
+            UploadEncrypted upload = new UploadEncrypted(this, ((CryptoniteApp)getApplication()).getDBApi(),
+                    new File(targetPath).getParent() + "/", encodedFile);
+            upload.execute();
+
+            return true;
+        } else {
+            return (jniEncrypt(stripstr, srcPath, true) == jniSuccess());
+        }
 
     }
 

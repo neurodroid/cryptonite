@@ -62,6 +62,7 @@
     <string name="dropbox_enable_email">"Send me an email so that you can test decrypting Dropbox folders in development mode."</string>
     <string name="dropbox_enable_email_subject">"Activate my Dropbox account"</string>
     <string name="dropbox_enable_email_content">"Please activate my Dropbox account (your@email.com) so that I can access my Dropbox from Cryptonite."</string>
+    <string name="dropbox_upload_successful">File successfully uploaded</string>
     
     <!-- File Browser -->
     <string name="select">Select</string>

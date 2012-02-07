@@ -102,7 +102,6 @@ public class FileDialog extends ListActivity {
     
     private int selectionMode = SelectionMode.MODE_OPEN;
 
-    @SuppressWarnings("unused")
     private VirtualFile selectedFile;
     private HashMap<String, Integer> lastPositions = new HashMap<String, Integer>();
 
