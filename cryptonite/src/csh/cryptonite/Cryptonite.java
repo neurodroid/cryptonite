@@ -339,11 +339,12 @@ public class Cryptonite extends Activity
         vfs.init();
         
         /* TODO: Remove this after testing
-         * Test local EncFS volume */
+         * Test local EncFS volume
         currentDialogStartPath = Environment.getExternalStorageDirectory().getPath();
         currentDialogRoot = "/";
         currentReturnPath = "/mnt/sdcard/.AAEncfs3"; 
         localDecryptEncFS(currentReturnPath, "password");
+         */
                         
         /* showAlert(getString(R.string.disclaimer), getString(R.string.no_warranty),
                 getString(R.string.understand)); */
@@ -428,8 +429,6 @@ public class Cryptonite extends Activity
                                         if (opMode == LOCALEXPORT_MODE) {
                                             alert = !localExport(currentReturnPathList, encfsBrowseRoot, 
                                                     currentReturnPath + "/Cryptonite", currentDialogDBEncFS);
-                                            /* alert = (jniExport(currentReturnPathList, encfsBrowseRoot, 
-                                                    currentReturnPath + "/Cryptonite") != jniSuccess()); */
                                         } else {
                                             alert = !dbExport(currentReturnPathList, encfsBrowseRoot, 
                                                     currentReturnPath + "/Cryptonite", currentDialogDBEncFS);
@@ -497,6 +496,7 @@ public class Cryptonite extends Activity
                         opMode = DBEXPORT_MODE;
                         break;
                     }
+                    launchBuiltinFileBrowser();
                 } else {
                     currentOpenPath = data.getStringExtra(FileDialog.RESULT_OPEN_PATH);
                     if (currentOpenPath != null && currentOpenPath.length() > 0) {
@@ -1357,7 +1357,7 @@ public class Cryptonite extends Activity
         ((CryptoniteApp) getApplication()).getDBApi()
             .getFile(encFSDBRoot + srcPath, null, fos, null);
         fos.close();
-    
+        
         return (jniDecrypt(encFSLocalRoot + srcPath, targetDir, forceReadable) == jniSuccess());
     }
 
@@ -1416,12 +1416,11 @@ public class Cryptonite extends Activity
                              * 
                              * Download and decode file
                              */
+                            (new File(destPath)).getParentFile().mkdirs();
                             if (!dbDownloadDecode(dbChild.path.substring(dbEncFSPath.length()), destDir, encFSDBRoot,
                                     encFSLocalRoot))
                             {
-                                Toast.makeText(getBaseContext(), 
-                                        getString(R.string.file_not_found) + dbChild.path,
-                                        Toast.LENGTH_LONG);
+                                showAlert(R.string.error, R.string.file_not_found);
                             }
                         }
                     }
@@ -1430,12 +1429,11 @@ public class Cryptonite extends Activity
 
         } else {
             
+            (new File(destPath)).getParentFile().mkdirs();
             if (!dbDownloadDecode(dbEntry.path.substring(dbEncFSPath.length()), destDir, encFSDBRoot,
                     encFSLocalRoot))
             {
-                Toast.makeText(getBaseContext(), 
-                        getString(R.string.file_not_found) + dbEncFSPath,
-                        Toast.LENGTH_LONG);
+                showAlert(R.string.error, R.string.file_not_found);
             }
         }
     }

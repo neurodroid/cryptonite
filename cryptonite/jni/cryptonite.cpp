@@ -822,9 +822,9 @@ Java_csh_cryptonite_Cryptonite_jniDecrypt(JNIEnv* env, jobject thiz, jstring enc
     std::string plainPath = gRootInfo->root->plainPath(mencodedname.c_str());
     std::string destname = mdestdir.str() + plainPath;
 
-    /* std::ostringstream out;
+    std::ostringstream out;
     out << "Decoding " << mencodedname.str() << " to " << plainPath << " in " << destname;
-    LOGI(out.str().c_str()); */
+    LOGI(out.str().c_str());
 
     boost::shared_ptr<FileNode> node = 
 	gRootInfo->root->lookupNode( plainPath.c_str(), "encfsctl");
@@ -857,12 +857,10 @@ Java_csh_cryptonite_Cryptonite_jniDecrypt(JNIEnv* env, jobject thiz, jstring enc
         int outfd = creat(destname.c_str(), srcmode);
 
         if (outfd == -1) {
-            if (errno == EACCES /* sic! */ || errno == EROFS || errno == ENOSPC) {
-                std::ostringstream out;
-                out << "Not creating " << destname << ": "
-                    << strerror(errno);
-                LOGE(out.str().c_str());
-            }
+            std::ostringstream out;
+            out << "Not creating " << destname << ": "
+                << strerror(errno);
+            LOGE(out.str().c_str());
             return EXIT_FAILURE;
         }
         WriteOutput output(outfd);
