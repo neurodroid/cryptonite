@@ -220,11 +220,7 @@ public class FileDialog extends ListActivity {
         uploadButton.setOnClickListener(new OnClickListener() {
 
             public void onClick(View v) {
-                getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
-                getIntent().putExtra(RESULT_EXPORT_PATHS, (String[])null);
-                getIntent().putExtra(RESULT_UPLOAD_PATH, currentPath);
-                setResult(RESULT_OK, getIntent());
-                finish();
+                showUploadWarning(currentPath);
             }
             
         });
@@ -755,4 +751,31 @@ public class FileDialog extends ListActivity {
         AlertDialog dialog = builder.create();
         dialog.show();
     }
+    
+    private void showUploadWarning(final String uploadPath) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(FileDialog.this);
+        builder.setIcon(R.drawable.ic_launcher_cryptonite)
+            .setTitle(R.string.warning)
+            .setMessage(R.string.upload_warning)
+            .setPositiveButton(R.string.upload_short,
+                    new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog,
+                        int which) {
+                    getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
+                    getIntent().putExtra(RESULT_EXPORT_PATHS, (String[])null);
+                    getIntent().putExtra(RESULT_UPLOAD_PATH, uploadPath);
+                    setResult(RESULT_OK, getIntent());
+                    finish();
+                }
+            })
+            .setNegativeButton(R.string.cancel,
+                    new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog,
+                        int which) {
+                }
+            });  
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+    
 }

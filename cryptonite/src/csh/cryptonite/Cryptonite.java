@@ -346,8 +346,8 @@ public class Cryptonite extends Activity
         localDecryptEncFS(currentReturnPath, "password");
          */
                         
-        /* showAlert(getString(R.string.disclaimer), getString(R.string.no_warranty),
-                getString(R.string.understand)); */
+        showAlert(getString(R.string.disclaimer), getString(R.string.no_warranty),
+                getString(R.string.understand));
     }
 
     private void cleanUpDecrypted() {
@@ -451,7 +451,6 @@ public class Cryptonite extends Activity
                     case SELECTDBUPLOAD_MODE:
                     case SELECTLOCALUPLOAD_MODE:
                         String srcPath = data.getStringExtra(FileDialog.RESULT_SELECTED_FILE);
-                        /* TODO: make currentReturnPath return file path rather than parent directory */
                         uploadEncFSFile(currentUploadPath, encfsBrowseRoot,
                                 currentDialogDBEncFS, srcPath, 
                                 (opMode == SELECTDBUPLOAD_MODE));

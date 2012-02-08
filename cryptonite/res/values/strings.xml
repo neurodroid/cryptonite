@@ -45,6 +45,7 @@
     <string name="warning">Warning</string>
     <string name="file_not_found">File not found: </string>
     <string name="export_warning">Exporting files can be slow and will copy decrypted files to your phone. Are you sure you want to proceed?</string>
+    <string name="upload_warning">Uploading files is an experimental feature. Existing files with the same name will be overwritten. Are you sure you want to proceed?</string>
     <string name="only_files">Can only upload single files at this time</string>
     
     <!-- Dropbox -->
@@ -85,6 +86,7 @@
     <string name="select_file_export">Select files to export</string>
     <string name="export">Export selected</string>
     <string name="export_short">Export</string>
+    <string name="upload_short">Upload</string>
     <string name="back">Back</string>
     <string name="context_open">Open</string>
     <string name="context_export">Export</string>
