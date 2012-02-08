@@ -84,6 +84,12 @@ cryptonite/obj
 cryptonite/obj/*
 cryptonite/tests/bin
 cryptonite/tests/bin/*
+cryptonite/tests/gen
+cryptonite/tests/gen/*
+cryptonite/tests/libs
+cryptonite/tests/libs/*
+cryptonite/tests/obj
+cryptonite/tests/obj/*
 
 # various
 
