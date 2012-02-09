@@ -79,10 +79,10 @@ public class UploadEncrypted extends AsyncTask<Void, Long, Boolean> {
 
         mDialog = new ProgressDialog(context);
         mDialog.setMax(100);
-        mDialog.setMessage("Uploading " + file.getName());
+        mDialog.setMessage(mContext.getString(R.string.dropbox_uploading) + " " + file.getName());
         mDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         mDialog.setProgress(0);
-        mDialog.setButton("Cancel", new OnClickListener() {
+        mDialog.setButton(mContext.getString(R.string.cancel), new OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
                 // This will cancel the putFile operation
                 mRequest.abort();
@@ -96,9 +96,10 @@ public class UploadEncrypted extends AsyncTask<Void, Long, Boolean> {
         try {
             // By creating a request, we get a handle to the putFile operation,
             // so we can cancel it later if we want to
+            
             FileInputStream fis = new FileInputStream(mFile);
             String path = mPath + mFile.getName();
-            mRequest = mApi.putFileOverwriteRequest(path, fis, mFile.length(),
+            mRequest = mApi.putFileRequest(path, fis, mFile.length(), null,
                     new ProgressListener() {
                 @Override
                 public long progressInterval() {

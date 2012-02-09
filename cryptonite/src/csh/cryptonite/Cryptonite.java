@@ -1702,6 +1702,8 @@ public class Cryptonite extends Activity
         }
         
         if (isDB) {
+            /* TODO: rename decoded file name if it exists on Dropbox */
+            
             /* Convert current path to encoded file name */
             String encodedPath = jniEncode(stripstr);
             File encodedFile = new File(encodedPath);

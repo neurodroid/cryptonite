@@ -45,7 +45,7 @@
     <string name="warning">Warning</string>
     <string name="file_not_found">File not found: </string>
     <string name="export_warning">Exporting files can be slow and will copy decrypted files to your phone. Are you sure you want to proceed?</string>
-    <string name="upload_warning">Uploading files is an experimental feature. Existing files with the same name will be overwritten. Are you sure you want to proceed?</string>
+    <string name="upload_warning">Uploading files is an experimental feature. Are you sure you want to proceed?</string>
     <string name="only_files">Can only upload single files at this time</string>
     
     <!-- Dropbox -->
@@ -64,6 +64,7 @@
     <string name="dropbox_enable_email_subject">"Activate my Dropbox account"</string>
     <string name="dropbox_enable_email_content">"Please activate my Dropbox account (your@email.com) so that I can access my Dropbox from Cryptonite."</string>
     <string name="dropbox_upload_successful">File successfully uploaded</string>
+    <string name="dropbox_uploading">Uploading</string>
     
     <!-- File Browser -->
     <string name="select">Select</string>
