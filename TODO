@@ -2,13 +2,11 @@ TODO
 ====
 
 MAJOR
-* Upload files to EncFS volumes.
 
 MINOR
 * Add symbol icons to buttons.
 
 CODE
-* Add unit testing
 * Add docstrings
 * Clean up path mess. It's a disgrace to intelligent life.
 * Clean up file browser setup mess
@@ -17,6 +15,7 @@ DONE
 ====
 
 MAJOR
+X Upload files to EncFS volumes.
 X Use a virtual filesystem in memory when browsing decrypted folders.
 X View decrypted Dropbox files directly without exporting them first.
 X Separate file decryption from file browsing so that volumes can
@@ -32,5 +31,5 @@ X Don't do a full recursion; check for labelled parent instead.
 X Check whether child directory is fully labelled
 
 CODE
-
+X Add unit testing
 X Minimise Dropbox metadata calls
