@@ -132,6 +132,7 @@ public class Cryptonite extends Activity
     private boolean mLocalDecrypted = false;
     private boolean hasFuse = false;
     private boolean triedLogin = false;
+    private boolean mInstrumentation = false;
 
     // If you'd like to change the access type to the full Dropbox instead of
     // an app folder, change this value.
@@ -145,7 +146,14 @@ public class Cryptonite extends Activity
     @Override public void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-
+        
+        /* Running from Instrumentation? */
+        if (getIntent() != null) {
+            mInstrumentation = getIntent().getBooleanExtra("csh.cryptonite.instrumentation", false);
+        } else {
+            mInstrumentation = false;
+        }
+        
         // We create a new AuthSession so that we can use the Dropbox API.
         AndroidAuthSession session = buildSession();
         ((CryptoniteApp) getApplication()).setDBApi(new DropboxAPI<AndroidAuthSession>(session));
@@ -345,9 +353,11 @@ public class Cryptonite extends Activity
         currentReturnPath = "/mnt/sdcard/.AAEncfs3"; 
         localDecryptEncFS(currentReturnPath, "password");
          */
-                        
-        showAlert(getString(R.string.disclaimer), getString(R.string.no_warranty),
-                getString(R.string.understand));
+        
+        if (!mInstrumentation) {
+            showAlert(getString(R.string.disclaimer), getString(R.string.no_warranty),
+                    getString(R.string.understand));
+        }
     }
 
     private void cleanUpDecrypted() {

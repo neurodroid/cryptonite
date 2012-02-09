@@ -16,13 +16,18 @@
 
 package csh.cryptonite.test;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Scanner;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.AssetManager;
 import android.test.ActivityInstrumentationTestCase2;
 import android.util.Log;
@@ -43,25 +48,26 @@ public class CryptoniteTest extends ActivityInstrumentationTestCase2<Cryptonite>
      */
     public CryptoniteTest() {
         super("csh.cryptonite", Cryptonite.class);
-        Log.i(Cryptonite.TAG, "In constructor");
         mHasTestVolumes = false;
     }
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
+        Intent instrumentationIntent = new Intent();
+        instrumentationIntent.putExtra("csh.cryptonite.instrumentation", true);
+        setActivityIntent(instrumentationIntent);
+        mActivity = this.getActivity();
+
         String[] encfsTypes = {"aes-256", "blowfish-128"};
         
         for (String encfsType : encfsTypes) {
-            File targetDir = getActivity().getDir(encfsType, Context.MODE_WORLD_WRITEABLE);
+            File targetDir = mActivity.getDir(encfsType, Context.MODE_WORLD_WRITEABLE);
             if (!targetDir.exists()) {
                 Log.e(Cryptonite.TAG, targetDir.getPath() + " wasn't created");
             }
         }
 
-        Log.i(Cryptonite.TAG, "In setUp");
-        
-        mActivity = this.getActivity();
         mHasTestVolumes = cpEncFSTest();
     }
 
@@ -78,8 +84,9 @@ public class CryptoniteTest extends ActivityInstrumentationTestCase2<Cryptonite>
             } else {
                 String fullPath = targetPath + "/" + srcPath;
                 File dir = new File(fullPath);
-                if (!dir.exists())
+                if (!dir.exists()) {
                     dir.mkdirs();
+                }
                 for (int i = 0; i < assets.length; ++i) {
                     if (!copyFileOrDir(srcPath + "/" + assets[i], targetPath)) {
                         return false;
@@ -94,23 +101,38 @@ public class CryptoniteTest extends ActivityInstrumentationTestCase2<Cryptonite>
         return true;
     }
 
-    private boolean copyFile(String filename, String targetPath) {
+    private boolean copyFile(String assetFileName, String targetPath) {
         Context context = getInstrumentation().getContext();
         AssetManager assetManager = context.getAssets();
 
         InputStream in = null;
         OutputStream out = null;
         try {
-            in = assetManager.open(filename);
-            String newFileName = targetPath + "/" + filename;
-            Log.i(Cryptonite.TAG, "Copying " + filename + " to " + newFileName);
-            if (!(new File(newFileName)).getParentFile().exists()) {
-                if (!(new File(newFileName)).getParentFile().mkdirs()) {
-                    Log.e(Cryptonite.TAG, "Couldn't create " + (new File(newFileName)).getParentFile().getPath());
+            in = assetManager.open(assetFileName);
+            
+            File srcFile = new File(assetFileName);
+            String srcFileName = srcFile.getName();
+            String srcFileParentPath = srcFile.getParent();
+            File srcFileParent = srcFile.getParentFile();
+            
+            String encfsXmlRegex = "encfs.\\.xml";
+            String prepend = "";
+            if (srcFileName.matches(encfsXmlRegex)) {
+                prepend = ".";
+            }
+            
+            String targetFileName = targetPath + "/" + srcFileParentPath + "/" + prepend + srcFileName;
+            File targetFile = new File(targetFileName);
+            File targetFileParent = targetFile.getParentFile();
+            String targetFileParentPath = targetFile.getParent();
+            
+            if (!targetFileParent.exists()) {
+                if (!targetFileParent.mkdirs()) {
+                    Log.e(Cryptonite.TAG, "Couldn't create " + targetFileParentPath);
                     return false;
                 }
             }
-            out = new FileOutputStream(newFileName);
+            out = new FileOutputStream(targetFile);
             
             byte[] buffer = new byte[1024];
             int read;
@@ -130,19 +152,15 @@ public class CryptoniteTest extends ActivityInstrumentationTestCase2<Cryptonite>
     }    
     /** Copy EncFS test volumes */
     public boolean cpEncFSTest() {
-        Log.i(Cryptonite.TAG, "Entering cpEncFSTest()");
         
         String[] encfsTypes = {"aes-256", "blowfish-128"};
         
         for (String encfsType : encfsTypes) {
-            File targetDir = getActivity().getDir(encfsType, Context.MODE_WORLD_WRITEABLE);
+            File targetDir = mActivity.getDir(encfsType, Context.MODE_WORLD_WRITEABLE);
             if (!targetDir.exists()) {
                 Log.e(Cryptonite.TAG, targetDir.getPath() + " wasn't created");
                 return false;
-            } else {
-                Log.i(Cryptonite.TAG, "Successfully created " + targetDir.getPath());
             }
-            Log.i(Cryptonite.TAG, "Copying to " + targetDir.getPath());
             if (!copyFileOrDir(encfsType, targetDir.getPath())) {
                 Log.e(Cryptonite.TAG, "Couldn't copy " + encfsType + " to " + targetDir.getPath());
                 return false;
@@ -150,59 +168,59 @@ public class CryptoniteTest extends ActivityInstrumentationTestCase2<Cryptonite>
         }
         
         return true;
-                /*File binDir = new File(BINDIR);
-        if (!binDir.exists()) {
-            throw new RuntimeException("Couldn't find binary directory");
-        }
-        String binName = BINDIR + "/" + trunk;
-
-        /* Catenate split files
-        Log.v(TAG, "Looking for assets in " + arch);
-        try {
-            String[] assetsFiles = getAssets().list(arch);
-            File newf = new File(binName);
-            FileOutputStream os = new FileOutputStream(newf);
-            for (String assetsFile : assetsFiles) {
-                if (assetsFile.substring(0, assetsFile.indexOf(".")).compareTo(trunk) == 0) {
-                    Log.v(TAG, "Found EncFS binary part: " + assetsFile);
-                    InputStream is = getAssets().open(arch + "/" + assetsFile);
-
-                    byte[] buffer = new byte[is.available()]; 
-
-                    is.read(buffer);
-
-                    os.write(buffer);
-
-                    is.close();
-                }
-            }
-            os.close();
-
-            ShellUtils.chmod(binName, "755");
-            
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }*/
-
     }
     
     /**
      * Verifies that the activity under test can be launched.
      */
-    public void testPreconditions() {
+    public void testEncFS_0_Preconditions() {
         assertNotNull("activity should be launched successfully", mActivity);
         assertEquals(true, this.mHasTestVolumes);
     }
     
-    public void testEncFS() {
+    public void testEncFS_1_Init() {
         String[] encfsTypes = {"aes-256", "blowfish-128"};
         
         for (String encfsType : encfsTypes) {
-            File targetDir = getActivity().getDir(encfsType, Context.MODE_WORLD_WRITEABLE);
-            assertEquals(getActivity().jniSuccess(), 
-                    getActivity().jniInit(targetDir.getPath() + "/" + encfsType, "password"));
+            File targetDir = mActivity.getDir(encfsType, Context.MODE_WORLD_WRITEABLE);
+            assertEquals(mActivity.jniSuccess(), 
+                    mActivity.jniInit(targetDir.getPath() + "/" + encfsType, "password"));
         }
+    }
+    
+    public void testEncFS_2_Export() {
+        String encFSType = "blowfish-128";
+        
+        File encFSDir = mActivity.getDir(encFSType, Context.MODE_WORLD_WRITEABLE);
+        assertEquals(mActivity.jniSuccess(), 
+                mActivity.jniInit(encFSDir.getPath() + "/" + encFSType, "password"));
+        
+        File decryptedDir = mActivity.getDir("decrypted", Context.MODE_WORLD_WRITEABLE);
+        String encodedName = "7F2jGY68wlYqw1/e4cKk0dWOKz5k,";
+        String decodedName = mActivity.jniDecode(encodedName);
+        String targetPath = decryptedDir.getPath() + "/" + decodedName;
+        (new File(targetPath)).getParentFile().mkdirs();
+        
+        assertEquals(mActivity.jniSuccess(), 
+                mActivity.jniDecrypt(encodedName, decryptedDir.getPath(), true));
+        assertEquals(true, (new File(targetPath)).exists());
+        
+        /* Read decrypted file */
+        String NL = System.getProperty("line.separator");
+        String output = "";
+        try {
+            Scanner outscanner  = new Scanner(new FileInputStream(targetPath));
+            try {
+                while (outscanner.hasNextLine()) {
+                    output += outscanner.nextLine();                    
+                }
+            } finally {
+                outscanner.close();
+            }
+        } catch (FileNotFoundException e) {
+            
+        }
+        assertEquals("6*8", output);
     }
     
 }
