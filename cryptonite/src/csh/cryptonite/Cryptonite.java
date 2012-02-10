@@ -1554,6 +1554,11 @@ public class Cryptonite extends Activity
         return ext;
     }
     
+    private static String fileNameTrunk(String url) {
+        String trunk = url.substring(0, url.lastIndexOf("."));
+        return new File(trunk).getName();
+    }
+    
     private boolean openEncFSFile(String encFSFilePath, String fileRoot, String dbEncFSPath, boolean isDB) {
 
         /* normalise path names */
@@ -1696,18 +1701,24 @@ public class Cryptonite extends Activity
         /* normalise path names */
         String bRoot = new File(fileRoot).getPath();
         String bPath = new File(encFSFilePath).getPath();
-        String stripstr = bPath.substring(bRoot.length()) + "/" + srcFileName;
-        if (!stripstr.startsWith("/")) {
-            stripstr = "/" + stripstr;
+        String stripstrtmp = bPath.substring(bRoot.length()) + "/" + srcFileName;
+        if (!stripstrtmp.startsWith("/")) {
+            stripstrtmp = "/" + stripstrtmp;
         }
+        final String stripstr = stripstrtmp;
+        final File decodedFile = new File(stripstr);
+        final String decodedFileParent = decodedFile.getParent() + "/";
+        final String decodedFileTrunk = decodedFileParent + 
+                Cryptonite.fileNameTrunk(decodedFile.getPath());
+        final String decodedFileExt = Cryptonite.fileExt(decodedFile.getPath());
         
         if (isDB) {
-            /* TODO: rename decoded file name if it exists on Dropbox */
+            /* TODO: rename _de_coded file name if the _en_crypted file exists on Dropbox */
             
             /* Convert current path to encoded file name */
             String encodedPath = jniEncode(stripstr);
-            File encodedFile = new File(encodedPath);
-
+            final File encodedFile = new File(encodedPath);
+            
             /* Create temporary cache dirs for Dropbox upload */
             getPrivateDir(BROWSEPNT, Context.MODE_PRIVATE);
             encodedFile.getParentFile().mkdirs();
@@ -1719,10 +1730,57 @@ public class Cryptonite extends Activity
             
             /* Upload file to DB */
             File browseRoot = getBaseContext().getDir(BROWSEPNT, Context.MODE_PRIVATE);
-            String targetPath = encodedPath.substring(browseRoot.getPath().length());
-            UploadEncrypted upload = new UploadEncrypted(this, ((CryptoniteApp)getApplication()).getDBApi(),
-                    new File(targetPath).getParent() + "/", encodedFile);
-            upload.execute();
+            final String targetPath = encodedPath.substring(browseRoot.getPath().length());
+            
+            /* Does the _en_crypted file exist on Dropbox? */
+            String dbPath = new File(targetPath).getParent() + "/" + encodedFile.getName();
+            boolean fileExists = true;
+            try {
+                fileExists = ((CryptoniteApp)getApplication()).dbFileExists(dbPath);
+            } catch (DropboxException e) {
+                showAlert(R.string.error, e.toString());
+                return false;
+            }
+            if (fileExists) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
+                builder.setIcon(R.drawable.ic_launcher_cryptonite)
+                    .setTitle(R.string.file_exists)
+                    .setMessage(R.string.file_exists_options)
+                    .setPositiveButton(R.string.overwrite,
+                            new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog,
+                                int which) {
+                            UploadEncrypted upload = new UploadEncrypted(Cryptonite.this, 
+                                    ((CryptoniteApp)getApplication()).getDBApi(),
+                                    new File(targetPath).getParent() + "/", encodedFile);
+                            upload.execute();                                
+                        }
+                    })
+                    .setNeutralButton(R.string.rename, 
+                            new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog,
+                                int which) {
+                            /* get next available file name */
+                            int ntry = 1;
+                            while (true) {
+                                String nextFilePath = decodedFileTrunk + " (" + ntry + ")" + "." +
+                                        decodedFileExt;
+                                ntry++;
+                            }
+                        }
+                    })
+                    .setNegativeButton(R.string.cancel,
+                            new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog,
+                                int which) {
+        
+                        }
+                    });  
+                AlertDialog dialog = builder.create();
+                dialog.show();
+                
+            }
+            
 
             return true;
         } else {

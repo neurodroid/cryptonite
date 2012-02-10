@@ -49,4 +49,18 @@ public class CryptoniteApp extends Application {
     public void clearDBHashMap() {
         dbHashMap.clear();
     }
+    
+    public boolean dbFileExists(String dbPath) throws DropboxException {
+        try {
+            getDBEntry(dbPath);
+        } catch (DropboxServerException e) {
+            if (e.error == DropboxServerException._404_NOT_FOUND) {
+                return false;
+            }
+        } catch (DropboxException e) {
+            throw e;
+        }
+        return true;
+    }
+
 }

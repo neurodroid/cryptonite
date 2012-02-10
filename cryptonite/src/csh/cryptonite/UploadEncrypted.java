@@ -99,7 +99,7 @@ public class UploadEncrypted extends AsyncTask<Void, Long, Boolean> {
             
             FileInputStream fis = new FileInputStream(mFile);
             String path = mPath + mFile.getName();
-            mRequest = mApi.putFileRequest(path, fis, mFile.length(), null,
+            mRequest = mApi.putFileOverwriteRequest(path, fis, mFile.length(),
                     new ProgressListener() {
                 @Override
                 public long progressInterval() {
