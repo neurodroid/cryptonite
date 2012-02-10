@@ -136,15 +136,15 @@ public class FileDialog extends ListActivity {
         
         String buttonLabel = getIntent().getStringExtra(BUTTON_LABEL);
         selectButton = (Button) findViewById(R.id.fdButtonSelect);
-        selectButton.setEnabled(true);
+        selectButton.setEnabled(selectionMode != SelectionMode.MODE_OPEN_UPLOAD_SOURCE);
         selectButton.setText(buttonLabel);
         selectButton.setOnClickListener(new OnClickListener() {
 
                 public void onClick(View v) {
-
-                    if (selectionMode == SelectionMode.MODE_OPEN
-                            || selectionMode == SelectionMode.MODE_OPEN_DB)
-                    {
+                    switch (selectionMode) {
+                    case SelectionMode.MODE_OPEN:
+                    case SelectionMode.MODE_OPEN_DB:
+                    case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
                         if (currentPath != null) {
                             getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
                             getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
@@ -157,7 +157,8 @@ public class FileDialog extends ListActivity {
                             setResult(RESULT_OK, getIntent());
                             finish();
                         }
-                    } else {
+                        break;
+                    default:
                         showExportWarning(selectedPaths.toArray(new String[0]));
                     }
                 }
@@ -184,10 +185,12 @@ public class FileDialog extends ListActivity {
         layoutCreate = (LinearLayout) findViewById(R.id.fdLinearLayoutCreate);
         layoutUpload = (LinearLayout) findViewById(R.id.fdLinearLayoutUpload);
         /* Disable upload at this time */ 
-        if (selectionMode != SelectionMode.MODE_OPEN_MULTISELECT 
-                && selectionMode != SelectionMode.MODE_OPEN_MULTISELECT_DB)
-        {
+        switch (selectionMode) {
+        case SelectionMode.MODE_OPEN:
+        case SelectionMode.MODE_OPEN_DB:
+        case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
             layoutUpload.setVisibility(View.GONE);
+            break;
         }
         // layoutUpload.setVisibility(View.GONE);
         layoutCreate.setVisibility(View.GONE);
@@ -233,10 +236,11 @@ public class FileDialog extends ListActivity {
         }
         String label = getIntent().getStringExtra(LABEL);
         this.setTitle(label);
-        if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT
-                || selectionMode == SelectionMode.MODE_OPEN_MULTISELECT_DB)
-        {            
+        switch (selectionMode) {
+        case SelectionMode.MODE_OPEN_MULTISELECT:
+        case SelectionMode.MODE_OPEN_MULTISELECT_DB:
             registerForContextMenu(getListView());
+            break;
         }
     }
 
@@ -329,23 +333,26 @@ public class FileDialog extends ListActivity {
                     R.drawable.ic_launcher_file);
         }
         
-        if (selectionMode == SelectionMode.MODE_OPEN
-                || selectionMode == SelectionMode.MODE_OPEN_DB)
-        {
-            SimpleAdapter fileList;
-            fileList = new SimpleAdapter(this, mList,
+        switch (selectionMode) {
+        case SelectionMode.MODE_OPEN:
+        case SelectionMode.MODE_OPEN_DB:
+        case SelectionMode.MODE_OPEN_UPLOAD_SOURCE: {
+            SimpleAdapter fileList = new SimpleAdapter(this, mList,
                     R.layout.file_dialog_row_single,
                     new String[] { ITEM_KEY, ITEM_IMAGE },
                     new int[] {R.id.fdrowtext, R.id.fdrowimage });
             fileList.notifyDataSetChanged();
             setListAdapter(fileList);
-        } else {
+            break;
+        }
+        default: {
             ArrayAdapter<HashMap<String, Object>> fileList = 
                     new FileDialogArrayAdapter(this, mList);
             setListAdapter(fileList);
             getListView().setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
             fileList.notifyDataSetChanged();
             setListAdapter(fileList);
+        }
         }
         
 
@@ -359,14 +366,15 @@ public class FileDialog extends ListActivity {
         HashMap<String, Object> item = new HashMap<String, Object>();
         item.put(ITEM_KEY, filelabel);
         item.put(ITEM_IMAGE, imageId);
-        if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT
-                || selectionMode == SelectionMode.MODE_OPEN_MULTISELECT_DB)
-        {
+        switch (selectionMode) {
+        case SelectionMode.MODE_OPEN_MULTISELECT:
+        case SelectionMode.MODE_OPEN_MULTISELECT_DB:
             item.put(ITEM_CHECK, getChecked(file));
             item.put(ITEM_FILE, file);
             item.put(ITEM_ENABLED,
                      (Boolean) (!file.getPath().equals(currentRoot) &&
                                 !file.getPath().equals(new VirtualFile(currentPath).getParent())));
+            break;
         }
         mList.add(item);
     }
@@ -507,9 +515,15 @@ public class FileDialog extends ListActivity {
 
         setSelectVisible(v);
 
-        selectButton.setEnabled(true);
-        
         if (file.isDirectory()) {
+            switch (selectionMode) {
+            case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
+                selectButton.setEnabled(false);
+                break;
+            default:
+                selectButton.setEnabled(true);
+            }
+
             if (file.canRead()) {
                 lastPositions.put(currentPath, position);
                 getDir(path.get(position), currentRoot, currentRootLabel, currentDBEncFS);
@@ -529,11 +543,14 @@ public class FileDialog extends ListActivity {
                                        }).show();
             }
         } else {
-            if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT
-                    || selectionMode == SelectionMode.MODE_OPEN_MULTISELECT_DB)
-            {
-                
-            } else {
+            switch (selectionMode) {
+            case SelectionMode.MODE_OPEN_MULTISELECT:
+            case SelectionMode.MODE_OPEN_MULTISELECT_DB:
+                break;
+            case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
+                selectButton.setEnabled(true);
+                /* no break! */
+            default:
                 selectedFile = file;
                 v.setSelected(true);
             }

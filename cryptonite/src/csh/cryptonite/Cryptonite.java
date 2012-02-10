@@ -410,6 +410,7 @@ public class Cryptonite extends Activity
         switch (requestCode) {
         case SelectionMode.MODE_OPEN:
         case SelectionMode.MODE_OPEN_DB:
+        case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
             /* file dialog */
             if (resultCode == Activity.RESULT_OK && data != null) {
                 currentReturnPath = data.getStringExtra(FileDialog.RESULT_EXPORT_PATHS);
@@ -517,7 +518,7 @@ public class Cryptonite extends Activity
                             /* select file to upload */
                             currentDialogLabel = Cryptonite.this.getString(R.string.select_upload);
                             currentDialogButtonLabel = Cryptonite.this.getString(R.string.select_upload_short);
-                            currentDialogMode = SelectionMode.MODE_OPEN;
+                            currentDialogMode = SelectionMode.MODE_OPEN_UPLOAD_SOURCE;
                             if (externalStorageIsWritable()) {
                                 currentDialogStartPath = Environment
                                         .getExternalStorageDirectory()
@@ -1812,7 +1813,7 @@ public class Cryptonite extends Activity
                 AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
                 builder.setIcon(R.drawable.ic_launcher_cryptonite)
                     .setTitle(R.string.file_exists)
-                    .setMessage(R.string.file_exists_options)
+                    .setMessage(R.string.file_exists_options_short)
                     .setPositiveButton(R.string.overwrite,
                             new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog,

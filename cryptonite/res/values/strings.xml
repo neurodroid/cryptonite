@@ -48,8 +48,9 @@
     <string name="upload_warning">Uploading files is an experimental feature. Are you sure you want to proceed?</string>
     <string name="upload_failure">Failed to upload file</string>
     <string name="only_files">Can only upload single files at this time</string>
-    <string name="file_exists">File exists</string>
+    <string name="file_exists">Encrypted file exists</string>
     <string name="file_exists_options">Overwrite, rename or cancel?</string>
+    <string name="file_exists_options_short">Overwrite or cancel?</string>
     <string name="overwrite">Overwrite</string>
     <string name="rename">Rename</string>
     <string name="rename_failure">Rename</string>
