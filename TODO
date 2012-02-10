@@ -7,6 +7,7 @@ MINOR
 * Add symbol icons to buttons.
 
 CODE
+* Enable hardware fp build
 * Add docstrings
 * Clean up path mess. It's a disgrace to intelligent life.
 * Clean up file browser setup mess
