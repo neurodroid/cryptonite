@@ -544,13 +544,11 @@ public class FileDialog extends ListActivity {
                                        }).show();
             }
         } else {
+            selectButton.setEnabled(true);
             switch (selectionMode) {
             case SelectionMode.MODE_OPEN_MULTISELECT:
             case SelectionMode.MODE_OPEN_MULTISELECT_DB:
                 break;
-            case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
-                selectButton.setEnabled(true);
-                /* no break! */
             default:
                 selectedFile = file;
                 v.setSelected(true);

@@ -465,9 +465,12 @@ public class Cryptonite extends Activity
                     case SELECTDBUPLOAD_MODE:
                     case SELECTLOCALUPLOAD_MODE:
                         String srcPath = data.getStringExtra(FileDialog.RESULT_SELECTED_FILE);
-                        uploadEncFSFile(currentUploadPath, encfsBrowseRoot,
+                        if (!uploadEncFSFile(currentUploadPath, encfsBrowseRoot,
                                 currentDialogDBEncFS, srcPath, 
-                                (opMode == SELECTDBUPLOAD_MODE));
+                                (opMode == SELECTDBUPLOAD_MODE)))
+                        {
+                            showAlert(R.string.error, R.string.upload_failure);
+                        }
                         break;
                     }
                 }
@@ -1806,8 +1809,12 @@ public class Cryptonite extends Activity
                 AlertDialog dialog = builder.create();
                 dialog.show();
                 
+            } else {
+                UploadEncrypted upload = new UploadEncrypted(Cryptonite.this, 
+                        ((CryptoniteApp)getApplication()).getDBApi(),
+                        new File(targetPath).getParent() + "/", encodedFile);
+                upload.execute();                                
             }
-            
 
             return true;
         } else {
