@@ -9,7 +9,13 @@
     <string name="about_menu">About</string>
     <string name="cb_builtin_title">Use built-in file browser</string>
     <string name="cb_builtin_summary">Always use the built-in file browser</string>
-
+    <string name="cb_builtin_enabled">Always using built-in file browser</string>
+    <string name="cb_builtin_disabled">Using OpenIntents File Browser (if available)</string>
+    <string name="cb_norris_title">Chuck Norris mode</string>
+    <string name="cb_norris_summary">Don\'t show paranoid warnings</string>
+    <string name="cb_norris_enabled">Disabled warning messages</string>
+    <string name="cb_norris_disabled">Enabled warning messages</string>
+    
     <string name="sdcard_not_writable">Can\'t write to SD card</string>
     <string name="title_password">EncFS password</string>
     <string name="settings_password">Enter password:</string>

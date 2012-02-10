@@ -32,6 +32,7 @@ public class Preferences extends PreferenceActivity {
     private SharedPreferences prefs;
     
     private CheckBoxPreference chkEnableBuiltin;
+    private CheckBoxPreference chkNorris;
     
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,12 +48,30 @@ public class Preferences extends PreferenceActivity {
         chkEnableBuiltin.setOnPreferenceClickListener(new OnPreferenceClickListener() {
                 public boolean onPreferenceClick(Preference preference) {
                     if (chkEnableBuiltin.isChecked()) {
-                        Toast.makeText(Preferences.this, "Always using built-in file browser", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(Preferences.this, getString(R.string.cb_builtin_enabled), Toast.LENGTH_SHORT).show();
                         return true;
                     } else {
-                        Toast.makeText(Preferences.this, "Using OpenIntents File Browser (if available)", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(Preferences.this, getString(R.string.cb_builtin_disabled), Toast.LENGTH_SHORT).show();
                         return false;
                     }
                 }});
+        
+        /* Get previous states */
+        boolean prevNorris = prefs.getBoolean("cb_norris", false);
+
+        chkNorris = (CheckBoxPreference)getPreferenceScreen().findPreference("cb_norris");
+        /* Initialise Chuck Norris mode */
+        chkNorris.setChecked(prevNorris);
+        chkNorris.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+                public boolean onPreferenceClick(Preference preference) {
+                    if (chkNorris.isChecked()) {
+                        Toast.makeText(Preferences.this, getString(R.string.cb_norris_enabled), Toast.LENGTH_SHORT).show();
+                        return true;
+                    } else {
+                        Toast.makeText(Preferences.this, getString(R.string.cb_norris_disabled), Toast.LENGTH_SHORT).show();
+                        return false;
+                    }
+                }});
+
     }
 }

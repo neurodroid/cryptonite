@@ -36,6 +36,7 @@ import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -744,8 +745,10 @@ public class FileDialog extends ListActivity {
     }
     
     private void showExportWarning(final String[] exportPaths) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(FileDialog.this);
-        builder.setIcon(R.drawable.ic_launcher_cryptonite)
+        SharedPreferences prefs = getBaseContext().getSharedPreferences(Cryptonite.ACCOUNT_PREFS_NAME, 0);
+        if (!prefs.getBoolean("cb_norris", false)) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(FileDialog.this);
+            builder.setIcon(R.drawable.ic_launcher_cryptonite)
             .setTitle(R.string.warning)
             .setMessage(R.string.export_warning)
             .setPositiveButton(R.string.export_short,
@@ -765,13 +768,23 @@ public class FileDialog extends ListActivity {
                         int which) {
                 }
             });  
-        AlertDialog dialog = builder.create();
-        dialog.show();
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        } else {
+            getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
+            getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
+            getIntent().putExtra(RESULT_EXPORT_PATHS, exportPaths);
+            setResult(RESULT_OK, getIntent());
+            finish();
+        }
     }
     
     private void showUploadWarning(final String uploadPath) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(FileDialog.this);
-        builder.setIcon(R.drawable.ic_launcher_cryptonite)
+        SharedPreferences prefs = getBaseContext().getSharedPreferences(Cryptonite.ACCOUNT_PREFS_NAME, 0);
+        if (!prefs.getBoolean("cb_norris", false)) {
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(FileDialog.this);
+            builder.setIcon(R.drawable.ic_launcher_cryptonite)
             .setTitle(R.string.warning)
             .setMessage(R.string.upload_warning)
             .setPositiveButton(R.string.upload_short,
@@ -791,8 +804,15 @@ public class FileDialog extends ListActivity {
                         int which) {
                 }
             });  
-        AlertDialog dialog = builder.create();
-        dialog.show();
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        } else {
+            getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
+            getIntent().putExtra(RESULT_EXPORT_PATHS, (String[])null);
+            getIntent().putExtra(RESULT_UPLOAD_PATH, uploadPath);
+            setResult(RESULT_OK, getIntent());
+            finish();
+        }
     }
     
 }

@@ -138,7 +138,7 @@ public class Cryptonite extends Activity
     // an app folder, change this value.
     final static private AccessType ACCESS_TYPE = AccessType.DROPBOX;
 
-    final static private String ACCOUNT_PREFS_NAME = "csh.cryptonite_preferences";
+    final static public String ACCOUNT_PREFS_NAME = "csh.cryptonite_preferences";
     final static private String ACCESS_KEY_NAME = "ACCESS_KEY";
     final static private String ACCESS_SECRET_NAME = "ACCESS_SECRET";
     
@@ -355,8 +355,11 @@ public class Cryptonite extends Activity
          */
         
         if (!mInstrumentation) {
-            showAlert(getString(R.string.disclaimer), getString(R.string.no_warranty),
-                    getString(R.string.understand));
+            SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+            if (!prefs.getBoolean("cb_norris", false)) {
+                showAlert(getString(R.string.disclaimer), getString(R.string.no_warranty),
+                        getString(R.string.understand));
+            }
         }
     }
 

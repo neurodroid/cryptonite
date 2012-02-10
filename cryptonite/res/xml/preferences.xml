@@ -8,4 +8,9 @@
       android:title="@string/cb_builtin_title"
       android:summary="@string/cb_builtin_summary" />
 
+    <CheckBoxPreference
+      android:key="cb_norris"
+      android:title="@string/cb_norris_title"
+      android:summary="@string/cb_norris_summary" />
+  
 </PreferenceScreen>
