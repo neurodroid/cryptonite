@@ -1689,7 +1689,7 @@ public class Cryptonite extends Activity
     }
 
     private boolean uploadEncFSFile(String encFSFilePath, String fileRoot, 
-            String dbEncFSPath, String srcPath, boolean isDB) 
+            String dbEncFSPath, final String srcPath, boolean isDB) 
     {
         
         File srcFile = new File(srcPath);
@@ -1699,7 +1699,7 @@ public class Cryptonite extends Activity
         String srcFileName = srcFile.getName();
         
         /* normalise path names */
-        String bRoot = new File(fileRoot).getPath();
+        final String bRoot = new File(fileRoot).getPath();
         String bPath = new File(encFSFilePath).getPath();
         String stripstrtmp = bPath.substring(bRoot.length()) + "/" + srcFileName;
         if (!stripstrtmp.startsWith("/")) {
@@ -1711,14 +1711,12 @@ public class Cryptonite extends Activity
         final String decodedFileTrunk = decodedFileParent + 
                 Cryptonite.fileNameTrunk(decodedFile.getPath());
         final String decodedFileExt = Cryptonite.fileExt(decodedFile.getPath());
+
+        /* Convert current path to encoded file name */
+        final String encodedPath = jniEncode(stripstr);
+        final File encodedFile = new File(encodedPath);
         
         if (isDB) {
-            /* TODO: rename _de_coded file name if the _en_crypted file exists on Dropbox */
-            
-            /* Convert current path to encoded file name */
-            String encodedPath = jniEncode(stripstr);
-            final File encodedFile = new File(encodedPath);
-            
             /* Create temporary cache dirs for Dropbox upload */
             getPrivateDir(BROWSEPNT, Context.MODE_PRIVATE);
             encodedFile.getParentFile().mkdirs();
@@ -1731,6 +1729,8 @@ public class Cryptonite extends Activity
             /* Upload file to DB */
             File browseRoot = getBaseContext().getDir(BROWSEPNT, Context.MODE_PRIVATE);
             final String targetPath = encodedPath.substring(browseRoot.getPath().length());
+            
+            /* rename _de_coded file name if the _en_crypted file exists on Dropbox */
             
             /* Does the _en_crypted file exist on Dropbox? */
             String dbPath = new File(targetPath).getParent() + "/" + encodedFile.getName();
@@ -1763,8 +1763,31 @@ public class Cryptonite extends Activity
                             /* get next available file name */
                             int ntry = 1;
                             while (true) {
-                                String nextFilePath = decodedFileTrunk + " (" + ntry + ")" + "." +
+                                String nextFilePath = decodedFileTrunk + " (" + ntry + ")" +
                                         decodedFileExt;
+                                /* encode */
+                                String nextEncodedPath = jniEncode(nextFilePath);
+                                File nextEncodedFile = new File(nextEncodedPath);
+                                String nextDbPath = new File(targetPath).getParent() + "/" + nextEncodedFile.getName();
+                                boolean nextFileExists = true;
+                                try {
+                                    nextFileExists = ((CryptoniteApp)getApplication()).dbFileExists(nextDbPath);
+                                } catch (DropboxException e) {
+                                    showAlert(R.string.error, e.toString());
+                                    break;
+                                }
+                                if (!nextFileExists) {
+                                    File tmpEncodedFile = new File(encodedPath);
+                                    if (!tmpEncodedFile.renameTo(nextEncodedFile)) {
+                                        showAlert(R.string.error, R.string.rename_failure);
+                                        break;
+                                    }
+                                    UploadEncrypted upload = new UploadEncrypted(Cryptonite.this, 
+                                            ((CryptoniteApp)getApplication()).getDBApi(),
+                                            new File(targetPath).getParent() + "/", nextEncodedFile);
+                                    upload.execute();
+                                    break;
+                                }
                                 ntry++;
                             }
                         }
@@ -1784,7 +1807,35 @@ public class Cryptonite extends Activity
 
             return true;
         } else {
-            return (jniEncrypt(stripstr, srcPath, true) == jniSuccess());
+            /* Does the encrypted file exist? */
+            if (encodedFile.exists()) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
+                builder.setIcon(R.drawable.ic_launcher_cryptonite)
+                    .setTitle(R.string.file_exists)
+                    .setMessage(R.string.file_exists_options)
+                    .setPositiveButton(R.string.overwrite,
+                            new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog,
+                                int which) {
+                            if (jniEncrypt(stripstr, srcPath, true) != jniSuccess()) {
+                                showAlert(R.string.error, R.string.upload_failure);
+                            }
+                        }
+                    })
+                    .setNegativeButton(R.string.cancel,
+                            new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog,
+                                int which) {
+        
+                        }
+                    });  
+                AlertDialog dialog = builder.create();
+                dialog.show();
+                return true;
+            } else {
+                return (jniEncrypt(stripstr, srcPath, true) == jniSuccess());
+            }
+            
         }
 
     }
