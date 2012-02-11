@@ -16,7 +16,7 @@ else
     ARCH=armeabi
 fi
 
-LIBSTDCXXLIB="-L${NDKDIR}/sources/cxx-stl/gnu-libstdc++/libs/armeabi -lgnustl_static"
+LIBSTDCXXLIB="-L${NDKDIR}/sources/cxx-stl/gnu-libstdc++/libs/${ARCH} -lgnustl_static"
 
 TARGET=`pwd`/${ARCH}
 

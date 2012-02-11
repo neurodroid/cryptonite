@@ -18,7 +18,7 @@ def cpfile(src, target):
     sys.stdout.write("Copying %s to %s\n" % (src, target))
     shutil.copy(src, target)
 
-archs = ["armeabi",]
+archs = ["armeabi","armeabi-v7a"]
 
 for arch in archs:
     try:

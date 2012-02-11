@@ -10,7 +10,8 @@ def cpfile(src, target):
     sys.stdout.write("Copying %s to %s\n" % (src, target))
     shutil.copy(src, target)
 
-archs = ["armeabi",]
+# We only copy the armeabi version of the binary
+archs = ["armeabi"]
 
 for arch in archs:
     try:
