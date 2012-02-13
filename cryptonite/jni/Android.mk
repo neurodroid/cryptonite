@@ -28,7 +28,7 @@ LOCAL_C_INCLUDES := \
     ../encfs/encfs-1.7.4/intl \
     ../fuse/fuse-android/jni/include \
     ../boost/boost_1_46_1 \
-    ../rlog/rlog-1.4/armeabi/include \
+    ../rlog/rlog-1.4/${TARGET_ARCH_ABI}/include \
     ../openssl/openssl-android/include
 
 LOCAL_CPPFLAGS := \
@@ -45,14 +45,14 @@ LOCAL_CPPFLAGS := \
     -frtti
 
 LOCAL_LDLIBS := \
-    ./obj/local/armeabi/libencfs.a \
-    ./obj/local/armeabi/libfuse.a \
+    ./obj/local/${TARGET_ARCH_ABI}/libencfs.a \
+    ./obj/local/${TARGET_ARCH_ABI}/libfuse.a \
     ./obj/local/armeabi/libboost_serialization.a \
-    ./obj/local/armeabi/librlog.a \
+    ./obj/local/${TARGET_ARCH_ABI}/librlog.a \
     ./obj/local/armeabi/libboost_filesystem.a \
     ./obj/local/armeabi/libboost_system.a \
-    ./obj/local/armeabi/libgnustl_static.a \
-    ./obj/local/armeabi/libgcc.a \
+    ./obj/local/${TARGET_ARCH_ABI}/libgnustl_static.a \
+    ./obj/local/${TARGET_ARCH_ABI}/libgcc.a \
     -L../openssl/openssl-android/libs/armeabi -lssl -lcrypto \
     -llog
 
