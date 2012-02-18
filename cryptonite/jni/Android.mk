@@ -54,6 +54,6 @@ LOCAL_LDLIBS := \
     ./obj/local/${TARGET_ARCH_ABI}/libgnustl_static.a \
     ./obj/local/${TARGET_ARCH_ABI}/libgcc.a \
     -L../openssl/openssl-android/libs/armeabi -lssl -lcrypto \
-    -llog
+    -llog -ldl
 
 include $(BUILD_SHARED_LIBRARY)

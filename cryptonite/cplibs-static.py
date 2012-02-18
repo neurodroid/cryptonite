@@ -26,12 +26,13 @@ for arch in archs:
     except os.error:
         pass
 
-    cpfile("../boost/boost_1_46_1/android/lib/libboost_filesystem.a", "./obj/local/%s/" % arch)
-    cpfile("../boost/boost_1_46_1/android/lib/libboost_serialization.a", "./obj/local/%s/" % arch)
-    cpfile("../boost/boost_1_46_1/android/lib/libboost_system.a", "./obj/local/%s/" % arch)
-    cpfile("../fuse/fuse-android/obj/local/%s/libfuse.a" % arch, "./obj/local/%s/" % arch)
-    cpfile("../rlog/rlog-1.4/%s/lib/librlog.a" % arch, "./obj/local/%s/" % arch)
-    cpfile("../encfs/encfs-1.7.4/%s/lib/libencfs.a" % arch, "./obj/local/%s/" % arch)
-    cpfile("%s/sources/cxx-stl/gnu-libstdc++/libs/%s/libgnustl_static.a" % (ndk, arch), "./obj/local/%s/" % arch)
-    cpfile("%s/lib/gcc/arm-linux-androideabi/4.4.3/libgcc.a" % toolchain, "./obj/local/%s/" % arch)
-    cpfile("%s/sources/cxx-stl/gnu-libstdc++/libs/%s/libgnustl_static.a" % (ndk, arch), "./obj/local/%s/" % arch)
+    target_dir = "./obj/local/%s/" % arch
+
+    cpfile("../boost/boost_1_46_1/android/lib/libboost_filesystem.a", target_dir)
+    cpfile("../boost/boost_1_46_1/android/lib/libboost_serialization.a", target_dir)
+    cpfile("../boost/boost_1_46_1/android/lib/libboost_system.a", target_dir)
+    cpfile("../fuse/fuse-android/obj/local/%s/libfuse.a" % arch, target_dir)
+    cpfile("../rlog/rlog-1.4/%s/lib/librlog.a" % arch, target_dir)
+    cpfile("../encfs/encfs-1.7.4/%s/lib/libencfs.a" % arch, target_dir)
+    cpfile("%s/sources/cxx-stl/gnu-libstdc++/libs/%s/libgnustl_static.a" % (ndk, arch), target_dir)
+    cpfile("%s/lib/gcc/arm-linux-androideabi/4.4.3/libgcc.a" % toolchain, target_dir)
