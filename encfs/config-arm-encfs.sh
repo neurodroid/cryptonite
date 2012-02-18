@@ -3,7 +3,7 @@
 NDKDIR=${HOME}/android-ndk-r7
 TOOLCHAIN=${HOME}/android-toolchain
 FUSEDIR=`pwd`/../../fuse/fuse-android
-OPENSSLDIR=`pwd`/../../openssl/openssl-android
+OPENSSLDIR=`pwd`/../../openssl/openssl-1.0.0g
 BOOSTDIR=`pwd`/../../boost/boost_1_46_1
 RLOGDIR=`pwd`/../../rlog/rlog-1.4
 MYAR=arm-linux-androideabi-ar
@@ -27,7 +27,7 @@ TARGET=`pwd`/${ARCH}
 AR=${MYAR} RANLIB=${MYRANLIB} NM=${MYNM} STRIP=${MYSTRIP} CC=${MYAGCC} CXX=${MYAGCC} \
     PKG_CONFIG="" \
     OPENSSL_CFLAGS="-DOPENSSL_NO_ENGINE -DHAVE_EVP_AES -DHAVE_EVP_BF -D__STDC_FORMAT_MACROS -I${OPENSSLDIR}/include" \
-    OPENSSL_LIBS="-L${OPENSSLDIR}/libs/armeabi -lssl -lcrypto -ldl" \
+    OPENSSL_LIBS="${OPENSSLDIR}/${ARCH}/libssl.a ${OPENSSLDIR}/${ARCH}/libcrypto.a -ldl" \
     RLOG_CFLAGS="-I${RLOGDIR}/${ARCH}/include" \
     RLOG_LIBS="-L${RLOGDIR}/${ARCH}/lib -lrlog" \
     CPPFLAGS="-DBOOST_FILESYSTEM_VERSION=2 -I${TOOLCHAIN}/sysroot/usr/include -I${FUSEDIR}/jni/include -I${BOOSTDIR} ${OPENSSL_CFLAGS} ${RLOG_CFLAGS}" \

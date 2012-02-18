@@ -40,6 +40,7 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 
 import android.graphics.drawable.Drawable;
 
@@ -185,7 +186,7 @@ public class Cryptonite extends Activity
         boolean volumeLoaded = (jniVolumeLoaded() == jniSuccess());
         
         /* Copy the encfs binaries to binDir and make executable. */
-        if (!(new File(ENCFSBIN)).exists()) {
+        if (needsEncFSBinary()) {
             final ProgressDialog pd = ProgressDialog.show(this,
                                                           this.getString(R.string.wait_msg),
                                                           this.getString(R.string.copying_bins), true);
@@ -196,6 +197,7 @@ public class Cryptonite extends Activity
                                 public void run() {
                                     if (pd.isShowing())
                                         pd.dismiss();
+                                    setEncFSBinaryVersion();
                                 }
                             });
                     }
@@ -361,6 +363,39 @@ public class Cryptonite extends Activity
                         getString(R.string.understand));
             }
         }
+    }
+
+    private boolean needsEncFSBinary() {
+        if (!(new File(ENCFSBIN)).exists()) {
+            return true;
+        }
+        
+        PackageInfo pInfo;
+        try {
+            pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+        } catch (NameNotFoundException e) {
+            return true;
+        }
+        String appVersion = pInfo.versionName;
+        
+        SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+        String binVersion = prefs.getString("binVersion", "");
+        return !binVersion.equals(appVersion);
+    }
+    
+    private void setEncFSBinaryVersion() {
+        PackageInfo pInfo;
+        try {
+            pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+        } catch (NameNotFoundException e) {
+            return;
+        }
+        String appVersion = pInfo.versionName;
+    
+        SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+        Editor prefEdit = prefs.edit();
+        prefEdit.putString("binVersion", appVersion);
+        prefEdit.commit();
     }
 
     private void cleanUpDecrypted() {

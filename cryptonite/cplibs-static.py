@@ -13,6 +13,7 @@ else:
 
 ndk = "%s/android-ndk-r7" % os.getenv("HOME")
 toolchain = "%s/toolchains/arm-linux-androideabi-4.4.3/prebuilt/%s-x86" % (ndk, platform)
+openssl_version = "1.0.0g"
 
 def cpfile(src, target):
     sys.stdout.write("Copying %s to %s\n" % (src, target))
@@ -34,5 +35,7 @@ for arch in archs:
     cpfile("../fuse/fuse-android/obj/local/%s/libfuse.a" % arch, target_dir)
     cpfile("../rlog/rlog-1.4/%s/lib/librlog.a" % arch, target_dir)
     cpfile("../encfs/encfs-1.7.4/%s/lib/libencfs.a" % arch, target_dir)
+    cpfile("../openssl/openssl-%s/%s/libssl.a" % (openssl_version, arch), target_dir)
+    cpfile("../openssl/openssl-%s/%s/libcrypto.a" % (openssl_version, arch), target_dir)
     cpfile("%s/sources/cxx-stl/gnu-libstdc++/libs/%s/libgnustl_static.a" % (ndk, arch), target_dir)
     cpfile("%s/lib/gcc/arm-linux-androideabi/4.4.3/libgcc.a" % toolchain, target_dir)

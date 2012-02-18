@@ -1,3 +1,4 @@
 #! /bin/bash
 
-git clone https://github.com/guardianproject/openssl-android.git
+wget http://www.openssl.org/source/openssl-1.0.0g.tar.gz
+tar -xzf openssl-1.0.0g.tar.gz

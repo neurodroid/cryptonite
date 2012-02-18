@@ -29,7 +29,7 @@ LOCAL_C_INCLUDES := \
     ../fuse/fuse-android/jni/include \
     ../boost/boost_1_46_1 \
     ../rlog/rlog-1.4/${TARGET_ARCH_ABI}/include \
-    ../openssl/openssl-android/include
+    ../../openssl-android/openssl-1.0.0g/include
 
 LOCAL_CPPFLAGS := \
     -D_FILE_OFFSET_BITS=64 \
@@ -53,7 +53,9 @@ LOCAL_LDLIBS := \
     ./obj/local/armeabi/libboost_system.a \
     ./obj/local/${TARGET_ARCH_ABI}/libgnustl_static.a \
     ./obj/local/${TARGET_ARCH_ABI}/libgcc.a \
-    -llog -ldl -lssl -lcrypto
+    ./obj/local/${TARGET_ARCH_ABI}/libcrypto.a \
+    ./obj/local/${TARGET_ARCH_ABI}/libssl.a \
+    -llog -ldl
 
 LOCAL_ALLOW_UNDEFINED_SYMBOLS := true
 
