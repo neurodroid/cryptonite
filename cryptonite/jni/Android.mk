@@ -53,7 +53,8 @@ LOCAL_LDLIBS := \
     ./obj/local/armeabi/libboost_system.a \
     ./obj/local/${TARGET_ARCH_ABI}/libgnustl_static.a \
     ./obj/local/${TARGET_ARCH_ABI}/libgcc.a \
-    -L../openssl/openssl-android/libs/armeabi -lssl -lcrypto \
-    -llog -ldl
+    -llog -ldl -lssl -lcrypto
+
+LOCAL_ALLOW_UNDEFINED_SYMBOLS := true
 
 include $(BUILD_SHARED_LIBRARY)
