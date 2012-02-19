@@ -119,7 +119,7 @@ public class Cryptonite extends Activity
     private String mntDir = "/sdcard" + MNTPNT;
     private TextView tv;
     private TextView tvMountInfo;
-    private String encfsversion, encfsoutput;
+    private String encfsVersion, opensslVersion, encfsoutput;
     private Button buttonDropbox, buttonDropboxDecrypt, buttonLocalDecrypt,
         buttonBrowseDecrypted, buttonForgetDecryption,
         buttonMount, buttonViewMount;
@@ -165,10 +165,11 @@ public class Cryptonite extends Activity
 
         cleanUpDecrypted();
         
-        encfsversion = "EncFS " + jniVersion();
-        Log.v(TAG, encfsversion);
+        encfsVersion = "EncFS " + jniEncFSVersion();
+        opensslVersion = jniOpenSSLVersion();
+        Log.v(TAG, encfsVersion + " " + opensslVersion);
         tv = (TextView)findViewById(R.id.tvVersion);
-        tv.setText(encfsversion);
+        tv.setText(encfsVersion + "\n" + opensslVersion);
 
         if (externalStorageIsWritable()) {
             mntDir = Environment.getExternalStorageDirectory().getPath() + MNTPNT;
@@ -768,7 +769,7 @@ public class Cryptonite extends Activity
     /** This will run the shipped encfs binary and spawn a daemon on rooted devices
      */
     private void mountEncFS(final String srcDir, String pwd) {
-        tv.setText(encfsversion);
+        tv.setText(encfsVersion + "\n" + opensslVersion);
         tv.invalidate();
 
         if (jniIsValidEncFS(srcDir) != jniSuccess()) {
@@ -790,7 +791,7 @@ public class Cryptonite extends Activity
                                 if (pd.isShowing())
                                     pd.dismiss();
                                 if (encfsoutput.length() > 0) {
-                                    tv.setText(encfsversion + "\n" + encfsoutput);
+                                    tv.setText(encfsVersion + "\n" + encfsoutput);
                                 }
                                 nullPassword();
                                 updateMountButtons();
@@ -900,7 +901,7 @@ public class Cryptonite extends Activity
      * @param pwd password
      */
     private void dbDecryptEncFS(final String srcDir, String pwd) {
-        tv.setText(encfsversion);
+        tv.setText(encfsVersion + "\n" + opensslVersion);
         tv.invalidate();
 
         /* Download encfs*.xml from Dropbox 
@@ -1902,7 +1903,8 @@ public class Cryptonite extends Activity
     public native int     jniEncrypt(String decodedPath, String srcPathk, boolean forceReadable);
     public static native String  jniDecode(String name);
     public static native String  jniEncode(String name);
-    public native String  jniVersion();
+    public native String  jniEncFSVersion();
+    public native String  jniOpenSSLVersion();
     public native String  jniAppKey();
     public native String  jniAppPw();
 

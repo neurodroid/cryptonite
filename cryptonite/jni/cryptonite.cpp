@@ -47,6 +47,8 @@
 #include <DirNode.h>
 #include <config.h>
 
+#include <openssl/ssl.h>
+
 #define  LOG_TAG    "cryptonite-jni"
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
@@ -464,7 +466,10 @@ extern "C" {
                                              jstring decodedname);
 
     JNIEXPORT jstring JNICALL
-    Java_csh_cryptonite_Cryptonite_jniVersion(JNIEnv * env, jobject thiz);
+    Java_csh_cryptonite_Cryptonite_jniEncFSVersion(JNIEnv * env, jobject thiz);
+
+    JNIEXPORT jstring JNICALL
+    Java_csh_cryptonite_Cryptonite_jniOpenSSLVersion(JNIEnv * env, jobject thiz);
 
     JNIEXPORT jstring JNICALL
     Java_csh_cryptonite_Cryptonite_jniAppKey(JNIEnv* env, jobject thiz);
@@ -995,9 +1000,15 @@ Java_csh_cryptonite_Cryptonite_jniEncrypt(JNIEnv * env, jobject thiz,
 }
 
 JNIEXPORT jstring JNICALL
-Java_csh_cryptonite_Cryptonite_jniVersion(JNIEnv* env, jobject thiz)
+Java_csh_cryptonite_Cryptonite_jniEncFSVersion(JNIEnv* env, jobject thiz)
 {
     return env->NewStringUTF(VERSION);
+}
+
+JNIEXPORT jstring JNICALL
+Java_csh_cryptonite_Cryptonite_jniOpenSSLVersion(JNIEnv* env, jobject thiz)
+{
+    return env->NewStringUTF(OPENSSL_VERSION_TEXT);
 }
 
 extern const char* get_key();
