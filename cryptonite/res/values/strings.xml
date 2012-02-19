@@ -18,7 +18,9 @@
     
     <string name="sdcard_not_writable">Can\'t write to SD card</string>
     <string name="title_password">EncFS password</string>
+    <string name="title_new_folder">Create new folder</string>
     <string name="settings_password">Enter password:</string>
+    <string name="settings_new_folder">New folder name:</string>
     <string name="running_encfs">Running EncFS&#8230;</string>
     <string name="running_export">Exporting files&#8230;</string>
     <string name="copying_bins">Copying binaries&#8230;</string>
@@ -53,6 +55,7 @@
     <string name="export_warning">Exporting files can be slow and will copy decrypted files to your phone. Are you sure you want to proceed?</string>
     <string name="upload_warning">Uploading files is an experimental feature. Are you sure you want to proceed?</string>
     <string name="upload_failure">Failed to upload file</string>
+    <string name="new_folder_warning">Creating folders is an experimental feature. Are you sure you want to proceed?</string>
     <string name="only_files">Can only upload single files at this time</string>
     <string name="file_exists">Encrypted file exists</string>
     <string name="file_exists_options">Overwrite, rename or cancel?</string>
@@ -101,10 +104,14 @@
     <string name="export">Export selected</string>
     <string name="export_short">Export</string>
     <string name="upload_short">Upload</string>
+    <string name="new_folder_short">Create folder</string>
     <string name="back">Back</string>
     <string name="context_open">Open</string>
     <string name="context_export">Export</string>
     <string name="upload">Upload file to this folder</string>
+    <string name="new_folder">Create new folder</string>
+    <string name="new_folder_fail">Couldn\'t create new folder</string>
+    <string name="new_folder_exists">Folder exists</string>
     
     <!-- Button labels -->
     <string name="local_decrypt">Decrypt local folder</string>

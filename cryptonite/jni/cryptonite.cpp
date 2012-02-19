@@ -95,7 +95,8 @@ static int isValidEncFS(std::string rootDir) {
     {
     case Config_None:
 	// xgroup(diag)
-	LOGI("Unable to load or parse config file");
+        info << "Unable to load or parse config file in " << rootDir;
+	LOGI(info.str().c_str());
 	return EXIT_FAILURE;
     case Config_Prehistoric:
 	// xgroup(diag)

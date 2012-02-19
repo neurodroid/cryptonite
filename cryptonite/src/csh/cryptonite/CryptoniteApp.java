@@ -51,8 +51,17 @@ public class CryptoniteApp extends Application {
     }
     
     public boolean dbFileExists(String dbPath) throws DropboxException {
+        Entry dbEntry;
         try {
-            getDBEntry(dbPath);
+            /* We need a new metadata call here without hash
+             * to make sure we get 404 if the file
+             * doesn't exist rather than 304 if we've
+             * asked before
+             */
+            dbEntry = mApi.metadata(dbPath, 0, null, true, null);
+            if (dbEntry.isDeleted) {
+                return false;
+            }
         } catch (DropboxServerException e) {
             if (e.error == DropboxServerException._404_NOT_FOUND) {
                 return false;

@@ -95,7 +95,7 @@ public class Cryptonite extends Activity
     public static final String ENCFSCTLBIN = BINDIR + "/encfsctl";
     public static final String TAG = "cryptonite";
 
-    private static final String BROWSEPNT = "browse";
+    public static final String BROWSEPNT = "browse";
     private static final String OPENPNT = "open";
     private static final String DROPBOXPNT = "dropbox";
     private static final String READPNT = "read";
@@ -354,8 +354,8 @@ public class Cryptonite extends Activity
         currentDialogStartPath = Environment.getExternalStorageDirectory().getPath();
         currentDialogRoot = "/";
         currentReturnPath = "/mnt/sdcard/.AAEncfs3"; 
-        localDecryptEncFS(currentReturnPath, "password");
-         */
+        localDecryptEncFS(currentReturnPath, "password"); */
+        
         
         if (!mInstrumentation) {
             SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);

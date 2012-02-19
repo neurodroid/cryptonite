@@ -20,6 +20,7 @@
 
 package csh.cryptonite;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,8 +34,10 @@ import com.dropbox.client2.exception.DropboxException;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -54,6 +57,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+// import android.widget.EditText;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -83,17 +87,18 @@ public class FileDialog extends ListActivity {
     public static final String CURRENT_ROOT_NAME = "CURRENT_ROOT_NAME";
     public static final String CURRENT_DBROOT = "CURRENT_DBROOT";
 
+    private static final int NEW_FOLDER_DIALOG_ID = 0;
+    
     private String currentRoot = ROOT;
     private String currentRootLabel = ROOT;
     private List<String> path = null;
     private TextView myPath;
-    private EditText mFileName;
+    /* private EditText mFileName; */
     private ArrayList<HashMap<String, Object>> mList;
 
     private Button selectButton;
 
     private LinearLayout layoutSelect;
-    private LinearLayout layoutCreate;
     private LinearLayout layoutUpload;
     private InputMethodManager inputManager;
     private String parentPath;
@@ -116,7 +121,7 @@ public class FileDialog extends ListActivity {
 
         setContentView(R.layout.file_dialog_main);
         myPath = (TextView) findViewById(R.id.path);
-        mFileName = (EditText) findViewById(R.id.fdEditTextFile);
+        /* mFileName = (EditText) findViewById(R.id.fdEditTextFile); */
 
         inputManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
 
@@ -183,7 +188,7 @@ public class FileDialog extends ListActivity {
           }
         */
         layoutSelect = (LinearLayout) findViewById(R.id.fdLinearLayoutSelect);
-        layoutCreate = (LinearLayout) findViewById(R.id.fdLinearLayoutCreate);
+        /* layoutCreate = (LinearLayout) findViewById(R.id.fdLinearLayoutCreate); */
         layoutUpload = (LinearLayout) findViewById(R.id.fdLinearLayoutUpload);
         /* Disable upload at this time */ 
         switch (selectionMode) {
@@ -194,7 +199,7 @@ public class FileDialog extends ListActivity {
             break;
         }
         // layoutUpload.setVisibility(View.GONE);
-        layoutCreate.setVisibility(View.GONE);
+        // layoutCreate.setVisibility(View.GONE);
 
         final Button cancelButton = (Button) findViewById(R.id.fdButtonCancel);
         cancelButton.setOnClickListener(new OnClickListener() {
@@ -205,20 +210,20 @@ public class FileDialog extends ListActivity {
                 }
 
             });
-        final Button createButton = (Button) findViewById(R.id.fdButtonCreate);
-        createButton.setOnClickListener(new OnClickListener() {
-
-                public void onClick(View v) {
-                    if (mFileName.getText().length() > 0) {
-                        getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
-                        getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
-                        getIntent().putExtra(RESULT_EXPORT_PATHS,
-                                currentPath + "/" + mFileName.getText());
-                        setResult(RESULT_OK, getIntent());
-                        finish();
-                    }
-                }
-            });
+//        final Button createButton = (Button) findViewById(R.id.fdButtonCreate);
+//        createButton.setOnClickListener(new OnClickListener() {
+//
+//                public void onClick(View v) {
+//                    if (mFileName.getText().length() > 0) {
+//                        getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
+//                        getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
+//                        getIntent().putExtra(RESULT_EXPORT_PATHS,
+//                                currentPath + "/" + mFileName.getText());
+//                        setResult(RESULT_OK, getIntent());
+//                        finish();
+//                    }
+//                }
+//            });
         
         final Button uploadButton = (Button) findViewById(R.id.fdButtonUpload);
         uploadButton.setOnClickListener(new OnClickListener() {
@@ -229,6 +234,14 @@ public class FileDialog extends ListActivity {
             
         });
 
+        final Button newFolderButton = (Button) findViewById(R.id.fdButtonNewFolder);
+        newFolderButton.setOnClickListener(new OnClickListener() {
+            
+            public void onClick(View v) {
+                showDialog(NEW_FOLDER_DIALOG_ID);
+            }
+        });
+        
         String startPath = getIntent().getStringExtra(START_PATH);
         if (startPath != null) {
             getDir(startPath, currentRoot, currentRootLabel, currentDBEncFS);
@@ -561,16 +574,16 @@ public class FileDialog extends ListActivity {
         if ((keyCode == KeyEvent.KEYCODE_BACK)) {
             selectButton.setEnabled(true);
 
-            if (layoutCreate.getVisibility() == View.VISIBLE) {
+            /* if (layoutCreate.getVisibility() == View.VISIBLE) {
                 layoutCreate.setVisibility(View.GONE);
                 layoutSelect.setVisibility(View.VISIBLE);
-            } else {
+            } else {*/
                 if (!currentPath.equals(currentRoot)) {
                     getDir(parentPath, currentRoot, currentRootLabel, currentDBEncFS);
                 } else {
                     return super.onKeyDown(keyCode, event);
                 }
-            }
+            //}
 
             return true;
         } else {
@@ -611,8 +624,42 @@ public class FileDialog extends ListActivity {
       }
     }
 
+    @Override protected Dialog onCreateDialog(int id) {
+        switch (id) {
+         case NEW_FOLDER_DIALOG_ID:
+             LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+
+             final View layout = inflater.inflate(R.layout.new_folder_dialog,
+                     (ViewGroup) findViewById(R.id.new_folder_root));
+             final EditText newFolder = (EditText) layout.findViewById(R.id.EditText_NewFolder);
+
+             AlertDialog.Builder builder = new AlertDialog.Builder(this);
+             builder.setTitle(R.string.title_new_folder);
+             builder.setView(layout);
+             builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                     public void onClick(DialogInterface dialog, int whichButton) {
+                         removeDialog(NEW_FOLDER_DIALOG_ID);
+                     }
+                 });
+             builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                     public void onClick(DialogInterface dialog, int which) {
+                         String newFolderString = newFolder.getText().toString();
+                         removeDialog(NEW_FOLDER_DIALOG_ID);
+                         if (newFolderString.length() > 0) {
+                             showCreateEncFSFolderWarning(newFolderString);
+                         } else {
+                             Toast.makeText(FileDialog.this, R.string.new_folder_fail, Toast.LENGTH_LONG);
+                         }
+                     }
+                 });
+             return builder.create();
+        }
+        
+        return null;
+    }
+    
     private void setSelectVisible(View v) {
-        layoutCreate.setVisibility(View.GONE);
+        // layoutCreate.setVisibility(View.GONE);
         layoutSelect.setVisibility(View.VISIBLE);
 
         inputManager.hideSoftInputFromWindow(v.getWindowToken(), 0);
@@ -811,6 +858,103 @@ public class FileDialog extends ListActivity {
             setResult(RESULT_OK, getIntent());
             finish();
         }
+    }
+
+    private void showCreateEncFSFolderWarning(final String decodedFolderName) {
+        SharedPreferences prefs = getBaseContext().getSharedPreferences(Cryptonite.ACCOUNT_PREFS_NAME, 0);
+        if (!prefs.getBoolean("cb_norris", false)) {
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(FileDialog.this);
+            builder.setIcon(R.drawable.ic_launcher_cryptonite)
+            .setTitle(R.string.warning)
+            .setMessage(R.string.new_folder_warning)
+            .setPositiveButton(R.string.new_folder_short,
+                    new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog,
+                        int which) {
+                    createEncFSFolder(decodedFolderName);
+                }
+            })
+            .setNegativeButton(R.string.cancel,
+                    new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog,
+                        int which) {
+                }
+            });  
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        } else {
+            createEncFSFolder(decodedFolderName);
+        }
+    }
+
+    private boolean createEncFSFolder(String decodedFolderName) {
+        /* normalise path names */
+        String bRoot = new File(currentRoot).getPath();
+        String bPath = new File(currentPath).getPath();
+        String stripstrtmp = bPath.substring(bRoot.length()) + "/" + decodedFolderName;
+        if (!stripstrtmp.startsWith("/")) {
+            stripstrtmp = "/" + stripstrtmp;
+        }
+        /* Remove trailing spaces */
+        while (stripstrtmp.endsWith(" ")) {
+            stripstrtmp = stripstrtmp.substring(0, stripstrtmp.length()-1);
+        }
+        final String stripstr = stripstrtmp;
+
+        /* Convert current path to encoded file name */
+        final String encodedPath = Cryptonite.jniEncode(stripstr);
+        final File encodedFile = new File(encodedPath);
+        
+        if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT_DB) {
+            /* Create dir on DB */
+            File browseRoot = getBaseContext().getDir(Cryptonite.BROWSEPNT, Context.MODE_PRIVATE);
+            final String targetPath = encodedPath.substring(browseRoot.getPath().length());
+            
+            /* Does the _en_crypted directory exist on Dropbox? */
+            String dbPath = new File(targetPath).getParent() + "/" + encodedFile.getName();
+            boolean fileExists = true;
+            try {
+                fileExists = ((CryptoniteApp)getApplication()).dbFileExists(dbPath);
+            } catch (DropboxException e) {
+                Toast.makeText(FileDialog.this, 
+                        getString(R.string.new_folder_fail) + ": " + e.toString(), 
+                        Toast.LENGTH_LONG);
+                return false;
+            }
+            if (fileExists) {
+                Toast.makeText(FileDialog.this, getString(R.string.new_folder_exists), 
+                        Toast.LENGTH_LONG);
+                return false;
+            } else {
+                try {
+                    ((CryptoniteApp)getApplication()).getDBApi().createFolder(dbPath);
+                    /* reload current directory */
+                    getDir(currentPath, currentRoot, currentRootLabel, currentDBEncFS);
+                    return true;
+                } catch (DropboxException e) {
+                    Toast.makeText(FileDialog.this, 
+                            getString(R.string.new_folder_fail) + ": " + e.toString(), 
+                            Toast.LENGTH_LONG);
+                    return false;
+                }
+            }
+        } else {
+            /* Does the encrypted file exist? */
+            if (encodedFile.exists()) {
+                Toast.makeText(FileDialog.this, R.string.new_folder_exists, Toast.LENGTH_LONG);
+                return false;
+            } else {
+                if (!encodedFile.mkdir()) {
+                    Toast.makeText(FileDialog.this, R.string.new_folder_fail, Toast.LENGTH_LONG);
+                    return false;
+                } else {
+                    /* reload current directory */
+                    getDir(currentPath, currentRoot, currentRootLabel, currentDBEncFS);
+                    return true;
+                }
+            }
+        }        
     }
     
 }
