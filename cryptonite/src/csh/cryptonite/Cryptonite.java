@@ -86,7 +86,7 @@ public class Cryptonite extends Activity
         VIEWMOUNT_MODE=3, SELECTLOCALEXPORT_MODE=4, LOCALEXPORT_MODE=5, DROPBOX_AUTH_MODE=6,
         SELECTDBEXPORT_MODE=7, DBEXPORT_MODE=8, SELECTLOCALUPLOAD_MODE=9, SELECTDBUPLOAD_MODE=10;
     private static final int DIRPICK_MODE=0, FILEPICK_MODE=1;
-    private static final int MY_PASSWORD_DIALOG_ID = 0;
+    public static final int MY_PASSWORD_DIALOG_ID = 0;
     private static final int DIALOG_MARKETNOTFOUND=1, DIALOG_OI_UNAVAILABLE=2;
     private static final int MAX_JNI_SIZE = 512;
     public static final String MNTPNT = "/csh.cryptonite/mnt";
@@ -122,6 +122,7 @@ public class Cryptonite extends Activity
     private String encfsVersion, opensslVersion, encfsoutput;
     private Button buttonDropbox, buttonDropboxDecrypt, buttonLocalDecrypt,
         buttonBrowseDecrypted, buttonForgetDecryption,
+        buttonDropboxCreate, buttonLocalCreate,
         buttonMount, buttonViewMount;
     private int opMode = -1;
     private int prevMode = -1;
@@ -289,6 +290,24 @@ public class Cryptonite extends Activity
 
         buttonForgetDecryption.setEnabled(volumeLoaded);
         
+        /* Create EncFS volume on Dropbox */
+        buttonDropboxCreate = (Button)findViewById(R.id.btnDropboxCreate);
+        buttonDropboxCreate.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    createEncFS(true);
+                }});
+
+        buttonDropboxCreate.setEnabled(mLoggedIn && !volumeLoaded);
+
+        /* Clear local EncFS volume */
+        buttonLocalCreate = (Button)findViewById(R.id.btnLocalCreate);
+        buttonLocalCreate.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    createEncFS(false);
+                }});
+
+        buttonLocalCreate.setEnabled(!volumeLoaded);
+        
         /* Mount local EncFS volume */
         buttonMount = (Button)findViewById(R.id.btnMount);
         buttonMount.setOnClickListener(new OnClickListener() {
@@ -420,6 +439,8 @@ public class Cryptonite extends Activity
         buttonDropboxDecrypt.setEnabled(!volumeLoaded && mLoggedIn);
         buttonBrowseDecrypted.setEnabled(volumeLoaded);
         buttonForgetDecryption.setEnabled(volumeLoaded);
+        buttonDropboxCreate.setEnabled(!volumeLoaded && mLoggedIn);
+        buttonLocalCreate.setEnabled(!volumeLoaded);
         
         if (!volumeLoaded) {
             mDropboxDecrypted = false;
@@ -450,6 +471,7 @@ public class Cryptonite extends Activity
         case SelectionMode.MODE_OPEN:
         case SelectionMode.MODE_OPEN_DB:
         case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
+        case SelectionMode.MODE_OPEN_CREATE:
             /* file dialog */
             if (resultCode == Activity.RESULT_OK && data != null) {
                 currentReturnPath = data.getStringExtra(FileDialog.RESULT_EXPORT_PATHS);
@@ -529,7 +551,7 @@ public class Cryptonite extends Activity
                     /* Select destination directory for exported files */
                     currentDialogLabel = Cryptonite.this.getString(R.string.select_exp);
                     currentDialogButtonLabel = Cryptonite.this.getString(R.string.select_exp_short);
-                    currentDialogMode = SelectionMode.MODE_OPEN;
+                    currentDialogMode = SelectionMode.MODE_OPEN_CREATE;
                     if (externalStorageIsWritable()) {
                         currentDialogStartPath = Environment
                                 .getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
@@ -600,6 +622,12 @@ public class Cryptonite extends Activity
                 }
             }
             break;
+        case CreateEncFS.CREATE_DB:
+        case CreateEncFS.CREATE_LOCAL:
+            /* Update buttons */
+            updateMountButtons();
+            updateDecryptButtons();
+            break;
         default:
             Log.e(TAG, "Unknown request code");
         }
@@ -627,9 +655,9 @@ public class Cryptonite extends Activity
                 
                 setLoggedIn(true);
             } catch (IllegalStateException e) {
-                Toast.makeText(this, 
+                Toast.makeText(getApplicationContext(), 
                         getString(R.string.dropbox_auth_fail) + ": " + e.getLocalizedMessage(), 
-                        Toast.LENGTH_LONG);
+                        Toast.LENGTH_LONG).show();
             }
         } else {
             if (triedLogin) {
@@ -1176,7 +1204,7 @@ public class Cryptonite extends Activity
         }
     }
 
-    private boolean externalStorageIsWritable() {
+    public static boolean externalStorageIsWritable() {
         /* Check sd card state */
         String state = Environment.getExternalStorageState();
 
@@ -1240,6 +1268,47 @@ public class Cryptonite extends Activity
         startActivityForResult(intent, currentDialogMode);
     }
     
+    private void createEncFS(final boolean isDB) {
+        SharedPreferences prefs = getBaseContext().getSharedPreferences(Cryptonite.ACCOUNT_PREFS_NAME, 0);
+        if (!prefs.getBoolean("cb_norris", false)) {
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
+            builder.setIcon(R.drawable.ic_launcher_cryptonite)
+            .setTitle(R.string.warning)
+            .setMessage(R.string.create_warning)
+            .setPositiveButton(R.string.create_short,
+                    new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog,
+                        int which) {
+                    Intent intent = new Intent(getBaseContext(), CreateEncFS.class);
+                    int createMode = CreateEncFS.CREATE_LOCAL;
+                    if (isDB) {
+                        createMode = CreateEncFS.CREATE_DB;
+                    }
+                    intent.putExtra(CreateEncFS.START_MODE, createMode);
+                    startActivityForResult(intent, createMode);
+                }
+            })
+            .setNegativeButton(R.string.cancel,
+                    new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog,
+                        int which) {
+                }
+            });  
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        } else {
+            Intent intent = new Intent(getBaseContext(), CreateEncFS.class);
+            int createMode = CreateEncFS.CREATE_LOCAL;
+            if (isDB) {
+                createMode = CreateEncFS.CREATE_DB;
+            }
+            intent.putExtra(CreateEncFS.START_MODE, createMode);
+            startActivityForResult(intent, createMode);
+        }
+        
+        
+    }
     
     private void logOut() {
         // Remove credentials from the session
@@ -1511,12 +1580,12 @@ public class Cryptonite extends Activity
                 dbRecTree(path, exportRoot, destDir, dbEncFSPath);
             }
         } catch (IOException e) {
-            Toast.makeText(getBaseContext(), getString(R.string.export_failed) + e.toString(),
-                    Toast.LENGTH_LONG);
+            Toast.makeText(getApplicationContext(), getString(R.string.export_failed) + e.toString(),
+                    Toast.LENGTH_LONG).show();
             return false;
         } catch (DropboxException e) {
-            Toast.makeText(getBaseContext(), getString(R.string.export_failed) + e.toString(),
-                    Toast.LENGTH_LONG);
+            Toast.makeText(getApplicationContext(), getString(R.string.export_failed) + e.toString(),
+                    Toast.LENGTH_LONG).show();
             return false;
         }
         return true;
@@ -1795,7 +1864,7 @@ public class Cryptonite extends Activity
                                 int which) {
                             UploadEncrypted upload = new UploadEncrypted(Cryptonite.this, 
                                     ((CryptoniteApp)getApplication()).getDBApi(),
-                                    new File(targetPath).getParent() + "/", encodedFile);
+                                    new File(targetPath).getParent() + "/", encodedFile, true);
                             upload.execute();                                
                         }
                     })
@@ -1827,7 +1896,7 @@ public class Cryptonite extends Activity
                                     }
                                     UploadEncrypted upload = new UploadEncrypted(Cryptonite.this, 
                                             ((CryptoniteApp)getApplication()).getDBApi(),
-                                            new File(targetPath).getParent() + "/", nextEncodedFile);
+                                            new File(targetPath).getParent() + "/", nextEncodedFile, true);
                                     upload.execute();
                                     break;
                                 }
@@ -1848,7 +1917,7 @@ public class Cryptonite extends Activity
             } else {
                 UploadEncrypted upload = new UploadEncrypted(Cryptonite.this, 
                         ((CryptoniteApp)getApplication()).getDBApi(),
-                        new File(targetPath).getParent() + "/", encodedFile);
+                        new File(targetPath).getParent() + "/", encodedFile, true);
                 upload.execute();                                
             }
 
@@ -1892,12 +1961,13 @@ public class Cryptonite extends Activity
      * with this application.
      */
     public native int     jniFailure();
-    public native int     jniSuccess();
+    public static native int jniSuccess();
     public native int     jniIsValidEncFS(String srcDir);
     public native int     jniVolumeLoaded();
-    public native int     jniResetVolume();
+    public static native int jniResetVolume();
     public native int     jniBrowse(String srcDir, String destDir, String password);
     public native int     jniInit(String srcDir, String password);
+    public static native int jniCreate(String srcDir, String password, int config);
     public native int     jniExport(String[] exportPaths, String exportRoot, String destDir);
     public native int     jniDecrypt(String encodedName, String destDir, boolean forceReadable);
     public native int     jniEncrypt(String decodedPath, String srcPathk, boolean forceReadable);

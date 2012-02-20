@@ -25,7 +25,8 @@
     <string name="running_export">Exporting files&#8230;</string>
     <string name="copying_bins">Copying binaries&#8230;</string>
     <string name="no_fuse">FUSE is not supported on your device</string>
-    <string name="browse_info">Browse &amp; Export EncFS volume</string>
+    <string name="browse_info">Open EncFS volume</string>
+    <string name="create_info">Create EncFS volume</string>
     <string name="mount_info">Mount EncFS volume</string>
     <string name="mount_info_unsupported">Mounting is not supported on this phone</string>
     <string name="invalid_encfs">This is not a valid EncFS root volume</string>
@@ -69,6 +70,7 @@
     <string name="dropbox_unlink">Unlink from Dropbox</string>
     <string name="dropbox_reading">Reading Dropbox&#8230;</string>
     <string name="dropbox_decrypt">Decrypt Dropbox folder</string>
+    <string name="dropbox_create">Create Dropbox volume</string>
     <string name="dropbox_auth_fail">"Couldn\'t authenticate with Dropbox</string>
     <string name="dropbox_read_fail">"Problem reading from Dropbox"</string>
     <string name="dropbox_service_started">"db_running"</string>
@@ -88,6 +90,8 @@
     <string name="select_enc_short">Select current folder</string>
     <string name="select_exp">Select export directory</string>
     <string name="select_exp_short">Export to current folder</string>
+    <string name="select_create">Select EncFS target directory</string>
+    <string name="select_create_short">Create in current folder</string>
     <string name="select_upload">Select file to upload</string>
     <string name="select_upload_short">Upload selected file</string>
     <string name="encfs_root">EncFS root</string>
@@ -96,7 +100,7 @@
     <string name="file_name">File name:</string>
     <string name="cancel">Cancel</string>
     <string name="ok">Ok</string>
-    <string name="create">Create</string>
+    <string name="create">Create new folder</string>
     <string name="no_data">No Data</string>
     <string name="location">Location</string>
     <string name="cant_read_folder">folder can\'t be read!</string>
@@ -115,10 +119,20 @@
     
     <!-- Button labels -->
     <string name="local_decrypt">Decrypt local folder</string>
+    <string name="local_create">Create local volume</string>
     <string name="mount">Mount</string>
     <string name="unmount">Unmount</string>
     <string name="viewmount">View mounted</string>
-    
+
+    <!-- Create dialog -->
+    <string name="create_name">Select encryption method</string>
+    <string name="create_success">Successfully created EncFS volume</string>
+    <string name="create_failure">Couldn\'t create EncFS volume</string>
+    <string name="creating_encfs">Creating EncFS volume&#8230;</string>
+    <string name="encfs6_exists">An EncFS volume already exists in this folder</string>
+    <string name="create_warning">Creating volumes is an experimental feature. Are you sure you want to proceed?</string>
+    <string name="create_short">Create volume</string>
+     
     <!-- Misc -->
     <string name="wait_msg">Please wait&#8230;</string>
     <string name="send_email">Send email&#8230;</string>

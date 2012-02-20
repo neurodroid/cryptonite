@@ -1,9 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent" android:layout_height="fill_parent"
+    android:scrollbars="vertical">
+    
 <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:stretchColumns="*" >
+
+  <Button
+      android:id="@+id/btnDropbox"
+      android:layout_width="0dp"
+      android:layout_height="match_parent"
+      android:layout_weight="1"
+      android:text="@string/dropbox_link"
+      android:typeface="normal" >
+  </Button>
 
   <TextView
       android:id="@+id/tvBrowse" 
@@ -15,16 +28,6 @@
   </TextView>
 
    <TableRow android:layout_width="wrap_content" >
-
-       <Button
-           android:id="@+id/btnDropbox"
-           android:layout_width="0dp"
-           android:layout_height="match_parent"
-           android:layout_weight="1"
-           android:text="@string/dropbox_link"
-           android:typeface="normal" >
-       </Button>
-
        <Button
            android:id="@+id/btnDropboxDecrypt"
            android:layout_width="0dp"
@@ -63,6 +66,36 @@
            android:typeface="normal" >
        </Button>
    </TableRow>
+
+  <TextView
+      android:id="@+id/tvCreate" 
+      android:text="@string/create_info"
+      android:layout_width="fill_parent" 
+      android:layout_height="wrap_content" 
+      android:typeface="normal"
+      android:textStyle="bold">
+  </TextView>
+
+   <TableRow android:layout_width="wrap_content" >
+       <Button
+           android:id="@+id/btnDropboxCreate"
+           android:layout_width="0dp"
+           android:layout_height="match_parent"
+           android:layout_weight="1"
+           android:text="@string/dropbox_create"
+           android:typeface="normal" >
+       </Button>
+
+       <Button
+           android:id="@+id/btnLocalCreate"
+           android:layout_width="0dp"
+           android:layout_height="match_parent"
+           android:layout_weight="1"
+           android:text="@string/local_create"
+           android:typeface="normal" >
+       </Button>
+   </TableRow>
+  
   <TextView
       android:id="@+id/tvMountInfo" 
       android:text="@string/mount_info" 
@@ -110,5 +143,5 @@
       android:textStyle="bold">
   </TextView>
 
-
 </TableLayout>
+</ScrollView>

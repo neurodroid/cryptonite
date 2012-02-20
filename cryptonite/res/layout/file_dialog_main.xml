@@ -56,26 +56,21 @@
                 </Button>
             </LinearLayout>
 		
-		<!-- LinearLayout android:id="@+id/fdLinearLayoutCreate"
-			android:orientation="vertical" android:layout_width="fill_parent"
-			android:layout_height="wrap_content"
-			android:paddingLeft="10dp"
-			android:paddingRight="10dp" android:paddingBottom="5dp">
-			<TextView android:id="@+id/textViewFilename" android:text="@string/file_name"
-				android:layout_width="fill_parent" android:layout_height="wrap_content" />
-			<EditText android:text="" android:id="@+id/fdEditTextFile"
-				android:layout_width="fill_parent" android:layout_height="wrap_content"></EditText>
+           <LinearLayout
+                android:id="@+id/fdLinearLayoutCreate"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:baselineAligned="true"
+                android:orientation="horizontal" >
 
-			<LinearLayout android:orientation="horizontal"
-				android:layout_width="fill_parent" android:layout_height="fill_parent">
-				<Button android:id="@+id/fdButtonCancel" android:layout_height="wrap_content"
-					android:layout_width="0dip" android:layout_weight=".3"
-					android:text="@string/cancel"></Button>
-				<Button android:id="@+id/fdButtonCreate" android:layout_height="wrap_content"
-					android:layout_width="0dip" android:layout_weight=".7"
-					android:text="@string/create"></Button>
-			</LinearLayout>
-		</LinearLayout -->
+                <Button
+                    android:id="@+id/fdButtonCreate"
+                    android:layout_width="0dip"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1.0"
+                    android:text="@string/create" >
+                </Button>
+            </LinearLayout>
 
 	</LinearLayout>
 

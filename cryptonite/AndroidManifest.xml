@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest 
     xmlns:android="http://schemas.android.com/apk/res/android" package="csh.cryptonite"
-    android:versionCode="17"
-    android:versionName="0.1.2">
+    android:versionCode="18"
+    android:versionName="0.2.0">
   <uses-sdk android:minSdkVersion="8" />
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
   <uses-permission android:name="android.permission.INTERNET" />
@@ -32,6 +32,12 @@
     </activity>
 
     <activity 
+        android:name=".CreateEncFS"
+        android:label="@string/create_name"
+        android:launchMode="singleTop">
+    </activity>
+
+   <activity 
         android:name="Preferences"
         android:label="@string/pref_name"
         android:launchMode="singleTop">

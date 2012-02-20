@@ -100,6 +100,8 @@ public class FileDialog extends ListActivity {
 
     private LinearLayout layoutSelect;
     private LinearLayout layoutUpload;
+    private LinearLayout layoutCreate;
+    
     private InputMethodManager inputManager;
     private String parentPath;
     private String currentPath = currentRoot;
@@ -151,6 +153,7 @@ public class FileDialog extends ListActivity {
                     case SelectionMode.MODE_OPEN:
                     case SelectionMode.MODE_OPEN_DB:
                     case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
+                    case SelectionMode.MODE_OPEN_CREATE:
                         if (currentPath != null) {
                             getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
                             getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
@@ -170,36 +173,23 @@ public class FileDialog extends ListActivity {
                 }
             });
 
-        /*
-          final Button newButton = (Button) findViewById(R.id.fdButtonNew);
-          newButton.setOnClickListener(new OnClickListener() {
-
-          @Override
-          public void onClick(View v) {
-          setCreateVisible(v);
-
-          mFileName.setText("");
-          mFileName.requestFocus();
-          }
-          });
-
-          if (selectionMode == SelectionMode.MODE_OPEN) {
-          newButton.setEnabled(false);
-          }
-        */
         layoutSelect = (LinearLayout) findViewById(R.id.fdLinearLayoutSelect);
-        /* layoutCreate = (LinearLayout) findViewById(R.id.fdLinearLayoutCreate); */
+        layoutCreate = (LinearLayout) findViewById(R.id.fdLinearLayoutCreate);
         layoutUpload = (LinearLayout) findViewById(R.id.fdLinearLayoutUpload);
+        
         /* Disable upload at this time */ 
         switch (selectionMode) {
         case SelectionMode.MODE_OPEN:
         case SelectionMode.MODE_OPEN_DB:
         case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
+            layoutCreate.setVisibility(View.GONE);
+            /* no break! */
+        case SelectionMode.MODE_OPEN_CREATE:
             layoutUpload.setVisibility(View.GONE);
             break;
+        default:
+            layoutCreate.setVisibility(View.GONE);
         }
-        // layoutUpload.setVisibility(View.GONE);
-        // layoutCreate.setVisibility(View.GONE);
 
         final Button cancelButton = (Button) findViewById(R.id.fdButtonCancel);
         cancelButton.setOnClickListener(new OnClickListener() {
@@ -210,20 +200,15 @@ public class FileDialog extends ListActivity {
                 }
 
             });
-//        final Button createButton = (Button) findViewById(R.id.fdButtonCreate);
-//        createButton.setOnClickListener(new OnClickListener() {
-//
-//                public void onClick(View v) {
-//                    if (mFileName.getText().length() > 0) {
-//                        getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
-//                        getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
-//                        getIntent().putExtra(RESULT_EXPORT_PATHS,
-//                                currentPath + "/" + mFileName.getText());
-//                        setResult(RESULT_OK, getIntent());
-//                        finish();
-//                    }
-//                }
-//            });
+
+        final Button createButton = (Button) findViewById(R.id.fdButtonCreate);
+        createButton.setOnClickListener(new OnClickListener() {
+
+            public void onClick(View v) {
+                showDialog(NEW_FOLDER_DIALOG_ID);
+            }
+
+        });
         
         final Button uploadButton = (Button) findViewById(R.id.fdButtonUpload);
         uploadButton.setOnClickListener(new OnClickListener() {
@@ -350,7 +335,8 @@ public class FileDialog extends ListActivity {
         switch (selectionMode) {
         case SelectionMode.MODE_OPEN:
         case SelectionMode.MODE_OPEN_DB:
-        case SelectionMode.MODE_OPEN_UPLOAD_SOURCE: {
+        case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
+        case SelectionMode.MODE_OPEN_CREATE: {
             SimpleAdapter fileList = new SimpleAdapter(this, mList,
                     R.layout.file_dialog_row_single,
                     new String[] { ITEM_KEY, ITEM_IMAGE },
@@ -368,7 +354,6 @@ public class FileDialog extends ListActivity {
             setListAdapter(fileList);
         }
         }
-        
 
     }
 
@@ -378,6 +363,7 @@ public class FileDialog extends ListActivity {
     
     private void addItem(VirtualFile file, Integer imageId, String filelabel) {
         HashMap<String, Object> item = new HashMap<String, Object>();
+        
         item.put(ITEM_KEY, filelabel);
         item.put(ITEM_IMAGE, imageId);
         switch (selectionMode) {
@@ -646,9 +632,15 @@ public class FileDialog extends ListActivity {
                          String newFolderString = newFolder.getText().toString();
                          removeDialog(NEW_FOLDER_DIALOG_ID);
                          if (newFolderString.length() > 0) {
-                             showCreateEncFSFolderWarning(newFolderString);
+                             switch (selectionMode) {
+                             case SelectionMode.MODE_OPEN_CREATE:
+                                 mkDir(newFolderString);
+                                 break;
+                             default:
+                                 showCreateEncFSFolderWarning(newFolderString);
+                             }
                          } else {
-                             Toast.makeText(FileDialog.this, R.string.new_folder_fail, Toast.LENGTH_LONG);
+                             showToast(R.string.new_folder_fail);
                          }
                      }
                  });
@@ -728,7 +720,7 @@ public class FileDialog extends ListActivity {
                         if (pd.isShowing())
                             pd.dismiss();
                         if (!alertMsg.equals("")) {
-                            Toast.makeText(FileDialog.this, alertMsg, Toast.LENGTH_LONG);
+                            showToast(alertMsg);
                             alertMsg = "";
                         }
                         getDirImpl(dirPath, rootPath, rootName);
@@ -783,7 +775,7 @@ public class FileDialog extends ListActivity {
             Log.e(Cryptonite.TAG, alertMsg);
         }
         if (!alertMsg.equals("")) {
-            Toast.makeText(FileDialog.this, alertMsg, Toast.LENGTH_LONG);
+            showToast(alertMsg);
             alertMsg = "";
         }
         getDirImpl(dirPath, rootPath, rootName);
@@ -917,14 +909,11 @@ public class FileDialog extends ListActivity {
             try {
                 fileExists = ((CryptoniteApp)getApplication()).dbFileExists(dbPath);
             } catch (DropboxException e) {
-                Toast.makeText(FileDialog.this, 
-                        getString(R.string.new_folder_fail) + ": " + e.toString(), 
-                        Toast.LENGTH_LONG);
+                showToast(getString(R.string.new_folder_fail) + ": " + e.toString());
                 return false;
             }
             if (fileExists) {
-                Toast.makeText(FileDialog.this, getString(R.string.new_folder_exists), 
-                        Toast.LENGTH_LONG);
+                showToast(R.string.new_folder_exists);
                 return false;
             } else {
                 try {
@@ -933,20 +922,18 @@ public class FileDialog extends ListActivity {
                     getDir(currentPath, currentRoot, currentRootLabel, currentDBEncFS);
                     return true;
                 } catch (DropboxException e) {
-                    Toast.makeText(FileDialog.this, 
-                            getString(R.string.new_folder_fail) + ": " + e.toString(), 
-                            Toast.LENGTH_LONG);
+                    showToast(getString(R.string.new_folder_fail) + ": " + e.toString());
                     return false;
                 }
             }
         } else {
             /* Does the encrypted file exist? */
             if (encodedFile.exists()) {
-                Toast.makeText(FileDialog.this, R.string.new_folder_exists, Toast.LENGTH_LONG);
+                showToast(R.string.new_folder_exists);
                 return false;
             } else {
                 if (!encodedFile.mkdir()) {
-                    Toast.makeText(FileDialog.this, R.string.new_folder_fail, Toast.LENGTH_LONG);
+                    showToast(R.string.new_folder_fail);
                     return false;
                 } else {
                     /* reload current directory */
@@ -956,5 +943,42 @@ public class FileDialog extends ListActivity {
             }
         }        
     }
+    protected void mkDir(String newFolderString) {
+        /* normalise path names */
+        String bPath = new File(currentPath).getPath();
+        String stripstr = bPath + "/" + newFolderString;
+        if (!stripstr.startsWith("/")) {
+            stripstr = "/" + stripstr;
+        }
+        /* Remove trailing spaces */
+        while (stripstr.endsWith(" ")) {
+            stripstr = stripstr.substring(0, stripstr.length()-1);
+        }
+        
+        File targetDir = new File(stripstr);
+        if (targetDir.exists()) {
+            showToast(R.string.new_folder_exists);
+            return;
+        }
+        if (!targetDir.mkdir()) {
+            showToast(R.string.new_folder_fail);
+            return;
+        }
+        /* reload current directory */
+        getDir(currentPath, currentRoot, currentRootLabel, currentDBEncFS);
+        return;
+    }
     
+    private void showToast(int resId) {
+        showToast(getString(resId));
+    }
+    
+    private void showToast(final String msg) {
+        runOnUiThread(new Runnable() {
+            public void run() {
+                Toast err = Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_LONG);
+                err.show();
+            }
+        });
+    }
 }

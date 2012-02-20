@@ -1,5 +1,5 @@
---- ./encfs/DirNode.cpp	2010-08-30 07:27:49.000000000 +0100
-+++ ./encfs/DirNode.cpp	2012-01-10 14:16:57.850439335 +0000
+--- ./encfs-1.7.4/encfs/DirNode.cpp	2010-08-30 07:27:49.000000000 +0100
++++ ./encfs-1.7.4/encfs/DirNode.cpp	2012-01-17 00:43:29.000000000 +0000
 @@ -27,7 +27,7 @@
  #include <cstdlib>
  #include <pthread.h>
@@ -35,8 +35,175 @@
      if(res == -1)
      {
  	int eno = errno;
---- ./encfs/encfs.cpp	2010-11-18 02:50:51.000000000 +0000
-+++ ./encfs/encfs.cpp	2012-01-15 02:20:26.090439248 +0000
+--- ./encfs-1.7.4/encfs/FSConfig.h	2010-08-30 07:27:49.000000000 +0100
++++ ./encfs-1.7.4/encfs/FSConfig.h	2012-01-17 00:43:29.000000000 +0000
+@@ -103,7 +103,9 @@
+     unsigned char *getKeyData() const;
+     unsigned char *getSaltData() const;
+ 
++#ifndef ANDROID
+ private:
++#endif    
+     CipherKey makeKey(const char *password, int passwdLen);
+ };
+    
+--- ./encfs-1.7.4/encfs/FileNode.cpp	2010-09-06 04:52:12.000000000 +0100
++++ ./encfs-1.7.4/encfs/FileNode.cpp	2012-01-17 00:43:29.000000000 +0000
+@@ -169,6 +169,7 @@
+     int res;
+     int olduid = -1;
+     int oldgid = -1;
++#ifndef ANDROID
+     if(uid != 0)
+     {
+ 	olduid = setfsuid( uid );
+@@ -187,7 +188,8 @@
+             return -EPERM;
+         }
+     }
+-
++#endif
++    
+     /*
+      * cf. xmp_mknod() in fusexmp.c
+      * The regular file stuff could be stripped off if there
+@@ -202,11 +204,13 @@
+     else
+         res = ::mknod( _cname.c_str(), mode, rdev );
+ 
++#ifndef ANDROID
+     if(olduid >= 0)
+ 	setfsuid( olduid );
+     if(oldgid >= 0)
+ 	setfsgid( oldgid );
+-
++#endif
++    
+     if(res == -1)
+     {
+ 	int eno = errno;
+@@ -283,7 +287,7 @@
+     if(fh >= 0)
+     {
+ 	int res = -EIO;
+-#ifdef linux
++#if defined(linux) && !defined (ANDROID)
+ 	if(datasync)
+ 	    res = fdatasync( fh );
+ 	else
+--- ./encfs-1.7.4/encfs/FileUtils.cpp	2010-11-04 03:28:54.000000000 +0000
++++ ./encfs-1.7.4/encfs/FileUtils.cpp	2012-02-20 19:14:27.000000000 +0000
+@@ -1045,6 +1045,38 @@
+ 	chainedIV = true;
+ 	externalIV = true;
+         desiredKDFDuration = ParanoiaKDFDuration;
++#ifdef ANDROID    
++    } else if(configMode == Config_Compatible)
++    {
++	// xgroup(setup)
++	cout << _("Compatible configuration selected.") << "\n";
++	// AES w/ 256 bit key, stream name encoding, no initialization
++        // vectors.
++	keySize = 256;
++	blockSize = DefaultBlockSize;
++	alg = findCipherAlgorithm("AES", keySize);
++	blockMACBytes = 0;
++	blockMACRandBytes = 0;
++	externalIV = false;
++	nameIOIface = StreamNameIO::CurrentInterface();
++        uniqueIV = false;
++        chainedIV = false;
++    } else if(configMode == Config_Quick)
++    {
++	// xgroup(setup)
++	cout << _("Quick configuration selected.") << "\n";
++	// Blowfish w/ 128 bit key, stream name encoding, no
++        // initialization vectors
++	keySize = 128;
++	blockSize = DefaultBlockSize;
++	alg = findCipherAlgorithm("Blowfish", keySize);
++	blockMACBytes = 0;
++	blockMACRandBytes = 0;
++	externalIV = false;
++	nameIOIface = StreamNameIO::CurrentInterface();
++        uniqueIV = false;
++        chainedIV = false;
++#endif
+     } else if(configMode == Config_Standard || answer[0] != 'x')
+     {
+ 	// xgroup(setup)
+@@ -1068,7 +1100,7 @@
+ 	    chainedIV = true;
+ 	}
+     }
+-
++    
+     if(answer[0] == 'x' || alg.name.empty())
+     {
+ 	if(answer[0] != 'x')
+@@ -1178,6 +1210,11 @@
+     // get user key and use it to encode volume key
+     CipherKey userKey;
+     rDebug( "useStdin: %i", useStdin );
++#ifdef ANDROID
++    if (!opts->password.empty())
++        userKey = config->makeKey( opts->password.c_str(), opts->password.length() );
++    else
++#endif        
+     if(useStdin)
+         userKey = config->getUserKey( useStdin );
+     else if(!passwordProgram.empty())
+@@ -1615,6 +1652,11 @@
+ 	// get user key
+ 	CipherKey userKey;
+ 
++#ifdef ANDROID
++        if(!opts->password.empty())
++            userKey = config->makeKey( opts->password.c_str(), opts->password.length() );
++        else
++#endif
+         if(opts->passwordProgram.empty())
+         {
+             rDebug( "useStdin: %i", opts->useStdin );
+--- ./encfs-1.7.4/encfs/FileUtils.h	2010-09-05 21:47:01.000000000 +0100
++++ ./encfs-1.7.4/encfs/FileUtils.h	2012-02-20 19:07:03.000000000 +0000
+@@ -58,6 +58,11 @@
+     Config_Prompt,
+     Config_Standard,
+     Config_Paranoia
++#ifdef ANDROID    
++    ,
++    Config_Compatible,
++    Config_Quick
++#endif
+ };
+ 
+ struct EncFS_Opts
+@@ -72,7 +77,10 @@
+ 
+     std::string passwordProgram; // path to password program (or empty)
+     bool useStdin; // read password from stdin rather then prompting
+-
++#ifdef ANDROID
++    std::string password; // supply password directly if encfs is used as a library
++#endif
++    
+     bool ownerCreate; // set owner of new files to caller
+ 
+     bool reverseEncryption; // Reverse encryption
+--- ./encfs-1.7.4/encfs/RawFileIO.cpp	2009-11-29 22:04:12.000000000 +0000
++++ ./encfs-1.7.4/encfs/RawFileIO.cpp	2012-01-17 00:43:29.000000000 +0000
+@@ -293,7 +293,7 @@
+     if(fd >= 0 && canWrite)
+     {
+ 	res = ::ftruncate( fd, size );
+-#ifndef __FreeBSD__
++#if !defined (__FreeBSD__) && !defined (ANDROID)
+ 	::fdatasync( fd );
+ #endif
+     } else
+--- ./encfs-1.7.4/encfs/encfs.cpp	2010-11-18 02:50:51.000000000 +0000
++++ ./encfs-1.7.4/encfs/encfs.cpp	2012-01-17 00:43:29.000000000 +0000
 @@ -421,6 +421,7 @@
  
  	// use setfsuid / setfsgid so that the new link will be owned by the
@@ -92,8 +259,8 @@
      return res;
  }
  
---- ./encfs/encfsctl.cpp	2010-08-30 07:27:49.000000000 +0100
-+++ ./encfs/encfsctl.cpp	2012-01-10 14:16:57.850439335 +0000
+--- ./encfs-1.7.4/encfs/encfsctl.cpp	2010-08-30 07:27:49.000000000 +0100
++++ ./encfs-1.7.4/encfs/encfsctl.cpp	2012-01-17 00:43:29.000000000 +0000
 @@ -384,7 +384,11 @@
  		fnode->getAttr( &stbuf );
  
@@ -120,155 +287,3 @@
      return EXIT_SUCCESS;
  }
  
---- ./encfs/FileNode.cpp	2010-09-06 04:52:12.000000000 +0100
-+++ ./encfs/FileNode.cpp	2012-01-10 14:16:57.850439335 +0000
-@@ -169,6 +169,7 @@
-     int res;
-     int olduid = -1;
-     int oldgid = -1;
-+#ifndef ANDROID
-     if(uid != 0)
-     {
- 	olduid = setfsuid( uid );
-@@ -187,7 +188,8 @@
-             return -EPERM;
-         }
-     }
--
-+#endif
-+    
-     /*
-      * cf. xmp_mknod() in fusexmp.c
-      * The regular file stuff could be stripped off if there
-@@ -202,11 +204,13 @@
-     else
-         res = ::mknod( _cname.c_str(), mode, rdev );
- 
-+#ifndef ANDROID
-     if(olduid >= 0)
- 	setfsuid( olduid );
-     if(oldgid >= 0)
- 	setfsgid( oldgid );
--
-+#endif
-+    
-     if(res == -1)
-     {
- 	int eno = errno;
-@@ -283,7 +287,7 @@
-     if(fh >= 0)
-     {
- 	int res = -EIO;
--#ifdef linux
-+#if defined(linux) && !defined (ANDROID)
- 	if(datasync)
- 	    res = fdatasync( fh );
- 	else
---- ./encfs/FileUtils.cpp	2010-11-04 03:28:54.000000000 +0000
-+++ ./encfs/FileUtils.cpp	2012-01-15 01:48:18.990438634 +0000
-@@ -1178,6 +1178,11 @@
-     // get user key and use it to encode volume key
-     CipherKey userKey;
-     rDebug( "useStdin: %i", useStdin );
-+#ifdef ANDROID
-+    if (!opts->password.empty())
-+        userKey = config->makeKey( opts->password.c_str(), opts->password.length() );
-+    else
-+#endif        
-     if(useStdin)
-         userKey = config->getUserKey( useStdin );
-     else if(!passwordProgram.empty())
-@@ -1615,6 +1620,11 @@
- 	// get user key
- 	CipherKey userKey;
- 
-+#ifdef ANDROID
-+        if(!opts->password.empty())
-+            userKey = config->makeKey( opts->password.c_str(), opts->password.length() );
-+        else
-+#endif
-         if(opts->passwordProgram.empty())
-         {
-             rDebug( "useStdin: %i", opts->useStdin );
---- ./encfs/FileUtils.h	2010-09-05 21:47:01.000000000 +0100
-+++ ./encfs/FileUtils.h	2012-01-15 01:38:52.610439019 +0000
-@@ -72,7 +72,10 @@
- 
-     std::string passwordProgram; // path to password program (or empty)
-     bool useStdin; // read password from stdin rather then prompting
--
-+#ifdef ANDROID
-+    std::string password; // supply password directly if encfs is used as a library
-+#endif
-+    
-     bool ownerCreate; // set owner of new files to caller
- 
-     bool reverseEncryption; // Reverse encryption
---- ./encfs/FSConfig.h	2010-08-30 07:27:49.000000000 +0100
-+++ ./encfs/FSConfig.h	2012-01-15 01:46:56.920439056 +0000
-@@ -103,7 +103,9 @@
-     unsigned char *getKeyData() const;
-     unsigned char *getSaltData() const;
- 
-+#ifndef ANDROID
- private:
-+#endif    
-     CipherKey makeKey(const char *password, int passwdLen);
- };
-    
---- ./encfs/RawFileIO.cpp	2009-11-29 22:04:12.000000000 +0000
-+++ ./encfs/RawFileIO.cpp	2012-01-10 14:16:57.850439335 +0000
-@@ -293,7 +293,7 @@
-     if(fd >= 0 && canWrite)
-     {
- 	res = ::ftruncate( fd, size );
--#ifndef __FreeBSD__
-+#if !defined (__FreeBSD__) && !defined (ANDROID)
- 	::fdatasync( fd );
- #endif
-     } else
---- ./configure.ac	2010-11-18 02:50:51.000000000 +0000
-+++ ./configure.ac	2012-01-10 14:13:29.560437598 +0000
-@@ -83,24 +83,24 @@
- AC_SUBST(FUSE_LIBS)
- 
- # check for a supported FUSE_MAJOR_VERSION.
--AC_MSG_CHECKING([For supported FUSE API version])
--AC_RUN_IFELSE([ 
--    AC_LANG_PROGRAM([[#include "fuse.h"]],
--[[
--    if(FUSE_MAJOR_VERSION == 2 && FUSE_MINOR_VERSION >= 5)
--    {
--	return 0;
--    } else
--	return -1;
--]])], 
--    [AC_MSG_RESULT([yes])],
--    [AC_MSG_RESULT([no])
--    AC_MSG_FAILURE([
--Encfs 1.3 requires FUSE 2.5 or newer.  Please check config.log for errors.  If
--you cannot determine the problem, mail encfs-users@lists.sourceforge.net
--and include the config.log file])
--    ]
--)
-+dnl AC_MSG_CHECKING([For supported FUSE API version])
-+dnl AC_RUN_IFELSE([ 
-+dnl     AC_LANG_PROGRAM([[#include "fuse.h"]],
-+dnl [[
-+dnl     if(FUSE_MAJOR_VERSION == 2 && FUSE_MINOR_VERSION >= 5)
-+dnl     {
-+dnl 	return 0;
-+dnl     } else
-+dnl 	return -1;
-+dnl ]])], 
-+dnl     [AC_MSG_RESULT([yes])],
-+dnl     [AC_MSG_RESULT([no])
-+dnl     AC_MSG_FAILURE([
-+dnl Encfs 1.3 requires FUSE 2.5 or newer.  Please check config.log for errors.  If
-+dnl you cannot determine the problem, mail encfs-users@lists.sourceforge.net
-+dnl and include the config.log file])
-+dnl     ]
-+dnl )
- 
- dnl fuse_operations.setxattr was added 2004-03-31
- dnl only enable it if setxattr function is found..

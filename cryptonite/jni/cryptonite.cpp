@@ -444,6 +444,10 @@ extern "C" {
                                            jstring srcdir, jstring password);
 
     JNIEXPORT jint JNICALL
+    Java_csh_cryptonite_Cryptonite_jniCreate(JNIEnv* env, jobject thiz,
+                                             jstring srcdir, jstring password, jint config);
+
+    JNIEXPORT jint JNICALL
     Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jobject thiz,
                                              jobjectArray exportpaths, jstring exportroot,
                                              jstring destdir);
@@ -705,6 +709,60 @@ JNIEXPORT jint JNICALL
 Java_csh_cryptonite_Cryptonite_jniInit(JNIEnv* env, jobject thiz, jstring srcdir, jstring password)
 {
     return setupRootDir(env, srcdir, password);
+}
+
+JNIEXPORT jint JNICALL
+Java_csh_cryptonite_Cryptonite_jniCreate(JNIEnv* env, jobject thiz, jstring srcdir, jstring password, jint config)
+{
+    int pw_len = (int)env->GetStringLength(password);
+    if (pw_len  == 0) {
+        return EXIT_FAILURE;
+    }
+
+    jniStringManager msrcdir(env, srcdir);
+    jniStringManager mpassword(env, password);
+
+    RootPtr result;
+    boost::shared_ptr<EncFS_Opts> opts( new EncFS_Opts() );
+    opts->createIfNotFound = true;
+    opts->checkKey = true;
+    opts->password.assign(mpassword.str());
+    opts->rootDir.assign(msrcdir.str());
+
+    switch ((int)config) {
+     case 0:
+         opts->configMode = Config_Paranoia;
+         break;
+     case 1:
+         opts->configMode = Config_Standard;
+         break;
+     case 2:
+         opts->configMode = Config_Compatible;
+         break;
+     case 3:
+         opts->configMode = Config_Quick;
+         break;
+     default:
+         opts->configMode = Config_Standard;
+    }
+    
+    if(checkDir( opts->rootDir )) {
+        LOGI((std::string("Initialising file system with root ") + msrcdir.str()).c_str());
+        result = initFS( NULL, opts );
+    }
+
+    // clear buffer
+    opts->password.assign(opts->password.length(), '\0');
+
+    if(!result) {
+        LOGE("Unable to initialize encrypted filesystem - check path.");
+        return EXIT_FAILURE;
+    }
+
+    /* clear password copy */
+    mpassword.release();
+
+    return EXIT_SUCCESS;
 }
 
 JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jobject thiz, jobjectArray exportpaths,
