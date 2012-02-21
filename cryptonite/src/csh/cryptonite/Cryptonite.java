@@ -450,9 +450,10 @@ public class Cryptonite extends Activity
 
     private void updateMountButtons() {
         boolean ism = ShellUtils.isMounted("fuse.encfs");
-
+        boolean hasBin = new File(ENCFSBIN).exists();
+        
         Log.v(TAG, "EncFS mount state: " + ism + "; FUSE support: " + hasFuse);
-        buttonMount.setEnabled(hasFuse);
+        buttonMount.setEnabled(hasFuse && hasBin);
         
         if (ism) {
             buttonMount.setText(R.string.unmount);            
@@ -460,7 +461,7 @@ public class Cryptonite extends Activity
             buttonMount.setText(R.string.mount);
         }
         
-        buttonViewMount.setEnabled(ism && hasFuse);
+        buttonViewMount.setEnabled(ism && hasFuse && hasBin);
     }
 
     /** Called upon exit from other activities */
@@ -742,7 +743,7 @@ public class Cryptonite extends Activity
             
         }
         catch (IOException e) {
-            throw new RuntimeException(e);
+            Log.e(TAG, "Problem while copying encFS binary: " + e.toString());
         }
 
     }
