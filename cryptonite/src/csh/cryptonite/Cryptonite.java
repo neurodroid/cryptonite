@@ -1336,9 +1336,9 @@ public class Cryptonite extends Activity
             buttonDropboxDecrypt.setEnabled(false);
             if (mDropboxDecrypted) {
                 jniResetVolume();
-                updateDecryptButtons();
             }
         }
+        updateDecryptButtons();
     }
 
     private void clearKeys() {

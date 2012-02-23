@@ -222,7 +222,7 @@ public class CreateEncFS extends ListActivity {
             
             /* Create encfs6.xml in temporary folder */
             if (Cryptonite.jniCreate(browseRoot.getPath(), passwordString, config) == Cryptonite.jniSuccess()) {
-                showToast(R.string.create_success_dropbox);
+                showToast(R.string.create_success_dropbox, false);
             } else {
                 showToast(R.string.create_failure);
                 return;
@@ -256,7 +256,7 @@ public class CreateEncFS extends ListActivity {
                 showToast(getString(R.string.file_not_found) + ": " + e.getMessage());
                 return;
             }
-            showToast(R.string.dropbox_upload_successful);
+            showToast(R.string.dropbox_create_successful);
         } else {
             String encfs6Path = currentReturnPath + "/" + ".encfs6.xml";
             if (new File(encfs6Path).exists()) {
@@ -305,12 +305,25 @@ public class CreateEncFS extends ListActivity {
     private void showToast(int resId) {
         showToast(getString(resId));
     }
-    
+
+    private void showToast(int resId, boolean showLong) {
+        showToast(getString(resId), showLong);
+    }
+
     private void showToast(final String msg) {
+        showToast(msg, true);
+    }
+    
+    private void showToast(final String msg, final boolean showLong) {
         runOnUiThread(new Runnable() {
             public void run() {
-                Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_LONG).show();
+                if (showLong) {
+                    Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
+
 }

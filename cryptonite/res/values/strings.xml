@@ -83,6 +83,7 @@
     <string name="dropbox_enable_email_subject">Activate my Dropbox account</string>
     <string name="dropbox_enable_email_content">Please activate my Dropbox account (your@email.com) so that I can access my Dropbox from Cryptonite.</string>
     <string name="dropbox_upload_successful">File successfully uploaded</string>
+    <string name="dropbox_create_successful">EncFS volume created on Dropbox</string>
     <string name="dropbox_uploading">Uploading</string>
     
     <!-- File Browser -->
