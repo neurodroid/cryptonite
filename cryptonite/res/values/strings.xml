@@ -71,16 +71,17 @@
     <string name="dropbox_reading">Reading Dropbox&#8230;</string>
     <string name="dropbox_decrypt">Decrypt Dropbox folder</string>
     <string name="dropbox_create">Create Dropbox volume</string>
-    <string name="dropbox_auth_fail">"Couldn\'t authenticate with Dropbox</string>
-    <string name="dropbox_read_fail">"Problem reading from Dropbox"</string>
-    <string name="dropbox_service_started">"db_running"</string>
-    <string name="dropbox_service_stopped">"db_stopped"</string>
-    <string name="dropbox_service_label">"Dropbox linked to Cryptonite"</string>
-    <string name="dropbox_root_name">"Dropbox"</string>
-    <string name="dropbox_enable">"Enable Dropbox"</string>
-    <string name="dropbox_enable_email">"Send me an email so that you can test decrypting Dropbox folders in development mode."</string>
-    <string name="dropbox_enable_email_subject">"Activate my Dropbox account"</string>
-    <string name="dropbox_enable_email_content">"Please activate my Dropbox account (your@email.com) so that I can access my Dropbox from Cryptonite."</string>
+    <string name="dropbox_auth_fail">Couldn\'t authenticate with Dropbox</string>
+    <string name="dropbox_read_fail">Problem reading from Dropbox</string>
+    <string name="dropbox_upload_fail">Couldn\'t upload to Dropbox</string>
+    <string name="dropbox_service_started">db_running</string>
+    <string name="dropbox_service_stopped">db_stopped</string>
+    <string name="dropbox_service_label">Dropbox linked to Cryptonite</string>
+    <string name="dropbox_root_name">Dropbox</string>
+    <string name="dropbox_enable">Enable Dropbox</string>
+    <string name="dropbox_enable_email">"Send me an email so that you can test decrypting Dropbox folders in development mode.</string>
+    <string name="dropbox_enable_email_subject">Activate my Dropbox account</string>
+    <string name="dropbox_enable_email_content">Please activate my Dropbox account (your@email.com) so that I can access my Dropbox from Cryptonite.</string>
     <string name="dropbox_upload_successful">File successfully uploaded</string>
     <string name="dropbox_uploading">Uploading</string>
     
@@ -91,7 +92,7 @@
     <string name="select_exp">Select export directory</string>
     <string name="select_exp_short">Export to current folder</string>
     <string name="select_create">Select EncFS target directory</string>
-    <string name="select_create_short">Create in current folder</string>
+    <string name="select_create_short">Use current folder</string>
     <string name="select_upload">Select file to upload</string>
     <string name="select_upload_short">Upload selected file</string>
     <string name="encfs_root">EncFS root</string>
@@ -126,7 +127,8 @@
 
     <!-- Create dialog -->
     <string name="create_name">Select encryption method</string>
-    <string name="create_success">Successfully created EncFS volume</string>
+    <string name="create_success_dropbox">Successfully initiated EncFS volume. Uploading to Dropbox now&#8230;</string>
+    <string name="create_success_local">Successfully initiated EncFS volume.</string>
     <string name="create_failure">Couldn\'t create EncFS volume</string>
     <string name="creating_encfs">Creating EncFS volume&#8230;</string>
     <string name="encfs6_exists">An EncFS volume already exists in this folder</string>

@@ -1,9 +1,12 @@
 package csh.cryptonite;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.dropbox.client2.DropboxAPI.UploadRequest;
 import com.dropbox.client2.exception.DropboxException;
 
 import android.app.Activity;
@@ -199,9 +202,11 @@ public class CreateEncFS extends ListActivity {
             
             /* Upload file to DB */
             String targetPath = currentReturnPath.substring(browseRoot.getPath().length());
-            
+            if (!targetPath.endsWith("/")) {
+                targetPath += "/";
+            }
             /* Is there an existing EncFSVolume? */
-            String dbPath = targetPath + "/.encfs6.xml";
+            String dbPath = targetPath + ".encfs6.xml";
 
             boolean fileExists = true;
             try {
@@ -217,19 +222,41 @@ public class CreateEncFS extends ListActivity {
             
             /* Create encfs6.xml in temporary folder */
             if (Cryptonite.jniCreate(browseRoot.getPath(), passwordString, config) == Cryptonite.jniSuccess()) {
-                showToast(R.string.create_success);
+                showToast(R.string.create_success_dropbox);
             } else {
                 showToast(R.string.create_failure);
                 return;
             }
 
             /* Upload to Dropbox */
-            UploadEncrypted upload = new UploadEncrypted(this,
-                    ((CryptoniteApp)getApplication()).getDBApi(),
-                    new File(targetPath) + "/", 
-                    new File(cachePath), false);
-            upload.execute();
+            /* Problems with AsyncTask when used from here;
+             * Therefore uploading directly. xml file is small
+             * anyway.
+             */
+            File cacheFile = new File(cachePath);
+            
+            try {
+                // By creating a request, we get a handle to the putFile operation,
+                // so we can cancel it later if we want to
+                
+                FileInputStream fis = new FileInputStream(cacheFile);
+                String path = targetPath + cacheFile.getName();
+                UploadRequest request = ((CryptoniteApp)getApplication()).getDBApi()
+                        .putFileOverwriteRequest(path, fis, cacheFile.length(), null);
 
+                if (request != null) {
+                    request.upload();
+                }
+
+            } catch (DropboxException e) {
+                // Unknown error
+                showToast(getString(R.string.dropbox_upload_fail) + ": " + e.getMessage());
+                return;
+            } catch (FileNotFoundException e) {
+                showToast(getString(R.string.file_not_found) + ": " + e.getMessage());
+                return;
+            }
+            showToast(R.string.dropbox_upload_successful);
         } else {
             String encfs6Path = currentReturnPath + "/" + ".encfs6.xml";
             if (new File(encfs6Path).exists()) {
@@ -237,7 +264,7 @@ public class CreateEncFS extends ListActivity {
                 return;
             }
             if (Cryptonite.jniCreate(currentReturnPath, passwordString, config) == Cryptonite.jniSuccess()) {
-                showToast(R.string.create_success);
+                showToast(R.string.create_success_local);
             } else {
                 showToast(R.string.create_failure);
             }

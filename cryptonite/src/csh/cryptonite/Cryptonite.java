@@ -1865,7 +1865,7 @@ public class Cryptonite extends Activity
                                 int which) {
                             UploadEncrypted upload = new UploadEncrypted(Cryptonite.this, 
                                     ((CryptoniteApp)getApplication()).getDBApi(),
-                                    new File(targetPath).getParent() + "/", encodedFile, true);
+                                    new File(targetPath).getParent() + "/", encodedFile);
                             upload.execute();                                
                         }
                     })
@@ -1897,7 +1897,7 @@ public class Cryptonite extends Activity
                                     }
                                     UploadEncrypted upload = new UploadEncrypted(Cryptonite.this, 
                                             ((CryptoniteApp)getApplication()).getDBApi(),
-                                            new File(targetPath).getParent() + "/", nextEncodedFile, true);
+                                            new File(targetPath).getParent() + "/", nextEncodedFile);
                                     upload.execute();
                                     break;
                                 }
@@ -1918,7 +1918,7 @@ public class Cryptonite extends Activity
             } else {
                 UploadEncrypted upload = new UploadEncrypted(Cryptonite.this, 
                         ((CryptoniteApp)getApplication()).getDBApi(),
-                        new File(targetPath).getParent() + "/", encodedFile, true);
+                        new File(targetPath).getParent() + "/", encodedFile);
                 upload.execute();                                
             }
 

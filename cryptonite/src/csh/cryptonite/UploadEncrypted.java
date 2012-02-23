@@ -68,7 +68,7 @@ public class UploadEncrypted extends AsyncTask<Void, Long, Boolean> {
 
 
     public UploadEncrypted(Context context, DropboxAPI<?> api, String dropboxPath,
-            File file, boolean withProgress) {
+            File file) {
         // We set the context this way so we don't accidentally leak activities
         mContext = context.getApplicationContext();
 
@@ -77,22 +77,18 @@ public class UploadEncrypted extends AsyncTask<Void, Long, Boolean> {
         mPath = dropboxPath;
         mFile = file;
 
-        if (withProgress) {
-            mDialog = new ProgressDialog(context);
-            mDialog.setMax(100);
-            mDialog.setMessage(mContext.getString(R.string.dropbox_uploading) + " " + file.getName());
-            mDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-            mDialog.setProgress(0);
-            mDialog.setButton(mContext.getString(R.string.cancel), new OnClickListener() {
-                public void onClick(DialogInterface dialog, int which) {
-                    // This will cancel the putFile operation
-                    mRequest.abort();
-                }
-            });
-            mDialog.show();
-        } else {
-            mDialog = null;
-        }
+        mDialog = new ProgressDialog(context);
+        mDialog.setMax(100);
+        mDialog.setMessage(mContext.getString(R.string.dropbox_uploading) + " " + file.getName());
+        mDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+        mDialog.setProgress(0);
+        mDialog.setButton(mContext.getString(R.string.cancel), new OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                // This will cancel the putFile operation
+                mRequest.abort();
+            }
+        }); 
+        mDialog.show();
     }
 
     @Override
