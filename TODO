@@ -2,12 +2,15 @@ TODO
 ====
 
 MAJOR
-* Create EncFS volumes
+* Safe preview of text and image files in memory
 
 MINOR
+* Create Dropbox folders
 * Add symbol icons to buttons.
 
 CODE
+* Implement unified storage interface class from which to derive 
+  other specialised storage classes (local, Dropbox, WebDAV, etc.)
 * Make encfs binary use libcryptonite.so to reduce apk size
 * Add docstrings
 * Clean up path mess. It's a disgrace to intelligent life.
@@ -17,6 +20,7 @@ DONE
 ====
 
 MAJOR
+X Create EncFS volumes
 X Upload files to EncFS volumes.
 X Use a virtual filesystem in memory when browsing decrypted folders.
 X View decrypted Dropbox files directly without exporting them first.
