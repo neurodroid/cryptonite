@@ -1657,6 +1657,14 @@ public class Cryptonite extends Activity
     }
     
     private static String fileExt(String url) {
+        /* file name part: */
+        String rawFileName = new File(url).getName();
+        
+        /* Does the file name have an extension at all? */
+        if (rawFileName.lastIndexOf(".") == -1) {
+            return "";
+        }
+
         String ext = url.substring(url.lastIndexOf(".") );
         if (ext.indexOf("?")>-1) {
             ext = ext.substring(0,ext.indexOf("?"));
@@ -1668,6 +1676,14 @@ public class Cryptonite extends Activity
     }
     
     private static String fileNameTrunk(String url) {
+        /* file name part: */
+        String rawFileName = new File(url).getName();
+        
+        /* Does the file name have an extension at all? */
+        if (rawFileName.lastIndexOf(".") == -1) {
+            return rawFileName;
+        }
+        
         String trunk = url.substring(0, url.lastIndexOf("."));
         return new File(trunk).getName();
     }
