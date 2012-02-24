@@ -1781,8 +1781,14 @@ public class Cryptonite extends Activity
         Uri data = Uri.fromFile(new File(filePath));
 
         MimeTypeMap myMime = MimeTypeMap.getSingleton();
-        String contentType = myMime.getMimeTypeFromExtension(fileExt(filePath).substring(1));
-               
+        String extension = fileExt(filePath);
+        String contentType;
+        if (extension.length() == 0) {
+            contentType = null;
+        } else {
+            contentType = myMime.getMimeTypeFromExtension(extension.substring(1));
+        }
+        
         /* Attempt to guess file type from content; seemingly very unreliable */
         if (contentType == null) {
             try {
