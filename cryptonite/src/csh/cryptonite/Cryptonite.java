@@ -1993,7 +1993,7 @@ public class Cryptonite extends Activity
     public static native int jniCreate(String srcDir, String password, int config);
     public native int     jniExport(String[] exportPaths, String exportRoot, String destDir);
     public native int     jniDecrypt(String encodedName, String destDir, boolean forceReadable);
-    public native int     jniEncrypt(String decodedPath, String srcPathk, boolean forceReadable);
+    public native int     jniEncrypt(String decodedPath, String srcPath, boolean forceReadable);
     public static native String  jniDecode(String name);
     public static native String  jniEncode(String name);
     public native String  jniEncFSVersion();

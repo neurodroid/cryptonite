@@ -31,6 +31,8 @@ import android.widget.Toast;
 public class CreateEncFS extends ListActivity {
 
     public static final int CREATE_LOCAL=20, CREATE_DB=21;
+    public static final int CONFIG_PARANOIA=0, CONFIG_STANDARD=1, 
+            CONFIG_COMPATIBLE=2, CONFIG_QUICK=3;
     public static final String RESULT_SELECTED_METHOD = "RESULT_SELECTED_METHOD";
     public static final String START_MODE = "START_MODE";
     

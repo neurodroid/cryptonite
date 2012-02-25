@@ -55,6 +55,8 @@
 
 namespace fs = boost::filesystem;
 
+const static int WRITE_BLOCK_SIZE = 1;
+
 enum writeMode {
     WRITE,
     TOUCH,
@@ -1015,7 +1017,7 @@ Java_csh_cryptonite_Cryptonite_jniEncrypt(JNIEnv * env, jobject thiz,
     long sz = ftell(fp);
     fseek(fp, 0L, SEEK_SET);
 
-    unsigned char buf[512];
+    unsigned char buf[WRITE_BLOCK_SIZE];
     int blocks = (sz + sizeof(buf)-1) / sizeof(buf);
 
     /* Create destination file */
