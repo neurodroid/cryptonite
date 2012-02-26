@@ -103,6 +103,7 @@ public class Cryptonite extends Activity
     private static final String OPENPNT = "open";
     private static final String DROPBOXPNT = "dropbox";
     private static final String READPNT = "read";
+    private static final String CACHEPNT = "cache";
 
     private String currentDialogStartPath = "/";
     private String currentDialogLabel = "";
@@ -520,11 +521,40 @@ public class Cryptonite extends Activity
                         break;
                     case SELECTDBUPLOAD_MODE:
                     case SELECTLOCALUPLOAD_MODE:
-                        String srcPath = data.getStringExtra(FileDialog.RESULT_SELECTED_FILE);
-                        if (!mStorage.uploadEncFSFile(currentUploadPath, encfsBrowseRoot,
-                                currentDialogDBEncFS, srcPath))
-                        {
-                            showAlert(R.string.error, R.string.upload_failure);
+                        final String srcPath = data.getStringExtra(FileDialog.RESULT_SELECTED_FILE);
+                        /* Does the file exist? */
+                        final String stripstr = mStorage.stripStr(currentUploadPath, encfsBrowseRoot, srcPath);
+                        final String nextFilePath = mStorage.encodedExists(stripstr);
+                        if (!nextFilePath.equals(stripstr)) {
+                            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                            builder.setIcon(R.drawable.ic_launcher_cryptonite)
+                                .setTitle(R.string.file_exists)
+                                .setMessage(R.string.file_exists_options)
+                                .setPositiveButton(R.string.overwrite,
+                                        new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog,
+                                            int which) {
+                                        uploadEncFSFile(stripstr, srcPath);                                      
+                                    }
+                                })
+                                .setNeutralButton(R.string.rename, 
+                                        new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog,
+                                            int which) {
+                                        uploadEncFSFile(nextFilePath, srcPath);
+                                    }
+                                })
+                                .setNegativeButton(R.string.cancel,
+                                        new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog,
+                                            int which) {
+                    
+                                    }
+                                });  
+                            AlertDialog dialog = builder.create();
+                            dialog.show();
+                        }else {
+                            uploadEncFSFile(stripstr, srcPath);
                         }
                         break;
                     }
@@ -553,6 +583,13 @@ public class Cryptonite extends Activity
                         currentDialogStartPath = Environment
                                 .getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
                                 .getPath();
+                        File downloadDir = new File(currentDialogStartPath);
+                        if (!downloadDir.exists()) {
+                            downloadDir.mkdir();
+                        }
+                        if (!downloadDir.exists()) {
+                            currentDialogStartPath = "/";
+                        }
                     } else {
                         currentDialogStartPath = "/";
                     }
@@ -629,6 +666,28 @@ public class Cryptonite extends Activity
         }
     }
 
+    private void uploadEncFSFile(final String targetPath, final String srcPath) {
+        final ProgressDialog pd = ProgressDialog.show(this,
+                this.getString(R.string.wait_msg),
+                this.getString(R.string.encrypting), true);
+        alertMsg = "";
+        new Thread(new Runnable(){
+            public void run(){
+                if (!mStorage.uploadEncFSFile(targetPath, srcPath)) {
+                    alertMsg = getString(R.string.upload_failure);
+                }        
+                runOnUiThread(new Runnable(){
+                    public void run() {
+                        if (pd.isShowing())
+                            pd.dismiss();
+                        if (!alertMsg.equals("")) {
+                            showAlert(R.string.error, alertMsg);
+                        }
+                    }
+                });
+            }
+        }).start();
+    }
 
     @Override
     protected void onResume() {
@@ -835,11 +894,6 @@ public class Cryptonite extends Activity
      */
      private void localInitEncFS(final String srcDir, final String pwd) {
         
-        if (jniIsValidEncFS(srcDir) != jniSuccess()) {
-            showAlert(R.string.error, R.string.invalid_encfs);
-            Log.v(TAG, "Invalid EncFS");
-            return;
-        }
         alertMsg = "";
 
         final ProgressDialog pd = ProgressDialog.show(this,
@@ -847,6 +901,11 @@ public class Cryptonite extends Activity
                                                       this.getString(R.string.running_encfs), true);
         new Thread(new Runnable(){
                 public void run(){
+                    if (jniIsValidEncFS(srcDir) != jniSuccess()) {
+                        alertMsg = getString(R.string.invalid_encfs);
+                        Log.e(TAG, "Invalid EncFS");
+                        return;
+                    }
                     /* Order is important here: DB root has to store
                      * the previous state of the dialog root.
                      */
@@ -866,11 +925,9 @@ public class Cryptonite extends Activity
                                     pd.dismiss();
                                 nullPassword();
                                 updateDecryptButtons();
-                                /* TODO: remove this after testing
-                                uploadEncFSFile("<virtual>/browse/artur", "<virtual>/browse", 
-                                        "/.AAEncfs3", "/mnt/sdcard/F2.large.jpg", false);*/
 
-                                mStorage = new LocalStorage(Cryptonite.this);
+                                mStorage = new LocalStorage(Cryptonite.this, 
+                                        ((CryptoniteApp)getApplication()));
                                 if (alertMsg.length()!=0) {
                                     showAlert(R.string.error, alertMsg);
                                 }
@@ -930,51 +987,50 @@ public class Cryptonite extends Activity
 
         /* Download encfs*.xml from Dropbox 
          * to browse folder */
-        String dbPath = srcDir.substring(currentDialogRoot.length());
-        String encfsXmlPath = "";
-        String encfsXmlRegex = "\\.encfs.\\.xml";
+        final String dbPath = srcDir.substring(currentDialogRoot.length());
+        final String encfsXmlRegex = "\\.encfs.\\.xml";
         
-        try {
-            Entry dbEntry = ((CryptoniteApp) getApplication()).getDBEntry(dbPath); 
-            if (dbEntry != null) {
-                if (dbEntry.isDir) {
-                    if (dbEntry.contents != null) {
-                        if (dbEntry.contents.size() > 0) {
-                            for (Entry dbChild : dbEntry.contents) {
-                                if (!dbChild.isDir) {
-                                    if (dbChild.fileName().matches(encfsXmlRegex)) {
-                                        encfsXmlPath = currentDialogRoot + dbChild.path;
-                                        FileOutputStream fos = new FileOutputStream(encfsXmlPath);
-                                        ((CryptoniteApp) getApplication()).getDBApi()
-                                            .getFile(dbChild.path, null, fos, null);
-                                        Log.i(TAG, "Downloaded " + dbChild.fileName() + " to " + encfsXmlPath);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (DropboxException e) {
-            showAlert(R.string.error, getString(R.string.dropbox_read_fail) + e.toString());
-            return;
-        } catch (FileNotFoundException e) {
-            showAlert(R.string.error, getString(R.string.dropbox_read_fail) + e.toString());
-            return;
-        }
-        
-        if (jniIsValidEncFS(srcDir) != jniSuccess()) {
-            showAlert(R.string.error, getString(R.string.invalid_encfs));
-            Log.v(TAG, "Invalid EncFS");
-            return;
-        }
         alertMsg = "";
         final ProgressDialog pd = ProgressDialog.show(this, 
                 this.getString(R.string.wait_msg), 
                 this.getString(R.string.running_encfs), true);
         new Thread(new Runnable(){
                 public void run(){
-                    /* Order is important here: DB root has to store
+                    try {
+                        Entry dbEntry = ((CryptoniteApp) getApplication()).getDBEntry(dbPath); 
+                        if (dbEntry != null) {
+                            if (dbEntry.isDir) {
+                                if (dbEntry.contents != null) {
+                                    if (dbEntry.contents.size() > 0) {
+                                        for (Entry dbChild : dbEntry.contents) {
+                                            if (!dbChild.isDir) {
+                                                if (dbChild.fileName().matches(encfsXmlRegex)) {
+                                                    String localEncfsXmlPath = currentDialogRoot + dbChild.path;
+                                                    FileOutputStream fos = new FileOutputStream(localEncfsXmlPath);
+                                                    ((CryptoniteApp) getApplication()).getDBApi()
+                                                        .getFile(dbChild.path, null, fos, null);
+                                                    Log.i(TAG, "Downloaded " + dbChild.fileName() + " to " + localEncfsXmlPath);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } catch (DropboxException e) {
+                        alertMsg = getString(R.string.dropbox_read_fail);
+                        return;
+                    } catch (FileNotFoundException e) {
+                        alertMsg = getString(R.string.dropbox_read_fail);
+                        return;
+                    }
+                    
+                    if (jniIsValidEncFS(srcDir) != jniSuccess()) {
+                        alertMsg = getString(R.string.invalid_encfs);
+                        Log.e(TAG, "Invalid EncFS");
+                        return;
+                    }
+                                  /* Order is important here: DB root has to store
                      * the previous state of the dialog root.
                      */
                     currentBrowsePath = currentReturnPath;
@@ -992,12 +1048,13 @@ public class Cryptonite extends Activity
                                 if (pd.isShowing())
                                     pd.dismiss();
                                 nullPassword();
-                                updateDecryptButtons();
-                                mStorage = new DropboxStorage(Cryptonite.this,
-                                        ((CryptoniteApp)getApplication()));
                                 if (alertMsg.length()!=0) {
                                     showAlert(R.string.error, alertMsg);
+                                } else {
+                                    mStorage = new DropboxStorage(Cryptonite.this,
+                                            ((CryptoniteApp)getApplication()));
                                 }
+                                updateDecryptButtons();
                             }
                         });
                 }
@@ -1395,63 +1452,81 @@ public class Cryptonite extends Activity
         return session;
     }
         
-    private boolean openEncFSFile(String encFSFilePath, String fileRoot, String dbEncFSPath) {
+    private boolean openEncFSFile(final String encFSFilePath, String fileRoot, final String dbEncFSPath) {
 
         /* normalise path names */
         String bRoot = new File(fileRoot).getPath();
         String bPath = new File(encFSFilePath).getPath();
-        String stripstr = bPath.substring(bRoot.length());
-        if (!stripstr.startsWith("/")) {
-            stripstr = "/" + stripstr;
+        String stripstrtmp = bPath.substring(bRoot.length());
+        if (!stripstrtmp.startsWith("/")) {
+            stripstrtmp = "/" + stripstrtmp;
         }
+
+        final String stripstr = stripstrtmp;
         
         /* Convert current path to encoded file name */
-        String encodedPath = jniEncode(stripstr);
+        final String encodedPath = jniEncode(stripstr);
 
         /* Set up temp dir for decrypted file */
-        File openDir = getPrivateDir(OPENPNT); /*, Context.MODE_WORLD_READABLE); */
+        final File openDir = getPrivateDir(OPENPNT); /*, Context.MODE_WORLD_READABLE); */
         String destPath = openDir.getPath() + (new File(bPath)).getParent().substring(bRoot.length());
 
         (new File(destPath)).mkdirs();
-        
-        if (!mStorage.decryptEncFSFile(encodedPath, openDir.getPath(), dbEncFSPath)) {
-            showAlert(R.string.error, R.string.local_read_fail);
-            Log.e(TAG, "Error while attempting to copy " + encodedPath);
-            return false;
-        }
-        
-        /* Copy the resulting file to a readable folder */
-        String openFilePath = openDir.getPath() + stripstr;
-        String readableName = (new File(encFSFilePath)).getName();
-        File readableDir = getPrivateDir(READPNT, Context.MODE_WORLD_READABLE);
-        String readablePath = readableDir.getPath() + "/" + readableName;
-        try {
-            FileOutputStream fos = new FileOutputStream(new File(readablePath));
+        alertMsg = "";
+        final ProgressDialog pd = ProgressDialog.show(this,
+                this.getString(R.string.wait_msg),
+                this.getString(R.string.decrypting), true);
+            new Thread(new Runnable(){
+                public void run(){
+                    if (!mStorage.decryptEncFSFile(encodedPath, openDir.getPath(), dbEncFSPath)) {
+                        alertMsg = getString(R.string.decrypt_failure);
+                        Log.e(TAG, "Error while attempting to copy " + encodedPath);
+                    }
+                    runOnUiThread(new Runnable(){
+                        public void run() {
+                            if (pd.isShowing())
+                                pd.dismiss();
+                            if (!alertMsg.equals("")) {
+                                showAlert(R.string.error, alertMsg);
+                                return;
+                            }
+                            /* Copy the resulting file to a readable folder */
+                            String openFilePath = openDir.getPath() + stripstr;
+                            String readableName = (new File(encFSFilePath)).getName();
+                            File readableDir = getPrivateDir(READPNT, Context.MODE_WORLD_READABLE);
+                            String readablePath = readableDir.getPath() + "/" + readableName;
+                            try {
+                                FileOutputStream fos = new FileOutputStream(new File(readablePath));
 
-            FileInputStream fis = new FileInputStream(new File(openFilePath));
+                                FileInputStream fis = new FileInputStream(new File(openFilePath));
 
-            byte[] buffer = new byte[fis.available()]; 
+                                byte[] buffer = new byte[fis.available()]; 
 
-            fis.read(buffer);
+                                fis.read(buffer);
 
-            fos.write(buffer);
+                                fos.write(buffer);
 
-            fis.close();
-            fos.close();
+                                fis.close();
+                                fos.close();
 
-            /* Make world readable */
-            ShellUtils.chmod(readablePath, "644");
-            
-            /* Delete tmp directory */
-            getPrivateDir(OPENPNT);
-        } catch (IOException e) {
-            Log.e(TAG, "Error while attempting to open " + readableName
-                    + ": " + e.toString());
-            return false;
-        }
-        
-        return fileOpen(readablePath);
-
+                                /* Make world readable */
+                                ShellUtils.chmod(readablePath, "644");
+                                
+                                /* Delete tmp directory */
+                                getPrivateDir(OPENPNT);
+                            } catch (IOException e) {
+                                Toast.makeText(Cryptonite.this, "Error while attempting to open " + readableName
+                                        + ": " + e.toString(), Toast.LENGTH_LONG).show();
+                                return;
+                            }
+                            
+                            fileOpen(readablePath);
+                            
+                        }
+                    });
+                }
+            }).start();
+        return true;        
     }
     
     private boolean fileOpen(String filePath) {

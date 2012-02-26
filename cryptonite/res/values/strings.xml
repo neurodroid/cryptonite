@@ -64,6 +64,10 @@
     <string name="overwrite">Overwrite</string>
     <string name="rename">Rename</string>
     <string name="rename_failure">Rename</string>
+    <string name="encrypt_failure">Failed to encrypt file</string>
+    <string name="encrypting">Encrypting file&#8230;</string>
+    <string name="decrypt_failure">Failed to decrypt file</string>
+    <string name="decrypting">Decrypting file&#8230;</string>
     
     <!-- Dropbox -->
     <string name="dropbox_link">Link with Dropbox</string>

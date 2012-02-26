@@ -11,4 +11,4 @@ ant clean
 ant debug
 adb -d uninstall csh.cryptonite
 adb -d install bin/cryptonite-debug.apk
-adb -d shell "am start -a android.intent.action.MAIN -n csh.cryptonite/.Cryptonite"
+# adb -d shell "am start -a android.intent.action.MAIN -n csh.cryptonite/.Cryptonite"

@@ -55,7 +55,7 @@
 
 namespace fs = boost::filesystem;
 
-const static int WRITE_BLOCK_SIZE = 1;
+const static int WRITE_BLOCK_SIZE = 512;
 
 enum writeMode {
     WRITE,
@@ -1018,8 +1018,9 @@ Java_csh_cryptonite_Cryptonite_jniEncrypt(JNIEnv * env, jobject thiz,
     fseek(fp, 0L, SEEK_SET);
 
     unsigned char buf[WRITE_BLOCK_SIZE];
-    int blocks = (sz + sizeof(buf)-1) / sizeof(buf);
-
+    int blocks = sz / sizeof(buf);
+    int rem = sz - blocks * sizeof(buf);
+    
     /* Create destination file */
     int outfd = creat(encodedpath.c_str(), srcmode);
 
@@ -1043,9 +1044,32 @@ Java_csh_cryptonite_Cryptonite_jniEncrypt(JNIEnv * env, jobject thiz,
     /* write all the encrypted data in blocks */
     for(int i=0; i<blocks; ++i)
     {
-        int bytes = fread(buf, sizeof(buf), 1, fp);
-        bool succ = node->write(i*sizeof(buf), buf, sizeof(buf));
-        if (!succ) {
+        if (fread(buf, sizeof(buf), 1, fp) != 1) {
+            std::ostringstream out;
+            out << "Unexpected file truncation: "
+                << encodedpath;
+            LOGE(out.str().c_str());
+            return EXIT_FAILURE;
+        }
+        if (!node->write(i*sizeof(buf), buf, sizeof(buf))) {
+            std::ostringstream out;
+            out << "Couldn't write to "
+                << encodedpath;
+            LOGE(out.str().c_str());
+            return EXIT_FAILURE;
+        }
+    }
+    if (rem != 0) {
+        /* last block, might be truncated */
+        std::vector<unsigned char> trunc_buf(rem);
+        if (fread(&trunc_buf[0], trunc_buf.size(), 1, fp) != 1) {
+            std::ostringstream out;
+            out << "Unexpected file truncation in last block: "
+                << encodedpath;
+            LOGE(out.str().c_str());
+            return EXIT_FAILURE;
+        }
+        if (!node->write(blocks*sizeof(buf), &trunc_buf[0], trunc_buf.size())) {
             std::ostringstream out;
             out << "Couldn't write to "
                 << encodedpath;

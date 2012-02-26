@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.IOException;
 
 import csh.cryptonite.Cryptonite;
+import csh.cryptonite.CryptoniteApp;
 import csh.cryptonite.R;
+import csh.cryptonite.UploadEncrypted;
 import android.content.Context;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -15,21 +17,24 @@ import android.widget.Toast;
 
 public abstract class Storage {
 
-    public Context mContext;
+    public Context mCallingContext;
+    public Context mAppContext;
+    public CryptoniteApp mApp;
     public String type;
     
     private UIHandler uiHandler;
     
-    public Storage(Context context) {
-        mContext = context.getApplicationContext();
+    public Storage(Context context, CryptoniteApp app) {
+        mCallingContext = context;
+        mAppContext = context.getApplicationContext();
+        mApp = app;
         type = "";
         Thread uiThread = new HandlerThread("UIHandler");
         uiThread.start();
         uiHandler = new UIHandler(((HandlerThread) uiThread).getLooper());
     }
             
-    abstract public boolean uploadEncFSFile(String encFSFilePath, String fileRoot, 
-            String dbEncFSPath, final String srcPath);
+    abstract public boolean uploadEncFSFile(String stripstr, String srcPath);
     
     abstract public boolean decryptEncFSFile(String encodedPath, String targetPath, String encfsPath);
     
@@ -38,7 +43,28 @@ public abstract class Storage {
 
     abstract public boolean createEncFS(String currentReturnPath, String passwordString, 
             File browseRoot, int config);
+    
+    abstract public String encodedExists(String stripstr);
+    
+    public String stripStr(String encFSFilePath, String fileRoot, String srcPath) {
+        File srcFile = new File(srcPath);
+        if (!srcFile.isFile()) {
+            handleUIToastRequest(mAppContext.getString(R.string.only_files));
+            return "";
+        }
+        String srcFileName = srcFile.getName();
 
+        /* normalise path names */
+        String bRoot = new File(fileRoot).getPath();
+        String bPath = new File(encFSFilePath).getPath();
+
+        String stripstr = bPath.substring(bRoot.length()) + "/" + srcFileName;
+        if (!stripstr.startsWith("/")) {
+            stripstr = "/" + stripstr;
+        }
+        return stripstr;
+    }
+    
     /** Create an empty file with a decoded file name
      * 
      * @param encodedPath The full encoded source path
@@ -98,22 +124,21 @@ public abstract class Storage {
     public File getPrivateDir(String label, int mode) {
         /* Tear down and recreate the browse directory to make
          * sure we have appropriate permissions */
-        File browseDirF = mContext.getDir(label, mode);
+        File browseDirF = mAppContext.getDir(label, mode);
         if (browseDirF.exists()) {
             if (!Cryptonite.deleteDir(browseDirF)) {
-                Toast.makeText(mContext, mContext.getString(R.string.target_dir_cleanup_failure),
-                        Toast.LENGTH_LONG).show();
+                handleUIToastRequest(mAppContext.getString(R.string.target_dir_cleanup_failure));
                 return null;
             }
         }
-        browseDirF = mContext.getDir(label, mode);
+        browseDirF = mAppContext.getDir(label, mode);
         return browseDirF;
     }
     
     private final class UIHandler extends Handler
     {
         public static final int DISPLAY_UI_TOAST = 0;
-        public static final int DISPLAY_UI_DIALOG = 1;
+        public static final int DISPLAY_UI_UPLOAD = 1;
 
         public UIHandler(Looper looper)
         {
@@ -127,22 +152,46 @@ public abstract class Storage {
             {
             case UIHandler.DISPLAY_UI_TOAST:
             {
-                Toast t = Toast.makeText(mContext, (String)msg.obj, Toast.LENGTH_LONG);
+                Toast t = Toast.makeText(mAppContext, (String)msg.obj, Toast.LENGTH_LONG);
                 t.show();
+                break;
             }
-            case UIHandler.DISPLAY_UI_DIALOG:
-                //TBD
+            case UIHandler.DISPLAY_UI_UPLOAD:
+            {
+                String[] paths = (String[])msg.obj;
+                if (paths.length < 2) {
+                    Toast t = Toast.makeText(mAppContext, R.string.upload_failure, Toast.LENGTH_LONG);
+                    t.show();
+                    break;
+                }
+                String targetPath = paths[0];
+                String encodedFilePath = paths[1];
+                UploadEncrypted upload = new UploadEncrypted(mCallingContext, 
+                        mApp.getDBApi(),
+                        new File(targetPath).getParent() + "/",
+                        new File(encodedFilePath));
+                upload.execute();
+                break;
+            }
             default:
                 break;
             }
         }
     }
 
-    protected void handleUIRequest(String message)
+    protected void handleUIToastRequest(String message)
     {
         Message msg = uiHandler.obtainMessage(UIHandler.DISPLAY_UI_TOAST);
         msg.obj = message;
         uiHandler.sendMessage(msg);
     }
+
+    protected void handleUIUploadEncrypted(String[] filePaths)
+    {
+        Message msg = uiHandler.obtainMessage(UIHandler.DISPLAY_UI_UPLOAD);
+        msg.obj = filePaths;
+        uiHandler.sendMessage(msg);
+    }
+
 
 }

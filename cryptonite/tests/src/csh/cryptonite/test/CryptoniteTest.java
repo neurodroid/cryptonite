@@ -22,6 +22,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Scanner;
 
 import android.content.Intent;
@@ -43,7 +47,9 @@ public class CryptoniteTest extends ActivityInstrumentationTestCase2<Cryptonite>
     private static final String TEST_STRING = "6*8";
     private static final String TEST_DIR="csh.cryptonite.test";
     private static final String DECRYPTED_DIR_NAME = "/arthur/dent"; 
-    private static final String DECRYPTED_FILE_NAME = "42"; 
+    private static final String DECRYPTED_FILE_NAME = "42";
+    private static final String LARGE_FILE_DIR = "/mnt/sdcard";
+    private static final String LARGE_FILE_NAME = "2012-01-21-24-52-07.jpg";
     
     /**
      * Creates an {@link ActivityInstrumentationTestCase2} for the Cryptonite activity.
@@ -79,6 +85,55 @@ public class CryptoniteTest extends ActivityInstrumentationTestCase2<Cryptonite>
     @Override
     protected void tearDown() throws Exception {
         super.tearDown();
+    }
+
+    private String md5(byte[] b) {
+        try {
+            // Create MD5 Hash
+            MessageDigest digest = java.security.MessageDigest.getInstance("MD5");
+            digest.update(b);
+            return new BigInteger(1, digest.digest()).toString(16);
+            
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    
+    // Returns the contents of the file in a byte array.
+    private static byte[] getBytesFromFile(File file) throws IOException {
+        InputStream is = new FileInputStream(file);
+
+        // Get the size of the file
+        long length = file.length();
+
+        // You cannot create an array using a long type.
+        // It needs to be an int type.
+        // Before converting to an int type, check
+        // to ensure that file is not larger than Integer.MAX_VALUE.
+        if (length > Integer.MAX_VALUE) {
+            // File is too large
+        }
+
+        // Create the byte array to hold the data
+        byte[] bytes = new byte[(int)length];
+
+        // Read in the bytes
+        int offset = 0;
+        int numRead = 0;
+        while (offset < bytes.length
+               && (numRead=is.read(bytes, offset, bytes.length-offset)) >= 0) {
+            offset += numRead;
+        }
+
+        // Ensure all the bytes have been read in
+        if (offset < bytes.length) {
+            throw new IOException("Could not completely read file "+file.getName());
+        }
+
+        // Close the input stream and return bytes
+        is.close();
+        return bytes;
     }
     
     /**
@@ -137,12 +192,19 @@ public class CryptoniteTest extends ActivityInstrumentationTestCase2<Cryptonite>
             
             assertTrue(encodedDir.mkdirs());
             
-            /* Upload file */
+            /* Upload small file */
             /* Convert current path to encoded file name */
             assertEquals(Cryptonite.jniSuccess(),
-                    mActivity.jniEncrypt(
+                    Cryptonite.jniEncrypt(
                             DECRYPTED_DIR_NAME + "/" + DECRYPTED_FILE_NAME, 
                             cacheDir + "/" + DECRYPTED_FILE_NAME, true));
+            
+            /* Upload large file */
+            assertEquals(Cryptonite.jniSuccess(),
+                    Cryptonite.jniEncrypt(
+                            DECRYPTED_DIR_NAME + "/" + LARGE_FILE_NAME, 
+                            LARGE_FILE_DIR + "/" + LARGE_FILE_NAME, true));
+                        
             Cryptonite.jniResetVolume();
         }
         Cryptonite.deleteDir(getCacheDir());
@@ -168,7 +230,7 @@ public class CryptoniteTest extends ActivityInstrumentationTestCase2<Cryptonite>
                 assertTrue(Cryptonite.deleteDir(new File(targetPath).getParentFile()));
             }
             assertEquals(Cryptonite.jniSuccess(), 
-                    mActivity.jniDecrypt(encodedName, decryptedCacheDir.getPath(), true));
+                    Cryptonite.jniDecrypt(encodedName, decryptedCacheDir.getPath(), true));
             assertTrue((new File(targetPath)).exists());
         
             /* Read decrypted file */
@@ -186,6 +248,29 @@ public class CryptoniteTest extends ActivityInstrumentationTestCase2<Cryptonite>
                 fail();
             }
             assertEquals(TEST_STRING, output);
+            
+            /* Check md5 sum of large file */
+            encodedName = Cryptonite.jniEncode(DECRYPTED_DIR_NAME + "/" + LARGE_FILE_NAME);
+            targetPath = decryptedCacheDir.getPath() 
+                    + DECRYPTED_DIR_NAME + "/" + LARGE_FILE_NAME;
+
+            assertEquals(Cryptonite.jniSuccess(), 
+                    Cryptonite.jniDecrypt(encodedName, decryptedCacheDir.getPath(), true));
+            assertTrue((new File(targetPath)).exists());
+            
+            /* Compare md5 sums */
+            String md5original = "A";
+            String md5decrypted = "B";
+            try {
+                md5original = md5(getBytesFromFile(new File(LARGE_FILE_DIR + "/" + LARGE_FILE_NAME)));
+                md5decrypted = md5(getBytesFromFile(new File(targetPath)));
+            } catch (IOException e) {
+                fail();
+            }
+            Log.i(Cryptonite.TAG, "Original checksum: " + md5original);
+            Log.i(Cryptonite.TAG, "Decrypted checksum: " + md5decrypted);
+            assertEquals(md5original, md5decrypted);
+            
             Cryptonite.jniResetVolume();
             Cryptonite.deleteDir(targetDir);
         }

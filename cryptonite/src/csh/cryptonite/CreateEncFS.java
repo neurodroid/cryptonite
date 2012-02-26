@@ -60,7 +60,7 @@ public class CreateEncFS extends ListActivity {
         if (getIntent().getIntExtra(START_MODE, CREATE_DB) == CREATE_DB) {
             mStorage = new DropboxStorage(this, ((CryptoniteApp)getApplication()));
         } else {
-            mStorage = new LocalStorage(this);
+            mStorage = new LocalStorage(this, ((CryptoniteApp)getApplication()));
         }
 
         mList = new ArrayList<HashMap<String, String>>();

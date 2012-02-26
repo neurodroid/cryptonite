@@ -5,70 +5,53 @@ import java.util.HashSet;
 import java.util.Set;
 
 import csh.cryptonite.Cryptonite;
+import csh.cryptonite.CryptoniteApp;
 import csh.cryptonite.R;
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.util.Log;
 
 public class LocalStorage extends Storage {
 
-    public LocalStorage(Context context) {
-        super(context);
+    public LocalStorage(Context context, CryptoniteApp app) {
+        super(context, app);
         type = "local";
     }
 
     @Override
-    public boolean uploadEncFSFile(String encFSFilePath, String fileRoot,
-            String dbEncFSPath, String srcPath) {
-        File srcFile = new File(srcPath);
-        if (!srcFile.isFile()) {
-            handleUIRequest(mContext.getString(R.string.only_files));
-            return false;
-        }
-        String srcFileName = srcFile.getName();
-        
-        /* normalise path names */
-        final String bRoot = new File(fileRoot).getPath();
-        String bPath = new File(encFSFilePath).getPath();
-        String stripstrtmp = bPath.substring(bRoot.length()) + "/" + srcFileName;
-        if (!stripstrtmp.startsWith("/")) {
-            stripstrtmp = "/" + stripstrtmp;
-        }
-        final String stripstr = stripstrtmp;
-
+    public String encodedExists(String stripstr) {
         /* Convert current path to encoded file name */
-        final String encodedPath = Cryptonite.jniEncode(stripstr);
+        String encodedPath = Cryptonite.jniEncode(stripstr);
         final File encodedFile = new File(encodedPath);
-        final String fSrcPath = srcPath;
+
         /* Does the encrypted file exist? */
         if (encodedFile.exists()) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
-            builder.setIcon(R.drawable.ic_launcher_cryptonite)
-                .setTitle(R.string.file_exists)
-                .setMessage(R.string.file_exists_options_short)
-                .setPositiveButton(R.string.overwrite,
-                        new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog,
-                            int which) {
-                        if (Cryptonite.jniEncrypt(stripstr, fSrcPath, true) != Cryptonite.jniSuccess()) {
-                            handleUIRequest(mContext.getString(R.string.upload_failure));
-                        }
-                    }
-                })
-                .setNegativeButton(R.string.cancel,
-                        new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog,
-                            int which) {
-    
-                    }
-                });  
-            AlertDialog dialog = builder.create();
-            dialog.show();
-            return true;
+            /* get next available file name */
+            File decodedFile = new File(stripstr);
+
+            String decodedFileParent = decodedFile.getParent() + "/";
+            String decodedFileTrunk = decodedFileParent + 
+                    fileNameTrunk(decodedFile.getPath());
+            String decodedFileExt = fileExt(decodedFile.getPath());
+            int ntry = 1;
+            while (true) {
+                String nextFilePath = decodedFileTrunk + " (" + ntry + ")" +
+                        decodedFileExt;
+                /* encode */
+                String nextEncodedPath = Cryptonite.jniEncode(nextFilePath);
+                File nextEncodedFile = new File(nextEncodedPath);
+                if (!nextEncodedFile.exists()) {
+                    return nextFilePath;
+                }
+                ntry++;
+            }
         } else {
-            return (Cryptonite.jniEncrypt(stripstr, srcPath, true) == Cryptonite.jniSuccess());
+            return stripstr;
         }
+    }
+    
+    @Override
+    public boolean uploadEncFSFile(String stripstr, String srcPath) {
+        return (Cryptonite.jniEncrypt(stripstr, srcPath, true) == Cryptonite.jniSuccess());
     }
 
     @Override
@@ -103,13 +86,13 @@ public class LocalStorage extends Storage {
             File browseRoot, int config) {
         String encfs6Path = currentReturnPath + "/" + ".encfs6.xml";
         if (new File(encfs6Path).exists()) {
-            handleUIRequest(mContext.getString(R.string.encfs6_exists));
+            handleUIToastRequest(mAppContext.getString(R.string.encfs6_exists));
             return false;
         }
         if (Cryptonite.jniCreate(currentReturnPath, passwordString, config) == Cryptonite.jniSuccess()) {
-            handleUIRequest(mContext.getString(R.string.create_success_local));
+            handleUIToastRequest(mAppContext.getString(R.string.create_success_local));
         } else {
-            handleUIRequest(mContext.getString(R.string.create_failure));
+            handleUIToastRequest(mAppContext.getString(R.string.create_failure));
             return false;
         }
         return true;
@@ -127,17 +110,23 @@ public class LocalStorage extends Storage {
     private void localRecTree(String currentPath, Set<String> errorList, String exportRoot,
             String destDir, String localEncFSPath)
     {
-        if (new VirtualFile(currentPath).exists()) {
+        /* normalise path names */
+        String bRoot = new VirtualFile(exportRoot).getPath();
+        String bPath = new VirtualFile(currentPath).getPath();
+        String stripstr = bPath.substring(bRoot.length());
 
-            /* normalise path names */
-            String bRoot = new VirtualFile(exportRoot).getPath();
-            String bPath = new VirtualFile(currentPath).getPath();
-            String stripstr = bPath.substring(bRoot.length());
+        /* Convert current path to encoded file name */
+        String encodedPath = Cryptonite.jniEncode(stripstr);
+        
+        /* Does the _en_coded filename exist? */
+        if (new File(encodedPath).exists()) {
 
-            if (new VirtualFile(bPath).isDirectory()) {
-
-                for (VirtualFile f : new VirtualFile(bPath).listFiles()) {
-                    localRecTree(f.getPath(), errorList, exportRoot, destDir, localEncFSPath);
+            if (new File(encodedPath).isDirectory()) {
+                /* get _en_coded file name list */
+                for (File f : new File(encodedPath).listFiles()) {
+                    /* convert to _de_coded file name */
+                    String decodedPath = Cryptonite.jniDecode(f.getPath());
+                    localRecTree(bRoot + "/" + decodedPath, errorList, exportRoot, destDir, localEncFSPath);
                 }
 
             } else {
@@ -147,8 +136,6 @@ public class LocalStorage extends Storage {
                 if (!finalDir.exists()) {
                     finalDir.mkdirs();
                 }
-                /* Convert current path to encoded file name */
-                String encodedPath = Cryptonite.jniEncode(stripstr);
 
                 if (Cryptonite.jniDecrypt(encodedPath, destDir, false) != Cryptonite.jniSuccess()) {
                     errorList.add(stripstr);
