@@ -32,6 +32,10 @@ import java.util.TreeMap;
 import com.dropbox.client2.DropboxAPI.Entry;
 import com.dropbox.client2.exception.DropboxException;
 
+import csh.cryptonite.storage.DropboxStorage;
+import csh.cryptonite.storage.Storage;
+import csh.cryptonite.storage.VirtualFile;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -697,10 +701,10 @@ public class FileDialog extends ListActivity {
                                         if (selectionMode == SelectionMode.MODE_OPEN_DB) {
                                             /* If we're selecting the encfs directory, we'll 
                                              * produce undecoded files */
-                                            Cryptonite.dbTouch(dbChild, rootPath);
+                                            DropboxStorage.dbTouch(dbChild, rootPath);
                                         } else {
                                             
-                                            Cryptonite.decode(dbChild.path.substring(dbEncFSPath.length()), 
+                                            DropboxStorage.decode(dbChild.path.substring(dbEncFSPath.length()), 
                                                     rootPath, dbChild.isDir);
                                         }
                                     }
@@ -762,8 +766,8 @@ public class FileDialog extends ListActivity {
                             for (VirtualFile localChild : localEntry.listFiles()) {
 
                                 if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT) {
-                                    Cryptonite.decode(localChild.getPath().substring(encFSRoot.length()), 
-                                            rootPath, localChild.isDirectory());
+                                    Storage.decode(localChild.getPath().substring(encFSRoot.length()), 
+                                                   rootPath, localChild.isDirectory());
                                 }
                             }
                         }

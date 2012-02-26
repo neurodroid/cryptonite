@@ -1,13 +1,12 @@
 package csh.cryptonite;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.dropbox.client2.DropboxAPI.UploadRequest;
-import com.dropbox.client2.exception.DropboxException;
+import csh.cryptonite.storage.DropboxStorage;
+import csh.cryptonite.storage.LocalStorage;
+import csh.cryptonite.storage.Storage;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -46,7 +45,7 @@ public class CreateEncFS extends ListActivity {
     
     private int currentConfig;
     
-    private boolean mIsDB;
+    private Storage mStorage;
 
     private ArrayList<HashMap<String, String>> mList;
 
@@ -58,7 +57,11 @@ public class CreateEncFS extends ListActivity {
         
         setContentView(R.layout.create);
         
-        mIsDB = (getIntent().getIntExtra(START_MODE, CREATE_DB) == CREATE_DB);        
+        if (getIntent().getIntExtra(START_MODE, CREATE_DB) == CREATE_DB) {
+            mStorage = new DropboxStorage(this, ((CryptoniteApp)getApplication()));
+        } else {
+            mStorage = new LocalStorage(this);
+        }
 
         mList = new ArrayList<HashMap<String, String>>();
         setupList();
@@ -105,7 +108,7 @@ public class CreateEncFS extends ListActivity {
         String dialogRoot = "";
         String dialogRootName = dialogRoot;
         String dialogDBEncFS = "";
-        if (mIsDB) {
+        if (mStorage.type.equals("dropbox")) {
             dialogMode = SelectionMode.MODE_OPEN_DB;
             dialogStartPath = getPrivateDir(Cryptonite.BROWSEPNT, Context.MODE_PRIVATE).getPath();
             dialogRoot = dialogStartPath;
@@ -174,12 +177,15 @@ public class CreateEncFS extends ListActivity {
                                      getString(R.string.creating_encfs), true);
                              new Thread(new Runnable(){
                                  public void run(){
-                                     createEncFS(currentReturnPath, passwordString, currentConfig); 
+                                     File browseRoot = getPrivateDir(Cryptonite.BROWSEPNT, Context.MODE_PRIVATE);
+                                     mStorage.createEncFS(currentReturnPath, passwordString, browseRoot, currentConfig); 
                                      runOnUiThread(new Runnable(){
                                          public void run() {
                                              if (pd.isShowing())
                                                  pd.dismiss();
-                                             // Do stuff after having copied
+                                             Cryptonite.jniResetVolume();
+                                             setResult(RESULT_OK, getIntent());
+                                             finish();
                                          }
                                      });
                                  }
@@ -194,87 +200,6 @@ public class CreateEncFS extends ListActivity {
         }
         return null;
     }
-
-    private void createEncFS(String currentReturnPath, String passwordString, int config) {
-        if (mIsDB) {
-            /* Create encrypted folder in temporary directory */
-            File browseRoot = getPrivateDir(Cryptonite.BROWSEPNT, Context.MODE_PRIVATE);
-            String cachePath = browseRoot + "/.encfs6.xml";
-            new File(cachePath).delete();
-            
-            /* Upload file to DB */
-            String targetPath = currentReturnPath.substring(browseRoot.getPath().length());
-            if (!targetPath.endsWith("/")) {
-                targetPath += "/";
-            }
-            /* Is there an existing EncFSVolume? */
-            String dbPath = targetPath + ".encfs6.xml";
-
-            boolean fileExists = true;
-            try {
-                fileExists = ((CryptoniteApp)getApplication()).dbFileExists(dbPath);
-            } catch (DropboxException e) {
-                showToast(e.toString());
-                return;
-            }
-            if (fileExists) {
-                showToast(R.string.encfs6_exists);
-                return;
-            }
-            
-            /* Create encfs6.xml in temporary folder */
-            if (Cryptonite.jniCreate(browseRoot.getPath(), passwordString, config) == Cryptonite.jniSuccess()) {
-                showToast(R.string.create_success_dropbox, false);
-            } else {
-                showToast(R.string.create_failure);
-                return;
-            }
-
-            /* Upload to Dropbox */
-            /* Problems with AsyncTask when used from here;
-             * Therefore uploading directly. xml file is small
-             * anyway.
-             */
-            File cacheFile = new File(cachePath);
-            
-            try {
-                // By creating a request, we get a handle to the putFile operation,
-                // so we can cancel it later if we want to
-                
-                FileInputStream fis = new FileInputStream(cacheFile);
-                String path = targetPath + cacheFile.getName();
-                UploadRequest request = ((CryptoniteApp)getApplication()).getDBApi()
-                        .putFileOverwriteRequest(path, fis, cacheFile.length(), null);
-
-                if (request != null) {
-                    request.upload();
-                }
-
-            } catch (DropboxException e) {
-                // Unknown error
-                showToast(getString(R.string.dropbox_upload_fail) + ": " + e.getMessage());
-                return;
-            } catch (FileNotFoundException e) {
-                showToast(getString(R.string.file_not_found) + ": " + e.getMessage());
-                return;
-            }
-            showToast(R.string.dropbox_create_successful);
-        } else {
-            String encfs6Path = currentReturnPath + "/" + ".encfs6.xml";
-            if (new File(encfs6Path).exists()) {
-                showToast(R.string.encfs6_exists);
-                return;
-            }
-            if (Cryptonite.jniCreate(currentReturnPath, passwordString, config) == Cryptonite.jniSuccess()) {
-                showToast(R.string.create_success_local);
-            } else {
-                showToast(R.string.create_failure);
-            }
-        }
-        Cryptonite.jniResetVolume();
-        setResult(RESULT_OK, getIntent());
-        finish();
-    }    
 
     private void launchBuiltinFileBrowser(String dialogRoot, String dialogDBEncFS, String dialogRootName,
             String dialogButtonLabel, String dialogStartPath, String dialogLabel, int dialogMode) 
@@ -306,10 +231,6 @@ public class CreateEncFS extends ListActivity {
     
     private void showToast(int resId) {
         showToast(getString(resId));
-    }
-
-    private void showToast(int resId, boolean showLong) {
-        showToast(getString(resId), showLong);
     }
 
     private void showToast(final String msg) {
