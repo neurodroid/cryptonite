@@ -5,7 +5,6 @@ MAJOR
 * Safe preview of text and image files in memory
 
 MINOR
-* Create Dropbox folders
 * Add symbol icons to buttons.
 
 CODE
@@ -30,6 +29,7 @@ X Implement Dropbox support
 X Implement multiselect export
 
 MINOR
+X Create Dropbox folders within EncFS volumes
 X Use same button for mount/unmount (see DBRoulette)
 X Use same button for connect / disconnect from Dropbox
 X Use 2-column table layout
