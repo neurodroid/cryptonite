@@ -100,11 +100,13 @@ public class Cryptonite extends Activity
     public static final String TAG = "cryptonite";
 
     public static final String BROWSEPNT = "browse";
-    private static final String OPENPNT = "open";
+    public static final String OPENPNT = "open";
     private static final String DROPBOXPNT = "dropbox";
     private static final String READPNT = "read";
     private static final String CACHEPNT = "cache";
 
+    private File openDir, readDir;
+    
     private String currentDialogStartPath = "/";
     private String currentDialogLabel = "";
     private String currentDialogButtonLabel = "OK";
@@ -184,6 +186,9 @@ public class Cryptonite extends Activity
             }
         }
 
+        SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+        setupReadDirs(prefs.getBoolean("cb_extcache", false));
+        
         tvMountInfo = (TextView)findViewById(R.id.tvMountInfo);
         if (!externalStorageIsWritable() || !ShellUtils.supportsFuse()) {
             tvMountInfo.setText(this.getString(R.string.mount_info_unsupported));
@@ -377,16 +382,7 @@ public class Cryptonite extends Activity
         VirtualFileSystem vfs = VirtualFileSystem.INSTANCE;
         vfs.init();
         
-        /* TODO: Remove this after testing
-         * Test local EncFS volume
-        currentDialogStartPath = Environment.getExternalStorageDirectory().getPath();
-        currentDialogRoot = "/";
-        currentReturnPath = "/mnt/sdcard/.AAEncfs3"; 
-        localDecryptEncFS(currentReturnPath, "password"); */
-        
-        
         if (!mInstrumentation) {
-            SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
             if (!prefs.getBoolean("cb_norris", false)) {
                 showAlert(getString(R.string.disclaimer), getString(R.string.no_warranty),
                         getString(R.string.understand));
@@ -394,6 +390,20 @@ public class Cryptonite extends Activity
         }
     }
 
+    private void setupReadDirs(boolean external) {
+        deleteDir(openDir);
+        deleteDir(readDir);
+        if (external && externalStorageIsWritable()) {
+            openDir = new File(getExternalCacheDir().getPath() + "/" + OPENPNT);
+            readDir = new File(getExternalCacheDir().getPath() + "/" + READPNT);
+            openDir.mkdirs();
+            readDir.mkdirs();
+        } else {
+            openDir = getDir(OPENPNT, Context.MODE_PRIVATE);
+            readDir = getDir(READPNT, Context.MODE_WORLD_READABLE);
+        }
+    }
+    
     private boolean needsEncFSBinary() {
         if (!(new File(ENCFSBIN)).exists()) {
             return true;
@@ -433,9 +443,9 @@ public class Cryptonite extends Activity
         /* Delete directories */
         deleteDir(getBaseContext().getFilesDir());
         deleteDir(getBaseContext().getDir(BROWSEPNT, Context.MODE_PRIVATE));
-        deleteDir(getBaseContext().getDir(OPENPNT, Context.MODE_PRIVATE));
         deleteDir(getBaseContext().getDir(DROPBOXPNT, Context.MODE_PRIVATE));
-        deleteDir(getBaseContext().getDir(READPNT, Context.MODE_WORLD_READABLE));
+        deleteDir(openDir);
+        deleteDir(readDir);
         
         /* Delete virtual file system */
         VirtualFileSystem.INSTANCE.clear();
@@ -450,7 +460,7 @@ public class Cryptonite extends Activity
         buttonForgetDecryption.setEnabled(volumeLoaded);
         buttonDropboxCreate.setEnabled(!volumeLoaded && mLoggedIn);
         buttonLocalCreate.setEnabled(!volumeLoaded);
-        
+
         if (!volumeLoaded) {
             mStorage = null;
         }
@@ -647,8 +657,8 @@ public class Cryptonite extends Activity
             }
             break;
         case REQUEST_PREFS:
-            @SuppressWarnings("unused")
             SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+            setupReadDirs(prefs.getBoolean("cb_extcache", false));
             break;
         case REQUEST_CODE_PICK_FILE_OR_DIRECTORY:
             /* from external OI file browser */
@@ -840,6 +850,9 @@ public class Cryptonite extends Activity
      * If a deletion fails, the method stops attempting to delete and returns false.
      */
     public static boolean deleteDir(File dir) {
+        if (dir == null) {
+            return false;
+        }
         if (dir.isDirectory()) {
             String[] children = dir.list();
             for (int i=0; i<children.length; i++) {
@@ -1459,6 +1472,9 @@ public class Cryptonite extends Activity
         
     private boolean openEncFSFile(final String encFSFilePath, String fileRoot, final String dbEncFSPath) {
 
+        SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+        setupReadDirs(prefs.getBoolean("cb_extcache", false));
+
         /* normalise path names */
         String bRoot = new File(fileRoot).getPath();
         String bPath = new File(encFSFilePath).getPath();
@@ -1473,7 +1489,6 @@ public class Cryptonite extends Activity
         final String encodedPath = jniEncode(stripstr);
 
         /* Set up temp dir for decrypted file */
-        final File openDir = getPrivateDir(OPENPNT); /*, Context.MODE_WORLD_READABLE); */
         String destPath = openDir.getPath() + (new File(bPath)).getParent().substring(bRoot.length());
 
         (new File(destPath)).mkdirs();
@@ -1498,10 +1513,14 @@ public class Cryptonite extends Activity
                             /* Copy the resulting file to a readable folder */
                             String openFilePath = openDir.getPath() + stripstr;
                             String readableName = (new File(encFSFilePath)).getName();
-                            File readableDir = getPrivateDir(READPNT, Context.MODE_WORLD_READABLE);
-                            String readablePath = readableDir.getPath() + "/" + readableName;
+                            String readablePath = readDir.getPath() + "/" + readableName;
+                            File readableFile = new File(readablePath);
+                            
+                            /* Make sure the readable Path exists */
+                            readableFile.getParentFile().mkdirs();
+                            
                             try {
-                                FileOutputStream fos = new FileOutputStream(new File(readablePath));
+                                FileOutputStream fos = new FileOutputStream(readableFile);
 
                                 FileInputStream fis = new FileInputStream(new File(openFilePath));
 
@@ -1518,7 +1537,7 @@ public class Cryptonite extends Activity
                                 ShellUtils.chmod(readablePath, "644");
                                 
                                 /* Delete tmp directory */
-                                getPrivateDir(OPENPNT);
+                                deleteDir(openDir);
                             } catch (IOException e) {
                                 Toast.makeText(Cryptonite.this, "Error while attempting to open " + readableName
                                         + ": " + e.toString(), Toast.LENGTH_LONG).show();

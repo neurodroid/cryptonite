@@ -16,6 +16,7 @@
 
 package csh.cryptonite;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 
 import android.os.Bundle;
@@ -33,6 +34,7 @@ public class Preferences extends PreferenceActivity {
     
     private CheckBoxPreference chkEnableBuiltin;
     private CheckBoxPreference chkNorris;
+    private CheckBoxPreference chkExtCache;
     
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,5 +75,32 @@ public class Preferences extends PreferenceActivity {
                     }
                 }});
 
+        /* Get previous state */
+        boolean prevExtCache = prefs.getBoolean("cb_extcache", false);
+
+        chkExtCache = (CheckBoxPreference)getPreferenceScreen().findPreference("cb_extcache");
+        /* Initialise ExtCache mode */
+        chkExtCache.setChecked(prevExtCache);
+        chkExtCache.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+                public boolean onPreferenceClick(Preference preference) {
+                    if (chkExtCache.isChecked()) {
+                        String extDir = getBaseContext().getExternalCacheDir().getPath();
+                        Toast.makeText(Preferences.this, getString(R.string.cb_extcache_enabled) + extDir, 
+                                Toast.LENGTH_SHORT).show();
+                        return true;
+                    } else {
+                        String intDir = getBaseContext().getDir(Cryptonite.OPENPNT, 
+                                Context.MODE_WORLD_WRITEABLE).getParent();
+                        Toast.makeText(Preferences.this, getString(R.string.cb_extcache_disabled) + intDir, 
+                                Toast.LENGTH_SHORT).show();
+                        return false;
+                    }
+                }});
+        /* Do we have external storage at all? */
+        if (!Cryptonite.externalStorageIsWritable()) {
+            chkExtCache.setEnabled(false);
+            chkExtCache.setChecked(false);
+            chkExtCache.setSummary(getBaseContext().getString(R.string.cb_no_external_storage));
+        }
     }
 }

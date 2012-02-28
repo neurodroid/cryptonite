@@ -15,6 +15,11 @@
     <string name="cb_norris_summary">Don\'t show paranoid warnings</string>
     <string name="cb_norris_enabled">Disabled warning messages</string>
     <string name="cb_norris_disabled">Enabled warning messages</string>
+    <string name="cb_extcache_title">Use external storage</string>
+    <string name="cb_extcache_summary">Save temporary files on SD card</string>
+    <string name="cb_extcache_enabled">Saving to SD card in </string>
+    <string name="cb_extcache_disabled">Saving to internal memory in </string>
+    <string name="cb_no_external_storage">No SD card was found</string>
     
     <string name="sdcard_not_writable">Can\'t write to SD card</string>
     <string name="title_password">EncFS password</string>
