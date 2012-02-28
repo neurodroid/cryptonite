@@ -20,7 +20,8 @@ public class DropboxStorage extends Storage {
 
     public DropboxStorage(Context context, CryptoniteApp app) {
         super(context, app);
-        type = "dropbox";
+        type = STOR_DROPBOX;
+        waitString = mApp.getString(R.string.dropbox_reading);
     }
     
     @Override
@@ -81,7 +82,7 @@ public class DropboxStorage extends Storage {
     public boolean uploadEncFSFile(String stripstr, String srcPath) {
         File srcFile = new File(srcPath);
         if (!srcFile.isFile()) {
-            handleUIToastRequest(mAppContext.getString(R.string.only_files));
+            handleUIToastRequest(R.string.only_files);
             return false;
         }
 
@@ -95,7 +96,7 @@ public class DropboxStorage extends Storage {
 
         /* Encrypt file to temporary cache */
         if (Cryptonite.jniEncrypt(stripstr, srcPath, true) != Cryptonite.jniSuccess()) {
-            handleUIToastRequest(mAppContext.getString(R.string.upload_failure));
+            handleUIToastRequest(R.string.upload_failure);
             return false;
         }
             
@@ -187,15 +188,15 @@ public class DropboxStorage extends Storage {
             return false;
         }
         if (fileExists) {
-            handleUIToastRequest(mAppContext.getString(R.string.encfs6_exists));
+            handleUIToastRequest(R.string.encfs6_exists);
             return false;
         }
         
         /* Create encfs6.xml in temporary folder */
         if (Cryptonite.jniCreate(browseRoot.getPath(), passwordString, config) == Cryptonite.jniSuccess()) {
-            handleUIToastRequest(mAppContext.getString(R.string.create_success_dropbox));
+            handleUIToastRequest(R.string.create_success_dropbox);
         } else {
-            handleUIToastRequest(mAppContext.getString(R.string.create_failure));
+            handleUIToastRequest(R.string.create_failure);
             return false;
         }
 
@@ -231,10 +232,124 @@ public class DropboxStorage extends Storage {
                             e.getMessage());
             return false;
         }
-        handleUIToastRequest(mAppContext.getString(R.string.dropbox_create_successful));        
+        handleUIToastRequest(R.string.dropbox_create_successful);
         return true;
     }
 
+    @Override
+    public void mkVisibleDecoded(String path, String encFSRoot, String encFSPath, String rootPath) {
+
+        String prevRoot = encFSRoot.substring(0, encFSRoot.length()-encFSPath.length());
+        String encodedPath = Cryptonite.jniEncode(path).substring(prevRoot.length()-1);
+        
+        try {
+
+            Entry dbEntry = mApp.getDBEntry(encodedPath);
+            
+            if (dbEntry != null) {
+                if (dbEntry.isDir) {
+                    if (dbEntry.contents != null) {
+                        if (dbEntry.contents.size()>0) {
+                            for (Entry dbChild : dbEntry.contents) {
+                                    decode(dbChild.path.substring(encFSPath.length()), 
+                                            rootPath, dbChild.isDir);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (DropboxException e) {
+            String alertMsg = e.getMessage() + " " + mAppContext.getString(R.string.dropbox_read_fail);
+            handleUIToastRequest(alertMsg);
+        } catch (IOException e) {
+            String alertMsg = e.getMessage() + " " + mAppContext.getString(R.string.dropbox_read_fail);
+            handleUIToastRequest(alertMsg);
+        }
+    }
+    
+    @Override
+    public void mkVisiblePlain(String path, String encFSPath, String rootPath) {
+        try {
+
+            Entry dbEntry = mApp.getDBEntry(path);
+
+            if (dbEntry != null) {
+                if (dbEntry.isDir) {
+                    if (dbEntry.contents != null) {
+                        if (dbEntry.contents.size()>0) {
+                            for (Entry dbChild : dbEntry.contents) {
+                                DropboxStorage.dbTouch(dbChild, rootPath);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (DropboxException e) {
+            String alertMsg = e.getMessage() + " " + mAppContext.getString(R.string.dropbox_read_fail);
+            handleUIToastRequest(alertMsg);
+        } catch (IOException e) {
+            String alertMsg = e.getMessage() + " " + mAppContext.getString(R.string.dropbox_read_fail);
+            handleUIToastRequest(alertMsg);
+        }
+    }
+
+    @Override
+    public boolean mkDirEncrypted(String encodedPath) {
+        /* Create dir on DB */
+        File browseRoot = mAppContext.getDir(Cryptonite.BROWSEPNT, Context.MODE_PRIVATE);
+        String targetPath = encodedPath.substring(browseRoot.getPath().length());
+        
+        /* Does the _en_crypted directory exist on Dropbox? */
+        String dbPath = new File(targetPath).getParent() + "/" + new File(encodedPath).getName();
+        boolean fileExists = true;
+        try {
+            fileExists = mApp.dbFileExists(dbPath);
+        } catch (DropboxException e) {
+            handleUIToastRequest(mAppContext.getString(R.string.new_folder_fail) + ": " + e.toString());
+            return false;
+        }
+        if (fileExists) {
+            handleUIToastRequest(R.string.new_folder_exists);
+            return false;
+        } else {
+            try {
+                mApp.getDBApi().createFolder(dbPath);
+            } catch (DropboxException e) {
+                handleUIToastRequest(mAppContext.getString(R.string.new_folder_fail) +
+                        ": " + e.toString());
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    @Override
+    public boolean mkDirPlain(String plainPath) {
+        /* Create dir on DB */
+        File browseRoot = mAppContext.getDir(Cryptonite.BROWSEPNT, Context.MODE_PRIVATE);
+        String targetPath = plainPath.substring(browseRoot.getPath().length());
+        boolean fileExists = true;
+        try {
+            fileExists = mApp.dbFileExists(targetPath);
+        } catch (DropboxException e) {
+            handleUIToastRequest(mAppContext.getString(R.string.new_folder_fail) + ": " + e.toString());
+            return false;
+        }
+        if (fileExists) {
+            handleUIToastRequest(R.string.new_folder_exists);
+            return false;
+        } else {
+            try {
+                mApp.getDBApi().createFolder(targetPath);
+            } catch (DropboxException e) {
+                handleUIToastRequest(mAppContext.getString(R.string.new_folder_fail) +
+                        ": " + e.toString());
+                return false;
+            }
+        }
+        return true;
+    }
+    
     /** Create an empty file in a local destination directory
      * preserving relative file paths from Dropbox
      * @param dbEntry Dropbox entry
@@ -331,7 +446,9 @@ public class DropboxStorage extends Storage {
                 
         /* Find file in Dropbox */
         Entry dbEntry = mApp.getDBEntry(dbPath);
-        
+        if (dbEntry == null) {
+            return;
+        }
         if (dbEntry.isDir) {
             /* Create the decoded directory */
             (new File(destPath)).mkdirs();
@@ -354,7 +471,7 @@ public class DropboxStorage extends Storage {
                             if (!dbDownloadDecode(dbChild.path.substring(dbEncFSPath.length()), destDir, encFSDBRoot,
                                     encFSLocalRoot))
                             {
-                                handleUIToastRequest(mAppContext.getString(R.string.file_not_found));
+                                handleUIToastRequest(R.string.file_not_found);
                             }
                         }
                     }
@@ -367,7 +484,7 @@ public class DropboxStorage extends Storage {
             if (!dbDownloadDecode(dbEntry.path.substring(dbEncFSPath.length()), destDir, encFSDBRoot,
                     encFSLocalRoot))
             {
-                handleUIToastRequest(mAppContext.getString(R.string.file_not_found));
+                handleUIToastRequest(R.string.file_not_found);
             }
         }
     }

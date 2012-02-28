@@ -108,12 +108,8 @@ public class CreateEncFS extends ListActivity {
         String dialogRoot = "";
         String dialogRootName = dialogRoot;
         String dialogDBEncFS = "";
-        if (mStorage.type.equals("dropbox")) {
-            dialogMode = SelectionMode.MODE_OPEN_DB;
-            dialogStartPath = getPrivateDir(Cryptonite.BROWSEPNT, Context.MODE_PRIVATE).getPath();
-            dialogRoot = dialogStartPath;
-            dialogRootName = getString(R.string.dropbox_root_name);
-        } else {
+        switch (mStorage.type) {
+        case Storage.STOR_LOCAL:
             if (Cryptonite.externalStorageIsWritable()) {
                 dialogStartPath = Environment
                         .getExternalStorageDirectory()
@@ -124,6 +120,14 @@ public class CreateEncFS extends ListActivity {
             dialogRoot = "/";
             dialogRootName = dialogRoot;
             dialogDBEncFS = "";
+            break;
+        case Storage.STOR_DROPBOX:
+            dialogMode = SelectionMode.MODE_OPEN_CREATE_DB;
+            dialogStartPath = getPrivateDir(Cryptonite.BROWSEPNT, Context.MODE_PRIVATE).getPath();
+            dialogRoot = dialogStartPath;
+            dialogRootName = getString(R.string.dropbox_root_name);
+            break;
+        default:
         }
         launchBuiltinFileBrowser(dialogRoot, dialogDBEncFS, dialogRootName,
                 dialogButtonLabel, dialogStartPath, dialogLabel, dialogMode);
@@ -136,7 +140,7 @@ public class CreateEncFS extends ListActivity {
 
         switch (requestCode) {
         case SelectionMode.MODE_OPEN_CREATE:
-        case SelectionMode.MODE_OPEN_DB:
+        case SelectionMode.MODE_OPEN_CREATE_DB:
             /* file dialog */
             if (resultCode == Activity.RESULT_OK && data != null) {
                 currentReturnPath = data.getStringExtra(FileDialog.RESULT_EXPORT_PATHS);

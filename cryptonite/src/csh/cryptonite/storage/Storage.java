@@ -17,10 +17,12 @@ import android.widget.Toast;
 
 public abstract class Storage {
 
+    public static final int STOR_UNDEFINED=-1, STOR_LOCAL=0, STOR_DROPBOX=1;
     public Context mCallingContext;
     public Context mAppContext;
     public CryptoniteApp mApp;
-    public String type;
+    public int type;
+    public String waitString;
     
     private UIHandler uiHandler;
     
@@ -28,7 +30,8 @@ public abstract class Storage {
         mCallingContext = context;
         mAppContext = context.getApplicationContext();
         mApp = app;
-        type = "";
+        type = STOR_UNDEFINED;
+        waitString = "";
         Thread uiThread = new HandlerThread("UIHandler");
         uiThread.start();
         uiHandler = new UIHandler(((HandlerThread) uiThread).getLooper());
@@ -46,6 +49,14 @@ public abstract class Storage {
     
     abstract public String encodedExists(String stripstr);
     
+    abstract public void mkVisibleDecoded(String path, String encFSRoot, String encFSPath, String rootPath);
+    
+    abstract public void mkVisiblePlain(String path, String encFSPath, String rootPath);
+    
+    abstract public boolean mkDirEncrypted(String encodedPath);
+
+    abstract public boolean mkDirPlain(String plainPath);
+
     public String stripStr(String encFSFilePath, String fileRoot, String srcPath) {
         File srcFile = new File(srcPath);
         if (!srcFile.isFile()) {
@@ -179,6 +190,10 @@ public abstract class Storage {
         }
     }
 
+    protected void handleUIToastRequest(int resId) {
+        handleUIToastRequest(mAppContext.getString(resId));
+    }
+    
     protected void handleUIToastRequest(String message)
     {
         Message msg = uiHandler.obtainMessage(UIHandler.DISPLAY_UI_TOAST);

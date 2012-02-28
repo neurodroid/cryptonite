@@ -21,7 +21,6 @@
 package csh.cryptonite;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,10 +28,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 
-import com.dropbox.client2.DropboxAPI.Entry;
-import com.dropbox.client2.exception.DropboxException;
-
 import csh.cryptonite.storage.DropboxStorage;
+import csh.cryptonite.storage.LocalStorage;
 import csh.cryptonite.storage.Storage;
 import csh.cryptonite.storage.VirtualFile;
 
@@ -45,7 +42,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
@@ -119,6 +115,8 @@ public class FileDialog extends ListActivity {
 
     private Set<String> selectedPaths = new HashSet<String>();
     
+    private Storage mStorage;
+    
     /** Called when the activity is first created. */
     @Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -132,6 +130,15 @@ public class FileDialog extends ListActivity {
         inputManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
 
         selectionMode = getIntent().getIntExtra(SELECTION_MODE, SelectionMode.MODE_OPEN);
+        switch (selectionMode) {
+        case SelectionMode.MODE_OPEN_CREATE_DB:
+        case SelectionMode.MODE_OPEN_DB:
+        case SelectionMode.MODE_OPEN_MULTISELECT_DB:
+            mStorage = new DropboxStorage(this, ((CryptoniteApp)getApplication()));
+            break;
+        default:
+            mStorage = new LocalStorage(this, ((CryptoniteApp)getApplication()));
+        }
 
         currentRoot = getIntent().getStringExtra(CURRENT_ROOT);
         if (currentRoot == null) {
@@ -158,6 +165,7 @@ public class FileDialog extends ListActivity {
                     case SelectionMode.MODE_OPEN_DB:
                     case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
                     case SelectionMode.MODE_OPEN_CREATE:
+                    case SelectionMode.MODE_OPEN_CREATE_DB:
                         if (currentPath != null) {
                             getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
                             getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
@@ -189,6 +197,7 @@ public class FileDialog extends ListActivity {
             layoutCreate.setVisibility(View.GONE);
             /* no break! */
         case SelectionMode.MODE_OPEN_CREATE:
+        case SelectionMode.MODE_OPEN_CREATE_DB:
             layoutUpload.setVisibility(View.GONE);
             break;
         default:
@@ -254,12 +263,11 @@ public class FileDialog extends ListActivity {
         Integer position = lastPositions.get(parentPath);
         
         switch (selectionMode) {
+        case SelectionMode.MODE_OPEN_CREATE_DB:
         case SelectionMode.MODE_OPEN_DB:
         case SelectionMode.MODE_OPEN_MULTISELECT_DB:
-            dbBuildDir(dirPath, rootPath, rootName, dbRootPath);  
-            break;
         case SelectionMode.MODE_OPEN_MULTISELECT:
-            localBuildDir(dirPath, rootPath, rootName, dbRootPath);
+            buildDir(dirPath, rootPath, rootName, dbRootPath);
             break;
         default:
             getDirImpl(dirPath, rootPath, rootName);
@@ -340,7 +348,8 @@ public class FileDialog extends ListActivity {
         case SelectionMode.MODE_OPEN:
         case SelectionMode.MODE_OPEN_DB:
         case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
-        case SelectionMode.MODE_OPEN_CREATE: {
+        case SelectionMode.MODE_OPEN_CREATE:
+        case SelectionMode.MODE_OPEN_CREATE_DB: {
             SimpleAdapter fileList = new SimpleAdapter(this, mList,
                     R.layout.file_dialog_row_single,
                     new String[] { ITEM_KEY, ITEM_IMAGE },
@@ -638,6 +647,7 @@ public class FileDialog extends ListActivity {
                          if (newFolderString.length() > 0) {
                              switch (selectionMode) {
                              case SelectionMode.MODE_OPEN_CREATE:
+                             case SelectionMode.MODE_OPEN_CREATE_DB:
                                  mkDir(newFolderString);
                                  break;
                              default:
@@ -662,62 +672,37 @@ public class FileDialog extends ListActivity {
         selectButton.setEnabled(false);
     }
     
-    private void dbBuildDir(final String dirPath, final String rootPath, final String rootName,
-            final String dbEncFSPath)
+    private void buildDir(final String dirPath, final String rootPath, final String rootName,
+            final String encFSPath)
     {
-        alertMsg = "";
-        
-        /* TODO: re-code path names so that they can be found on Dropbox */
-        final String dbPath = "/" + dirPath.substring(rootPath.length());
+        final String path = "/" + dirPath.substring(rootPath.length());
         String encFSRoot = "";
-        if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT_DB) {
+        switch (selectionMode) {
+        case SelectionMode.MODE_OPEN_MULTISELECT:
+        case SelectionMode.MODE_OPEN_MULTISELECT_DB:
+            /* Is the encfs volume still OK? */
+            if (Cryptonite.jniVolumeLoaded() != Cryptonite.jniSuccess()) {
+                showToast(R.string.browse_failed);
+                finish();
+            }
             /* Full path of previous encFSRoot */
             encFSRoot = Cryptonite.jniEncode("/");
+            break;
         }
-        final String prevDBRoot = encFSRoot.substring(0, encFSRoot.length()-dbEncFSPath.length());
+        final String fEncFSRoot = encFSRoot;
         
         final ProgressDialog pd = ProgressDialog.show(FileDialog.this,
                 getString(R.string.wait_msg),
-                getString(R.string.dropbox_reading), true);
+                mStorage.waitString, true);
         new Thread(new Runnable(){
             public void run(){
-                try {
-                    /* If we're selecting the files to be exported, we
-                     * have to insert the path within the Dropbox that
-                     * leads to the encoded folder. dirPath will represent
-                     * a decoded file name so that we have to re-encode it */
-                    String encodedPath = dbPath;
-                    if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT_DB) {
-                        encodedPath = Cryptonite.jniEncode(dbPath).substring(prevDBRoot.length()-1); 
-                    }
-                    Entry dbEntry = ((CryptoniteApp) getApplication()).getDBEntry(encodedPath);
-
-                    if (dbEntry != null) {
-                        if (dbEntry.isDir) {
-                            if (dbEntry.contents != null) {
-                                if (dbEntry.contents.size()>0) {
-                                    for (Entry dbChild : dbEntry.contents) {
-                                        
-                                        if (selectionMode == SelectionMode.MODE_OPEN_DB) {
-                                            /* If we're selecting the encfs directory, we'll 
-                                             * produce undecoded files */
-                                            DropboxStorage.dbTouch(dbChild, rootPath);
-                                        } else {
-                                            
-                                            DropboxStorage.decode(dbChild.path.substring(dbEncFSPath.length()), 
-                                                    rootPath, dbChild.isDir);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } catch (DropboxException e) {
-                    alertMsg = getString(R.string.dropbox_read_fail) + e.toString();
-                    Log.e(Cryptonite.TAG, alertMsg);
-                } catch (IOException e) {
-                    alertMsg = getString(R.string.dropbox_read_fail) + e.toString();
-                    Log.e(Cryptonite.TAG, alertMsg);
+                switch (selectionMode) {
+                case SelectionMode.MODE_OPEN_MULTISELECT:
+                case SelectionMode.MODE_OPEN_MULTISELECT_DB:
+                    mStorage.mkVisibleDecoded(path, fEncFSRoot, encFSPath, rootPath);
+                    break;
+                default:
+                    mStorage.mkVisiblePlain(path, encFSPath, rootPath);
                 }
                 runOnUiThread(new Runnable(){
                     public void run() {
@@ -732,57 +717,6 @@ public class FileDialog extends ListActivity {
                 });
             }
         }).start();
-    }
-
-    private void localBuildDir(final String dirPath, final String rootPath, final String rootName,
-            final String localEncFSPath)
-    {
-        alertMsg = "";
-        
-        /* TODO: re-code path names so that they can be found on Dropbox */
-        final String localPath = "/" + dirPath.substring(rootPath.length());
-        String encFSRoot = "";
-        if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT) {
-            /* Full path of previous encFSRoot */
-            encFSRoot = Cryptonite.jniEncode("/");
-        }
-        String prevLocalRoot = encFSRoot.substring(0, encFSRoot.length()-localEncFSPath.length());
-
-        try {
-            /* If we're selecting the files to be exported, we
-             * have to insert the path within the Dropbox that
-             * leads to the encoded folder. dirPath will represent
-             * a decoded file name so that we have to re-encode it */
-            String encodedPath = localPath;
-            if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT) {
-                encodedPath = Cryptonite.jniEncode(localPath).substring(prevLocalRoot.length()-1); 
-            }
-            VirtualFile localEntry = new VirtualFile(prevLocalRoot + encodedPath);
-
-            if (localEntry.exists()) {
-                if (localEntry.isDirectory()) {
-                    if (localEntry.listFiles() != null) {
-                        if (localEntry.listFiles().length > 0) {
-                            for (VirtualFile localChild : localEntry.listFiles()) {
-
-                                if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT) {
-                                    Storage.decode(localChild.getPath().substring(encFSRoot.length()), 
-                                                   rootPath, localChild.isDirectory());
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (IOException e) {
-            alertMsg = getString(R.string.local_read_fail) + e.toString();
-            Log.e(Cryptonite.TAG, alertMsg);
-        }
-        if (!alertMsg.equals("")) {
-            showToast(alertMsg);
-            alertMsg = "";
-        }
-        getDirImpl(dirPath, rootPath, rootName);
     }
     
     private void showExportWarning(final String[] exportPaths) {
@@ -888,65 +822,26 @@ public class FileDialog extends ListActivity {
         /* normalise path names */
         String bRoot = new File(currentRoot).getPath();
         String bPath = new File(currentPath).getPath();
-        String stripstrtmp = bPath.substring(bRoot.length()) + "/" + decodedFolderName;
-        if (!stripstrtmp.startsWith("/")) {
-            stripstrtmp = "/" + stripstrtmp;
+        String stripstr = bPath.substring(bRoot.length()) + "/" + decodedFolderName;
+        if (!stripstr.startsWith("/")) {
+            stripstr = "/" + stripstr;
         }
         /* Remove trailing spaces */
-        while (stripstrtmp.endsWith(" ")) {
-            stripstrtmp = stripstrtmp.substring(0, stripstrtmp.length()-1);
+        while (stripstr.endsWith(" ")) {
+            stripstr = stripstr.substring(0, stripstr.length()-1);
         }
-        final String stripstr = stripstrtmp;
 
         /* Convert current path to encoded file name */
-        final String encodedPath = Cryptonite.jniEncode(stripstr);
-        final File encodedFile = new File(encodedPath);
+        String encodedPath = Cryptonite.jniEncode(stripstr);
         
-        if (selectionMode == SelectionMode.MODE_OPEN_MULTISELECT_DB) {
-            /* Create dir on DB */
-            File browseRoot = getBaseContext().getDir(Cryptonite.BROWSEPNT, Context.MODE_PRIVATE);
-            final String targetPath = encodedPath.substring(browseRoot.getPath().length());
-            
-            /* Does the _en_crypted directory exist on Dropbox? */
-            String dbPath = new File(targetPath).getParent() + "/" + encodedFile.getName();
-            boolean fileExists = true;
-            try {
-                fileExists = ((CryptoniteApp)getApplication()).dbFileExists(dbPath);
-            } catch (DropboxException e) {
-                showToast(getString(R.string.new_folder_fail) + ": " + e.toString());
-                return false;
-            }
-            if (fileExists) {
-                showToast(R.string.new_folder_exists);
-                return false;
-            } else {
-                try {
-                    ((CryptoniteApp)getApplication()).getDBApi().createFolder(dbPath);
-                    /* reload current directory */
-                    getDir(currentPath, currentRoot, currentRootLabel, currentDBEncFS);
-                    return true;
-                } catch (DropboxException e) {
-                    showToast(getString(R.string.new_folder_fail) + ": " + e.toString());
-                    return false;
-                }
-            }
-        } else {
-            /* Does the encrypted file exist? */
-            if (encodedFile.exists()) {
-                showToast(R.string.new_folder_exists);
-                return false;
-            } else {
-                if (!encodedFile.mkdir()) {
-                    showToast(R.string.new_folder_fail);
-                    return false;
-                } else {
-                    /* reload current directory */
-                    getDir(currentPath, currentRoot, currentRootLabel, currentDBEncFS);
-                    return true;
-                }
-            }
-        }        
+        boolean folderMade = mStorage.mkDirEncrypted(encodedPath);
+        if (folderMade) {
+            /* reload current directory */
+            getDir(currentPath, currentRoot, currentRootLabel, currentDBEncFS);
+        }
+        return folderMade;
     }
+    
     protected void mkDir(String newFolderString) {
         /* normalise path names */
         String bPath = new File(currentPath).getPath();
@@ -959,17 +854,10 @@ public class FileDialog extends ListActivity {
             stripstr = stripstr.substring(0, stripstr.length()-1);
         }
         
-        File targetDir = new File(stripstr);
-        if (targetDir.exists()) {
-            showToast(R.string.new_folder_exists);
-            return;
+        if (mStorage.mkDirPlain(stripstr)) {
+            /* reload current directory */
+            getDir(currentPath, currentRoot, currentRootLabel, currentDBEncFS);
         }
-        if (!targetDir.mkdir()) {
-            showToast(R.string.new_folder_fail);
-            return;
-        }
-        /* reload current directory */
-        getDir(currentPath, currentRoot, currentRootLabel, currentDBEncFS);
         return;
     }
     

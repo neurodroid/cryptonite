@@ -1,6 +1,7 @@
 package csh.cryptonite.storage;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -14,7 +15,8 @@ public class LocalStorage extends Storage {
 
     public LocalStorage(Context context, CryptoniteApp app) {
         super(context, app);
-        type = "local";
+        type = STOR_LOCAL;
+        waitString = mApp.getString(R.string.local_reading);
     }
 
     @Override
@@ -86,13 +88,79 @@ public class LocalStorage extends Storage {
             File browseRoot, int config) {
         String encfs6Path = currentReturnPath + "/" + ".encfs6.xml";
         if (new File(encfs6Path).exists()) {
-            handleUIToastRequest(mAppContext.getString(R.string.encfs6_exists));
+            handleUIToastRequest(R.string.encfs6_exists);
             return false;
         }
         if (Cryptonite.jniCreate(currentReturnPath, passwordString, config) == Cryptonite.jniSuccess()) {
-            handleUIToastRequest(mAppContext.getString(R.string.create_success_local));
+            handleUIToastRequest(R.string.create_success_local);
         } else {
-            handleUIToastRequest(mAppContext.getString(R.string.create_failure));
+            handleUIToastRequest(R.string.create_failure);
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public void mkVisibleDecoded(String path, String encFSRoot, String encFSPath, String rootPath) {
+
+        String prevRoot = encFSRoot.substring(0, encFSRoot.length()-encFSPath.length());
+        String encodedPath = Cryptonite.jniEncode(path).substring(prevRoot.length()-1);
+        
+        try {
+
+            VirtualFile localEntry = new VirtualFile(prevRoot + encodedPath);
+
+            if (localEntry.exists()) {
+                if (localEntry.isDirectory()) {
+                    if (localEntry.listFiles() != null) {
+                        if (localEntry.listFiles().length > 0) {
+                            for (VirtualFile localChild : localEntry.listFiles()) {
+                                decode(localChild.getPath().substring(encFSRoot.length()), 
+                                        rootPath, localChild.isDirectory());
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            String alertMsg = mAppContext.getString(R.string.local_read_fail) + e.toString();
+            handleUIToastRequest(alertMsg);
+            Log.e(Cryptonite.TAG, alertMsg);
+        }
+    }
+    
+    @Override
+    public void mkVisiblePlain(String path, String encFSPath, String rootPath) {
+        /* Does nothing because the files are already visible */
+        return;
+    }
+
+    @Override
+    public boolean mkDirEncrypted(String encodedPath) {
+        File encodedFile = new File(encodedPath);
+        /* Does the encrypted file exist? */
+        if (encodedFile.exists()) {
+            handleUIToastRequest(R.string.new_folder_exists);
+            return false;
+        } else {
+            if (!encodedFile.mkdir()) {
+                handleUIToastRequest(R.string.new_folder_fail);
+                return false;
+            } else {
+                return true;
+            }
+        }
+    }        
+
+    @Override
+    public boolean mkDirPlain(String plainPath) {
+        File targetDir = new File(plainPath);
+        if (targetDir.exists()) {
+            handleUIToastRequest(R.string.new_folder_exists);
+            return false;
+        }
+        if (!targetDir.mkdir()) {
+            handleUIToastRequest(R.string.new_folder_fail);
             return false;
         }
         return true;

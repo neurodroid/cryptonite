@@ -89,6 +89,7 @@
     <string name="dropbox_upload_successful">File successfully uploaded</string>
     <string name="dropbox_create_successful">EncFS volume created on Dropbox</string>
     <string name="dropbox_uploading">Uploading</string>
+    <string name="dropbox_null">Problem reading Dropbox. If this problem persists, please report a bug to http://code.google.com/p/cryptonite/issues/list</string>
     
     <!-- File Browser -->
     <string name="select">Select</string>
@@ -122,6 +123,7 @@
     <string name="new_folder">Create new folder</string>
     <string name="new_folder_fail">Couldn\'t create new folder</string>
     <string name="new_folder_exists">Folder exists</string>
+    <string name="local_reading">Reading local folder</string>
     
     <!-- Button labels -->
     <string name="local_decrypt">Decrypt local folder</string>

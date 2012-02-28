@@ -13,8 +13,14 @@ import android.util.Log;
 
 public class CryptoniteApp extends Application {
 
-    private DropboxAPI<AndroidAuthSession> mApi = null;
-    private HashMap<String, Entry> dbHashMap = new HashMap<String, Entry>();
+    private DropboxAPI<AndroidAuthSession> mApi;
+    private HashMap<String, Entry> dbHashMap;
+    
+    public CryptoniteApp() {
+        super();
+        mApi = null;
+        dbHashMap = new HashMap<String, Entry>();
+    }
     
     public DropboxAPI<AndroidAuthSession> getDBApi() {
         return mApi;
@@ -25,6 +31,14 @@ public class CryptoniteApp extends Application {
     }
     
     public Entry getDBEntry(String dbPath) throws DropboxException {
+        if (mApi == null) {
+            /* This shouldn't happen really */
+            throw new DropboxException("mApi == null: " + getString(R.string.dropbox_null));
+        }
+        if (dbPath == null) {
+            throw new DropboxException("dbPath == null: " + getString(R.string.dropbox_null));
+        }
+        
         String hash = null;
         
         if (dbHashMap.containsKey(dbPath)) {

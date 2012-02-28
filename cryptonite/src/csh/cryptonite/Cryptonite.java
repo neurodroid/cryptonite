@@ -274,10 +274,15 @@ public class Cryptonite extends Activity
         buttonBrowseDecrypted = (Button)findViewById(R.id.btnBrowseDecrypted);
         buttonBrowseDecrypted.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-                    if (mStorage.type.equals("local")) {
+                    switch (mStorage.type) {
+                    case Storage.STOR_LOCAL:
                         localBrowseEncFS(currentBrowsePath, currentBrowseStartPath);
-                    } else if (mStorage.type.equals("dropbox")) {
+                        break;
+                    case Storage.STOR_DROPBOX:
                         dbBrowseEncFS(currentBrowsePath, currentBrowseStartPath);
+                        break;
+                    default:
+                        break;
                     }
                     
                 }});
@@ -1018,10 +1023,10 @@ public class Cryptonite extends Activity
                             }
                         }
                     } catch (DropboxException e) {
-                        alertMsg = getString(R.string.dropbox_read_fail);
+                        alertMsg = e.getMessage() + " " + getString(R.string.dropbox_read_fail);
                         return;
                     } catch (FileNotFoundException e) {
-                        alertMsg = getString(R.string.dropbox_read_fail);
+                        alertMsg = e.getMessage() + " " + getString(R.string.dropbox_read_fail);
                         return;
                     }
                     
@@ -1030,7 +1035,7 @@ public class Cryptonite extends Activity
                         Log.e(TAG, "Invalid EncFS");
                         return;
                     }
-                                  /* Order is important here: DB root has to store
+                    /* Order is important here: DB root has to store
                      * the previous state of the dialog root.
                      */
                     currentBrowsePath = currentReturnPath;
@@ -1387,7 +1392,7 @@ public class Cryptonite extends Activity
         } else {
             buttonDropbox.setText(R.string.dropbox_link);
             buttonDropboxDecrypt.setEnabled(false);
-            if (mStorage != null && mStorage.type.equals("dropbox")) {
+            if (mStorage != null && mStorage.type == Storage.STOR_DROPBOX) {
                 jniResetVolume();
                 mStorage = null;
             }
@@ -1583,7 +1588,7 @@ public class Cryptonite extends Activity
     public native int     jniFailure();
     public static native int jniSuccess();
     public native int     jniIsValidEncFS(String srcDir);
-    public native int     jniVolumeLoaded();
+    public static native int jniVolumeLoaded();
     public static native int jniResetVolume();
     public native int     jniBrowse(String srcDir, String destDir, String password);
     public native int     jniInit(String srcDir, String password);
