@@ -53,7 +53,9 @@ public class ShellUtils {
         return chmod;
     }
     
-    public static void chmod(String filePath, String mod) throws IOException {
+    public static void chmod(String filePath, String mod)
+            throws IOException, InterruptedException
+    {
         String[] chmodlist = {getChmod(), mod, filePath};
         ShellUtils.runBinary(chmodlist);
     }
@@ -62,66 +64,68 @@ public class ShellUtils {
         return (new File("/dev/fuse")).exists();
     }
     
-    public static String runBinary(String[] binName) {
+    public static String runBinary(String[] binName)
+            throws IOException, InterruptedException
+    {
         return runBinary(binName, "/", null, false);
     }
 
-    public static String runBinary(String[] binName, String binDir) {
+    public static String runBinary(String[] binName, String binDir)
+            throws IOException, InterruptedException
+    {
         return runBinary(binName, binDir, null, false);
     }
 
     /** Run a binary using binDir as the wd. Return stdout
      *  and optinally stderr
+     * @throws IOException 
+     * @throws InterruptedException 
      */
-    public static String runBinary(String[] binName, String binDirPath, String toStdIn, boolean root) {
-        try {
-            File binDir = new File(binDirPath);
-            if (!binDir.exists()) {
-                binDir.mkdirs();
-            }
-            
-            String NL = System.getProperty("line.separator");
-            ProcessBuilder pb = new ProcessBuilder(binName);
-            pb.directory(binDir);
-            pb.redirectErrorStream(true);
-            
-            if (root) {
-                String[] sucmd = {"su", "-c", join(binName, " ")};
-                pb.command(sucmd);
-            } else {
-                pb.command(binName);
-            }
-
-            Process process = pb.start();
-            
-            if (toStdIn != null) {
-                BufferedWriter writer = new BufferedWriter(
-                                                           new OutputStreamWriter(process.getOutputStream()) );
-                writer.write(toStdIn + "\n");
-                writer.flush();
-            }
-
-            process.waitFor();
-                
-            String output = "";
-            Scanner outscanner = new Scanner(new BufferedInputStream(process.getInputStream()));
-            try {
-                while (outscanner.hasNextLine()) {
-                    output += outscanner.nextLine();
-                    output += NL;
-                }
-            }
-            finally {
-                outscanner.close();
-            }
-
-            return output;
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+    public static String runBinary(String[] binName, String binDirPath, String toStdIn, boolean root)
+            throws IOException, InterruptedException
+    {
+        File binDir = new File(binDirPath);
+        if (!binDir.exists()) {
+            binDir.mkdirs();
         }
+        
+        String NL = System.getProperty("line.separator");
+        ProcessBuilder pb = new ProcessBuilder(binName);
+        pb.directory(binDir);
+        pb.redirectErrorStream(true);
+        
+        if (root) {
+            String[] sucmd = {"su", "-c", join(binName, " ")};
+            pb.command(sucmd);
+        } else {
+            pb.command(binName);
+        }
+
+        Process process = pb.start();
+        
+        if (toStdIn != null) {
+            BufferedWriter writer = new BufferedWriter(
+                    new OutputStreamWriter(process.getOutputStream()) );
+            writer.write(toStdIn + "\n");
+            writer.flush();
+        }
+
+        process.waitFor();
+            
+        String output = "";
+        Scanner outscanner = new Scanner(new BufferedInputStream(process.getInputStream()));
+        try {
+            while (outscanner.hasNextLine()) {
+                output += outscanner.nextLine();
+                output += NL;
+            }
+        }
+        finally {
+            outscanner.close();
+        }
+
+        return output;
+
     }
     
     public static boolean isMounted(String mountName) {

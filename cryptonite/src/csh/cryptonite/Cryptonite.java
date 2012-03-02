@@ -349,8 +349,18 @@ public class Cryptonite extends Activity
                     
                 } else {
                     String[] umountlist = {"umount", mntDir};
-                    ShellUtils.runBinary(umountlist, BINDIR, null, true);
-                    updateMountButtons();                        
+                    try {
+                        ShellUtils.runBinary(umountlist, BINDIR, null, true);
+                    } catch (IOException e) {
+                        Toast.makeText(Cryptonite.this, 
+                                getString(R.string.umount_fail) + ": " + e.getMessage(), 
+                                Toast.LENGTH_LONG).show();
+                    } catch (InterruptedException e) {
+                        Toast.makeText(Cryptonite.this, 
+                                getString(R.string.umount_fail) + ": " + e.getMessage(), 
+                                Toast.LENGTH_LONG).show();
+                    }
+                    updateMountButtons();
                 }
             }});
 
@@ -725,7 +735,7 @@ public class Cryptonite extends Activity
                 
                 setLoggedIn(true);
             } catch (IllegalStateException e) {
-                Toast.makeText(getApplicationContext(), 
+                Toast.makeText(Cryptonite.this, 
                         getString(R.string.dropbox_auth_fail) + ": " + e.getLocalizedMessage(), 
                         Toast.LENGTH_LONG).show();
             }
@@ -807,11 +817,12 @@ public class Cryptonite extends Activity
                 }
             }
             os.close();
-
             ShellUtils.chmod(binName, "755");
             
         }
         catch (IOException e) {
+            Log.e(TAG, "Problem while copying encFS binary: " + e.toString());
+        } catch (InterruptedException e) {
             Log.e(TAG, "Problem while copying encFS binary: " + e.toString());
         }
 
@@ -883,16 +894,27 @@ public class Cryptonite extends Activity
                                                       this.getString(R.string.wait_msg),
                                                       this.getString(R.string.running_encfs), true);
         Log.v(TAG, "Running encfs with " + srcDir + " " + mntDir);
+        alertMsg = "";
         new Thread(new Runnable(){
                 public void run(){
-                    String[] cmdlist = {ENCFSBIN, "--public", "--stdinpass", srcDir, mntDir};
-                    encfsoutput = ShellUtils.runBinary(cmdlist, BINDIR, currentPassword, true);
+                    String[] cmdlist = {ENCFSBIN, "--public", "--stdinpass",
+                            "\"" + srcDir + "\"", "\"" + mntDir + "\""};
+                    try {
+                        encfsoutput = ShellUtils.runBinary(cmdlist, BINDIR, currentPassword, true);
+                    } catch (IOException e) {
+                        alertMsg = getString(R.string.mount_fail) + ": " + e.getMessage();
+                    } catch (InterruptedException e) {
+                        alertMsg = getString(R.string.mount_fail) + ": " + e.getMessage();
+                    }
                     runOnUiThread(new Runnable(){
                             public void run() {
                                 if (pd.isShowing())
                                     pd.dismiss();
                                 if (encfsoutput.length() > 0) {
                                     tv.setText(encfsVersion + "\n" + encfsoutput);
+                                }
+                                if (!alertMsg.equals("")) {
+                                    showAlert(R.string.error, alertMsg);
                                 }
                                 nullPassword();
                                 updateMountButtons();
@@ -1534,7 +1556,11 @@ public class Cryptonite extends Activity
                                 fos.close();
 
                                 /* Make world readable */
-                                ShellUtils.chmod(readablePath, "644");
+                                try {
+                                    ShellUtils.chmod(readablePath, "644");
+                                } catch (InterruptedException e) {
+                                    Log.e(Cryptonite.TAG, e.toString());
+                                }
                                 
                                 /* Delete tmp directory */
                                 deleteDir(openDir);

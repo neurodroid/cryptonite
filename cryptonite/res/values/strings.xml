@@ -73,6 +73,8 @@
     <string name="encrypting">Encrypting file&#8230;</string>
     <string name="decrypt_failure">Failed to decrypt file</string>
     <string name="decrypting">Decrypting file&#8230;</string>
+    <string name="mount_fail">Failed to mount volume</string>
+    <string name="umount_fail">Failed to unmount volume</string>
     
     <!-- Dropbox -->
     <string name="dropbox_link">Link with Dropbox</string>
