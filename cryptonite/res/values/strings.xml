@@ -75,6 +75,9 @@
     <string name="decrypting">Decrypting file&#8230;</string>
     <string name="mount_fail">Failed to mount volume</string>
     <string name="umount_fail">Failed to unmount volume</string>
+    <string name="jni_fail">Failed to load native library. Please report an issue or send me an email so that I can fix this bug. Will exit now.</string>
+    <string name="crash_report">Cryptonite crash report</string>
+    <string name="crash_report_content">Please provide information about your device, manufacturer, and Android version.</string>
     
     <!-- Dropbox -->
     <string name="dropbox_link">Link with Dropbox</string>
@@ -152,6 +155,7 @@
     <!-- Misc -->
     <string name="wait_msg">Please wait&#8230;</string>
     <string name="send_email">Send email&#8230;</string>
+    <string name="send_report">Report issue&#8230;</string>
     
     <!-- Colours -->
     <color name="gray">#ffff0000</color>

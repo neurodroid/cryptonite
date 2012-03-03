@@ -90,8 +90,9 @@ public class Cryptonite extends Activity
         VIEWMOUNT_MODE=3, SELECTLOCALEXPORT_MODE=4, LOCALEXPORT_MODE=5, DROPBOX_AUTH_MODE=6,
         SELECTDBEXPORT_MODE=7, DBEXPORT_MODE=8, SELECTLOCALUPLOAD_MODE=9, SELECTDBUPLOAD_MODE=10;
     private static final int DIRPICK_MODE=0, FILEPICK_MODE=1;
+    protected static final int MSG_SHOW_TOAST = 0;
     public static final int MY_PASSWORD_DIALOG_ID = 0;
-    private static final int DIALOG_MARKETNOTFOUND=1, DIALOG_OI_UNAVAILABLE=2;
+    private static final int DIALOG_MARKETNOTFOUND=1, DIALOG_OI_UNAVAILABLE=2, DIALOG_JNI_FAIL=3;
     private static final int MAX_JNI_SIZE = 512;
     public static final String MNTPNT = "/csh.cryptonite/mnt";
     public static final String BINDIR = "/data/data/csh.cryptonite";
@@ -105,6 +106,8 @@ public class Cryptonite extends Activity
     private static final String READPNT = "read";
     private static final String CACHEPNT = "cache";
 
+    private static boolean hasJni = false;
+    
     private File openDir, readDir;
     
     private String currentDialogStartPath = "/";
@@ -155,6 +158,15 @@ public class Cryptonite extends Activity
 
         super.onCreate(savedInstanceState);
         
+        setContentView(R.layout.main);
+
+        getResources();
+
+        if (!hasJni) {
+            jniFail();
+            return;
+        }
+        
         /* Running from Instrumentation? */
         if (getIntent() != null) {
             mInstrumentation = getIntent().getBooleanExtra("csh.cryptonite.instrumentation", false);
@@ -166,10 +178,6 @@ public class Cryptonite extends Activity
         AndroidAuthSession session = buildSession();
         ((CryptoniteApp) getApplication()).setDBApi(new DropboxAPI<AndroidAuthSession>(session));
         
-        setContentView(R.layout.main);
-
-        getResources();
-
         cleanUpDecrypted();
         
         encfsVersion = "EncFS " + jniEncFSVersion();
@@ -246,7 +254,7 @@ public class Cryptonite extends Activity
                     currentDialogDBEncFS = "";
                     if (mLoggedIn) {
                         launchBuiltinFileBrowser();
-                    }                        
+                    }
                 }});
 
         buttonDropboxDecrypt.setEnabled(mLoggedIn && !volumeLoaded);
@@ -559,7 +567,7 @@ public class Cryptonite extends Activity
                                         new DialogInterface.OnClickListener() {
                                     public void onClick(DialogInterface dialog,
                                             int which) {
-                                        uploadEncFSFile(stripstr, srcPath);                                      
+                                        uploadEncFSFile(stripstr, srcPath);
                                     }
                                 })
                                 .setNeutralButton(R.string.rename, 
@@ -717,6 +725,9 @@ public class Cryptonite extends Activity
     @Override
     protected void onResume() {
         super.onResume();
+        if (!hasJni) {
+            return;
+        }
         AndroidAuthSession session = ((CryptoniteApp) getApplication()).getDBApi().getSession();
 
         // The next part must be inserted in the onResume() method of the
@@ -1648,13 +1659,64 @@ public class Cryptonite extends Activity
     public native String  jniAppKey();
     public native String  jniAppPw();
 
+    private void jniFail() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
+        builder.setIcon(R.drawable.ic_launcher_cryptonite)
+        .setTitle(R.string.error)
+        .setMessage(R.string.jni_fail)
+        .setPositiveButton(R.string.send_email,
+                new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog,
+                    int which) {
+                removeDialog(DIALOG_JNI_FAIL);
+                Intent emailIntent = new Intent(android.content.Intent.ACTION_SEND);
+                emailIntent.setType("plain/text");
+                emailIntent.putExtra(android.content.Intent.EXTRA_EMAIL,
+                        new String[]{"christoph.schmidthieber@googlemail.com"});
+                emailIntent.putExtra(android.content.Intent.EXTRA_SUBJECT,
+                        Cryptonite.this.getString(R.string.crash_report));
+                emailIntent.putExtra(android.content.Intent.EXTRA_TEXT,
+                        getString(R.string.crash_report_content));
+                Cryptonite.this.startActivity(Intent.createChooser(emailIntent, "Send mail..."));
+                finish();
+            }   
+        })  
+        .setNeutralButton(R.string.send_report,
+                new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog,
+                    int which) {
+                removeDialog(DIALOG_JNI_FAIL);
+                Intent reportIntent = new Intent(android.content.Intent.ACTION_VIEW);
+                String url = "https://code.google.com/p/cryptonite/issues/detail?id=9";
+                reportIntent.setData(Uri.parse(url));
+                Cryptonite.this.startActivity(reportIntent);
+                finish();
+            }
+        })
+        .setNegativeButton(R.string.cancel,
+                new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog,
+                    int which) {
+                removeDialog(DIALOG_JNI_FAIL);
+                finish();
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
     /* this is used to load the 'cryptonite' library on application
      * startup. The library has already been unpacked into
      * /data/data/csh.cryptonite/lib/libcryptonite.so at
      * installation time by the package manager.
      */
     static {
-        System.loadLibrary("cryptonite");
+        try {
+            System.loadLibrary("cryptonite");
+            Cryptonite.hasJni = true;
+        } catch (java.lang.UnsatisfiedLinkError e) {
+            Cryptonite.hasJni = false;
+        }
     }
 
 }
