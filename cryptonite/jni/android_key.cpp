@@ -87,18 +87,19 @@ const char* get_full_pw() {
 }
 
 const char* get_folder_key() {
-    return decrypt(app_folder_key_enc, 25, mykey, myiv);
+    return decrypt(app_folder_key_enc, 24, mykey, myiv);
 }
 
 const char* get_folder_pw() {
-    return decrypt(app_folder_pw_enc, 25, mykey, myiv);
+    return decrypt(app_folder_pw_enc, 24, mykey, myiv);
 }
 
 #ifdef STANDALONE
 int main(int argc, char* argv[]) {
-    unsigned char secret[16] = {};
-    const char* enc = encrypt(secret, 16, mykey, myiv);
-    const char* dec = decrypt((unsigned char*)enc, strlen(enc), mykey, myiv);
-    std::cout << enc << std::endl;
+    // unsigned char secret[16] = {};
+    // const char* enc = encrypt(secret, 16, mykey, myiv);
+    // const char* dec = decrypt((unsigned char*)enc, strlen(enc), mykey, myiv);
+    std::cout << get_folder_key() << std::endl;
+    std::cout << get_folder_pw() << std::endl;
 }
 #endif

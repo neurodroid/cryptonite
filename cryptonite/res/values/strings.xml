@@ -100,6 +100,10 @@
     <string name="dropbox_create_successful">EncFS volume created on Dropbox</string>
     <string name="dropbox_uploading">Uploading</string>
     <string name="dropbox_null">Problem reading Dropbox. If this problem persists, please report a bug to http://code.google.com/p/cryptonite/issues/list</string>
+    <string name="dropbox_access_title">Choose Dropbox access type</string>
+    <string name="dropbox_access_msg">Do you want to access your full Dropbox or restrict access to the Cryptonite App folder?</string>
+    <string name="dropbox_full">Full</string>
+    <string name="dropbox_folder">App Folder</string>
     
     <!-- File Browser -->
     <string name="select">Select</string>

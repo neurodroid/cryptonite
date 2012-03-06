@@ -60,7 +60,7 @@
     </activity>
 
     <activity
-        android:name="com.dropbox.client2.android.AuthActivityAppFolder"
+        android:name="com.dropbox.client2.android.AuthActivity"
         android:configChanges="orientation|keyboard"
         android:launchMode="singleTask" >
       <intent-filter>

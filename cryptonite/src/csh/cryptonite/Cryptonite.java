@@ -174,10 +174,6 @@ public class Cryptonite extends Activity
             mInstrumentation = false;
         }
         
-        // We create a new AuthSession so that we can use the Dropbox API.
-        AndroidAuthSession session = buildSession();
-        ((CryptoniteApp) getApplication()).setDBApi(new DropboxAPI<AndroidAuthSession>(session));
-        
         cleanUpDecrypted();
         
         encfsVersion = "EncFS " + jniEncFSVersion();
@@ -227,14 +223,22 @@ public class Cryptonite extends Activity
         buttonDropbox = (Button)findViewById(R.id.btnDropbox);
         buttonDropbox.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-                    if (mLoggedIn) {
-                        logOut();
+                    // If necessary, we create a new AuthSession 
+                    // so that we can use the Dropbox API.
+                    // Not done on program startup so that the user can
+                    // decide between app folder and full access.
+                    if (((CryptoniteApp) getApplication()).getDBApi() == null) {
+                        buildSession();
                     } else {
-                        triedLogin = true;
-                        // Start the remote authentication
-                        ((CryptoniteApp) getApplication()).getDBApi()
-                            .getSession().startAuthentication(Cryptonite.this);
-                    }                        
+                        if (mLoggedIn) {
+                            logOut();
+                        } else {
+                            triedLogin = true;
+                            // Start the remote authentication
+                            ((CryptoniteApp) getApplication()).getDBApi()
+                                .getSession().startAuthentication(Cryptonite.this);
+                        }
+                    }
                 }});
 
         buttonDropbox.setEnabled(true);
@@ -728,62 +732,68 @@ public class Cryptonite extends Activity
         if (!hasJni) {
             return;
         }
-        AndroidAuthSession session = ((CryptoniteApp) getApplication()).getDBApi().getSession();
-
-        // The next part must be inserted in the onResume() method of the
-        // activity from which session.startAuthentication() was called, so
-        // that Dropbox authentication completes properly.
-        if (session.authenticationSuccessful()) {
-            try {
-                // Mandatory call to complete the auth
-                session.finishAuthentication();
-
-                // Store it locally in our app for later use
-                TokenPair tokens = session.getAccessTokenPair();
-                storeKeys(tokens.key, tokens.secret);
-                
-                ((CryptoniteApp) getApplication()).clearDBHashMap();
-                
-                setLoggedIn(true);
-            } catch (IllegalStateException e) {
-                Toast.makeText(Cryptonite.this, 
-                        getString(R.string.dropbox_auth_fail) + ": " + e.getLocalizedMessage(), 
-                        Toast.LENGTH_LONG).show();
+        if (((CryptoniteApp) getApplication()).getDBApi() != null && 
+                ((CryptoniteApp) getApplication()).getDBApi().getSession() != null) {
+            AndroidAuthSession session = ((CryptoniteApp) getApplication()).getDBApi().getSession();
+    
+            // The next part must be inserted in the onResume() method of the
+            // activity from which session.startAuthentication() was called, so
+            // that Dropbox authentication completes properly.
+            // Make sure we're returning from an authentication attempt at all.
+            if (triedLogin && session.authenticationSuccessful()) {
+                triedLogin = false;
+                try {
+                    // Mandatory call to complete the auth
+                    session.finishAuthentication();
+    
+                    // Store it locally in our app for later use
+                    TokenPair tokens = session.getAccessTokenPair();
+                    storeKeys(tokens.key, tokens.secret);
+                    
+                    ((CryptoniteApp) getApplication()).clearDBHashMap();
+                    
+                    setLoggedIn(true);
+                } catch (IllegalStateException e) {
+                    Toast.makeText(Cryptonite.this, 
+                            getString(R.string.dropbox_auth_fail) + ": " + e.getLocalizedMessage(), 
+                            Toast.LENGTH_LONG).show();
+                }
+            } else {
+                if (triedLogin) {
+                    triedLogin = false;
+                    AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
+                    builder.setIcon(R.drawable.ic_launcher_cryptonite)
+                        .setTitle(R.string.dropbox_enable)
+                        .setMessage(R.string.dropbox_enable_email)
+                        .setPositiveButton(R.string.send_email,
+                                new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog,
+                                    int which) {
+                                final Intent emailIntent = new Intent(android.content.Intent.ACTION_SEND);
+                                emailIntent.setType("plain/text");
+                                emailIntent.putExtra(android.content.Intent.EXTRA_EMAIL,
+                                        new String[]{"christoph.schmidthieber@googlemail.com"});
+                                emailIntent.putExtra(android.content.Intent.EXTRA_SUBJECT,
+                                        getString(R.string.dropbox_enable_email_subject));
+                                emailIntent.putExtra(android.content.Intent.EXTRA_TEXT,
+                                        getString(R.string.dropbox_enable_email_content));
+                                startActivity(Intent.createChooser(emailIntent, "Send mail..."));    
+                            }
+                        })
+                        .setNegativeButton(R.string.cancel,
+                                new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog,
+                                    int which) {
+            
+                            }
+                        });  
+                    AlertDialog dialog = builder.create();
+                    dialog.show();
+                }
             }
         } else {
-            if (triedLogin) {
-                triedLogin = false;
-                AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
-                builder.setIcon(R.drawable.ic_launcher_cryptonite)
-                    .setTitle(R.string.dropbox_enable)
-                    .setMessage(R.string.dropbox_enable_email)
-                    .setPositiveButton(R.string.send_email,
-                            new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog,
-                                int which) {
-                            final Intent emailIntent = new Intent(android.content.Intent.ACTION_SEND);
-                            emailIntent.setType("plain/text");
-                            emailIntent.putExtra(android.content.Intent.EXTRA_EMAIL,
-                                    new String[]{"christoph.schmidthieber@googlemail.com"});
-                            emailIntent.putExtra(android.content.Intent.EXTRA_SUBJECT,
-                                    getString(R.string.dropbox_enable_email_subject));
-                            emailIntent.putExtra(android.content.Intent.EXTRA_TEXT,
-                                    getString(R.string.dropbox_enable_email_content));
-                            startActivity(Intent.createChooser(emailIntent, "Send mail..."));    
-                        }
-                    })
-                    .setNegativeButton(R.string.cancel,
-                            new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog,
-                                int which) {
-        
-                        }
-                    });  
-                AlertDialog dialog = builder.create();
-                dialog.show();
-            }
+            setLoggedIn(false);
         }
-        
         updateMountButtons();
       
         updateDecryptButtons();
@@ -1488,19 +1498,47 @@ public class Cryptonite extends Activity
         edit.commit();
     }
 
-    private AndroidAuthSession buildSession() {
-        AppKeyPair appKeyPair = new AppKeyPair(jniAppKey(), jniAppPw());
-        AndroidAuthSession session;
+    private void buildSession() {
+        final String[] stored = getKeys();
 
-        String[] stored = getKeys();
+        AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
+        builder.setIcon(R.drawable.ic_launcher_cryptonite)
+        .setTitle(R.string.dropbox_access_title)
+        .setMessage(R.string.dropbox_access_msg)
+        .setPositiveButton(R.string.dropbox_full,
+                new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog,
+                    int which) {
+                AppKeyPair appKeyPair = new AppKeyPair(jniFullKey(), jniFullPw());
+                setSession(stored, appKeyPair, AccessType.DROPBOX);
+            }   
+        })  
+        .setNegativeButton(R.string.dropbox_folder,
+                new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog,
+                    int which) {
+                AppKeyPair appKeyPair = new AppKeyPair(jniFolderKey(), jniFolderPw());
+                setSession(stored, appKeyPair, AccessType.APP_FOLDER);
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+    
+    private void setSession(String[] stored, AppKeyPair appKeyPair, AccessType accessType) {
+        AndroidAuthSession session;
         if (stored != null) {
             AccessTokenPair accessToken = new AccessTokenPair(stored[0], stored[1]);
-            session = new AndroidAuthSession(appKeyPair, ACCESS_TYPE, accessToken);
+            session = new AndroidAuthSession(appKeyPair, accessType, accessToken);
         } else {
-            session = new AndroidAuthSession(appKeyPair, ACCESS_TYPE);
+            session = new AndroidAuthSession(appKeyPair, accessType);
         }
+        ((CryptoniteApp) getApplication()).setDBApi(new DropboxAPI<AndroidAuthSession>(session));
 
-        return session;
+        triedLogin = true;
+        // Start the remote authentication
+        ((CryptoniteApp) getApplication()).getDBApi()
+            .getSession().startAuthentication(Cryptonite.this);
     }
         
     private boolean openEncFSFile(final String encFSFilePath, String fileRoot, final String dbEncFSPath) {
@@ -1656,8 +1694,10 @@ public class Cryptonite extends Activity
     public static native String jniEncode(String name);
     public native String  jniEncFSVersion();
     public native String  jniOpenSSLVersion();
-    public native String  jniAppKey();
-    public native String  jniAppPw();
+    public native String  jniFullKey();
+    public native String  jniFullPw();
+    public native String  jniFolderKey();
+    public native String  jniFolderPw();
 
     private void jniFail() {
         AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
