@@ -479,10 +479,16 @@ extern "C" {
     Java_csh_cryptonite_Cryptonite_jniOpenSSLVersion(JNIEnv * env, jobject thiz);
 
     JNIEXPORT jstring JNICALL
-    Java_csh_cryptonite_Cryptonite_jniAppKey(JNIEnv* env, jobject thiz);
+    Java_csh_cryptonite_Cryptonite_jniFullKey(JNIEnv* env, jobject thiz);
 
     JNIEXPORT jstring JNICALL
-    Java_csh_cryptonite_Cryptonite_jniAppPw(JNIEnv* env, jobject thiz);
+    Java_csh_cryptonite_Cryptonite_jniFullPw(JNIEnv* env, jobject thiz);
+
+    JNIEXPORT jstring JNICALL
+    Java_csh_cryptonite_Cryptonite_jniFolderKey(JNIEnv* env, jobject thiz);
+
+    JNIEXPORT jstring JNICALL
+    Java_csh_cryptonite_Cryptonite_jniFolderPw(JNIEnv* env, jobject thiz);
 #ifdef __cplusplus
 };
 #endif
@@ -1096,17 +1102,31 @@ Java_csh_cryptonite_Cryptonite_jniOpenSSLVersion(JNIEnv* env, jobject thiz)
     return env->NewStringUTF(OPENSSL_VERSION_TEXT);
 }
 
-extern const char* get_key();
-extern const char* get_pw();
+extern const char* get_full_key();
+extern const char* get_full_pw();
+extern const char* get_folder_key();
+extern const char* get_folder_pw();
 
 JNIEXPORT jstring JNICALL
-Java_csh_cryptonite_Cryptonite_jniAppKey(JNIEnv* env, jobject thiz)
+Java_csh_cryptonite_Cryptonite_jniFullKey(JNIEnv* env, jobject thiz)
 {
-    return env->NewStringUTF(get_key());
+    return env->NewStringUTF(get_full_key());
 }
 
 JNIEXPORT jstring JNICALL
-Java_csh_cryptonite_Cryptonite_jniAppPw(JNIEnv* env, jobject thiz)
+Java_csh_cryptonite_Cryptonite_jniFullPw(JNIEnv* env, jobject thiz)
 {
-    return env->NewStringUTF(get_pw());
+    return env->NewStringUTF(get_full_pw());
+}
+
+JNIEXPORT jstring JNICALL
+Java_csh_cryptonite_Cryptonite_jniFolderKey(JNIEnv* env, jobject thiz)
+{
+    return env->NewStringUTF(get_folder_key());
+}
+
+JNIEXPORT jstring JNICALL
+Java_csh_cryptonite_Cryptonite_jniFolderPw(JNIEnv* env, jobject thiz)
+{
+    return env->NewStringUTF(get_folder_pw());
 }

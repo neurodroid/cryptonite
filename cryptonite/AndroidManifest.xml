@@ -49,8 +49,24 @@
         android:launchMode="singleTask" >
       <intent-filter>
 
-        <!-- Change this to be db- followed by your app key -->
-        <data android:scheme="db-" />
+        <!-- Change this to be db1- followed by your app key -->
+        <data android:scheme="db1-" />
+
+        <action android:name="android.intent.action.VIEW" />
+
+        <category android:name="android.intent.category.BROWSABLE" />
+        <category android:name="android.intent.category.DEFAULT" />
+      </intent-filter>
+    </activity>
+
+    <activity
+        android:name="com.dropbox.client2.android.AuthActivityAppFolder"
+        android:configChanges="orientation|keyboard"
+        android:launchMode="singleTask" >
+      <intent-filter>
+
+        <!-- Change this to be db2- followed by your app key -->
+        <data android:scheme="db2-" />
 
         <action android:name="android.intent.action.VIEW" />
 
