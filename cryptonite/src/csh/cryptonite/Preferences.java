@@ -18,6 +18,7 @@ package csh.cryptonite;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 
 import android.os.Bundle;
 
@@ -26,27 +27,24 @@ import android.preference.PreferenceActivity;
 import android.preference.CheckBoxPreference;
 import android.preference.Preference.OnPreferenceClickListener;
 
+import android.util.Log;
 import android.widget.Toast;
 
 public class Preferences extends PreferenceActivity {
 
-    private SharedPreferences prefs;
+    /*private SharedPreferences prefs;
+    private Editor prefsEdit;*/
     
     private CheckBoxPreference chkEnableBuiltin;
     private CheckBoxPreference chkNorris;
     private CheckBoxPreference chkExtCache;
+    private CheckBoxPreference chkAppFolder;
     
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         addPreferencesFromResource(R.xml.preferences);
-
-        /* Get previous states */
-        prefs = getBaseContext().getSharedPreferences("csh.cryptonite_preferences", 0);
-        boolean prevBuiltin = prefs.getBoolean("cb_builtin", false);
         
         chkEnableBuiltin = (CheckBoxPreference)getPreferenceScreen().findPreference("cb_builtin");
-        /* Initialise builtin file browser status */
-        chkEnableBuiltin.setChecked(prevBuiltin);
         chkEnableBuiltin.setOnPreferenceClickListener(new OnPreferenceClickListener() {
                 public boolean onPreferenceClick(Preference preference) {
                     if (chkEnableBuiltin.isChecked()) {
@@ -58,12 +56,7 @@ public class Preferences extends PreferenceActivity {
                     }
                 }});
         
-        /* Get previous states */
-        boolean prevNorris = prefs.getBoolean("cb_norris", false);
-
         chkNorris = (CheckBoxPreference)getPreferenceScreen().findPreference("cb_norris");
-        /* Initialise Chuck Norris mode */
-        chkNorris.setChecked(prevNorris);
         chkNorris.setOnPreferenceClickListener(new OnPreferenceClickListener() {
                 public boolean onPreferenceClick(Preference preference) {
                     if (chkNorris.isChecked()) {
@@ -75,12 +68,7 @@ public class Preferences extends PreferenceActivity {
                     }
                 }});
 
-        /* Get previous state */
-        boolean prevExtCache = prefs.getBoolean("cb_extcache", false);
-
         chkExtCache = (CheckBoxPreference)getPreferenceScreen().findPreference("cb_extcache");
-        /* Initialise ExtCache mode */
-        chkExtCache.setChecked(prevExtCache);
         chkExtCache.setOnPreferenceClickListener(new OnPreferenceClickListener() {
                 public boolean onPreferenceClick(Preference preference) {
                     if (chkExtCache.isChecked()) {
@@ -102,5 +90,18 @@ public class Preferences extends PreferenceActivity {
             chkExtCache.setChecked(false);
             chkExtCache.setSummary(getBaseContext().getString(R.string.cb_no_external_storage));
         }
+        
+        chkAppFolder = (CheckBoxPreference)getPreferenceScreen().findPreference("cb_appfolder");
+        chkAppFolder.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+                public boolean onPreferenceClick(Preference preference) {
+                    if (chkAppFolder.isChecked()) {
+                        Toast.makeText(Preferences.this, getString(R.string.cb_appfolder_enabled), Toast.LENGTH_SHORT).show();
+                        return true;
+                    } else {
+                        Toast.makeText(Preferences.this, getString(R.string.cb_appfolder_disabled), Toast.LENGTH_SHORT).show();
+                        return false;
+                    }
+                }});
+
     }
 }

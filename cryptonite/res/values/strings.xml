@@ -20,6 +20,10 @@
     <string name="cb_extcache_enabled">Saving to SD card in </string>
     <string name="cb_extcache_disabled">Saving to internal memory in </string>
     <string name="cb_no_external_storage">No SD card was found</string>
+    <string name="cb_appfolder_title">Use app folder on Dropbox</string>
+    <string name="cb_appfolder_summary">Restrict access to an app folder on your Dropbox</string>
+    <string name="cb_appfolder_enabled">Using app folder</string>
+    <string name="cb_appfolder_disabled">Using full Dropbox access</string>
     
     <string name="sdcard_not_writable">Can\'t write to SD card</string>
     <string name="title_password">EncFS password</string>
@@ -104,6 +108,7 @@
     <string name="dropbox_access_msg">Do you want to access your full Dropbox or restrict access to the Cryptonite App folder?</string>
     <string name="dropbox_full">Full</string>
     <string name="dropbox_folder">App Folder</string>
+    <string name="dropbox_forced_logout">Unlinked from Dropbox to enable new access settings</string>
     
     <!-- File Browser -->
     <string name="select">Select</string>

@@ -18,4 +18,9 @@
       android:title="@string/cb_extcache_title"
       android:summary="@string/cb_extcache_summary" />
   
+    <CheckBoxPreference
+      android:key="cb_appfolder"
+      android:title="@string/cb_appfolder_title"
+      android:summary="@string/cb_appfolder_summary" />
+  
 </PreferenceScreen>

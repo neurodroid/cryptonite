@@ -144,12 +144,14 @@ public class Cryptonite extends Activity
     private boolean hasFuse = false;
     private boolean triedLogin = false;
     private boolean mInstrumentation = false;
-
+    private boolean mUseAppFolder;
+    
     // If you'd like to change the access type to the full Dropbox instead of
     // an app folder, change this value.
     final static private AccessType ACCESS_TYPE = AccessType.DROPBOX;
 
     final static public String ACCOUNT_PREFS_NAME = "csh.cryptonite_preferences";
+    final static public String ACCOUNT_DB_PREFS_NAME = "csh.cryptonite_db_preferences";
     final static private String ACCESS_KEY_NAME = "ACCESS_KEY";
     final static private String ACCESS_SECRET_NAME = "ACCESS_SECRET";
     
@@ -681,6 +683,21 @@ public class Cryptonite extends Activity
         case REQUEST_PREFS:
             SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
             setupReadDirs(prefs.getBoolean("cb_extcache", false));
+            /* If app folder settings have changed, we'll have to log out the user
+             * from his Dropbox and restart the authentication from scratch during
+             * the next login:
+             */
+            if (prefs.getBoolean("cb_appfolder", false) != mUseAppFolder) {
+                Editor prefEdit = prefs.edit();
+                prefEdit.putBoolean("dbDecided", true);
+                if (mLoggedIn) {
+                    Toast.makeText(Cryptonite.this,
+                            R.string.dropbox_forced_logout,
+                            Toast.LENGTH_LONG).show();
+                    logOut();
+                    ((CryptoniteApp) getApplication()).setDBApi(null);
+                }
+            }
             break;
         case REQUEST_CODE_PICK_FILE_OR_DIRECTORY:
             /* from external OI file browser */
@@ -761,34 +778,7 @@ public class Cryptonite extends Activity
             } else {
                 if (triedLogin) {
                     triedLogin = false;
-                    AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
-                    builder.setIcon(R.drawable.ic_launcher_cryptonite)
-                        .setTitle(R.string.dropbox_enable)
-                        .setMessage(R.string.dropbox_enable_email)
-                        .setPositiveButton(R.string.send_email,
-                                new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog,
-                                    int which) {
-                                final Intent emailIntent = new Intent(android.content.Intent.ACTION_SEND);
-                                emailIntent.setType("plain/text");
-                                emailIntent.putExtra(android.content.Intent.EXTRA_EMAIL,
-                                        new String[]{"christoph.schmidthieber@googlemail.com"});
-                                emailIntent.putExtra(android.content.Intent.EXTRA_SUBJECT,
-                                        getString(R.string.dropbox_enable_email_subject));
-                                emailIntent.putExtra(android.content.Intent.EXTRA_TEXT,
-                                        getString(R.string.dropbox_enable_email_content));
-                                startActivity(Intent.createChooser(emailIntent, "Send mail..."));    
-                            }
-                        })
-                        .setNegativeButton(R.string.cancel,
-                                new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog,
-                                    int which) {
-            
-                            }
-                        });  
-                    AlertDialog dialog = builder.create();
-                    dialog.show();
+                    logOut();
                 }
             }
         } else {
@@ -1275,6 +1265,9 @@ public class Cryptonite extends Activity
         // Handle item selection
         switch (item.getItemId()) {
          case R.id.preferences:
+             SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+             /* Store current app folder choice */
+             mUseAppFolder = prefs.getBoolean("cb_appfolder", false);
              Intent settingsActivity = new Intent(getBaseContext(),
                                                   Preferences.class);
              startActivityForResult(settingsActivity, REQUEST_PREFS);
@@ -1427,11 +1420,13 @@ public class Cryptonite extends Activity
     
     private void logOut() {
         // Remove credentials from the session
-        ((CryptoniteApp) getApplication()).getDBApi().getSession().unlink();
-        // Clear our stored keys
-        clearKeys();
+        if (((CryptoniteApp) getApplication()).getDBApi() != null) {
+            ((CryptoniteApp) getApplication()).getDBApi().getSession().unlink();
+            // Clear our stored keys
+            clearKeys();
         
-        ((CryptoniteApp) getApplication()).clearDBHashMap();
+            ((CryptoniteApp) getApplication()).clearDBHashMap();
+        }
         
         // Change UI state to display logged out version
         setLoggedIn(false);
@@ -1457,7 +1452,7 @@ public class Cryptonite extends Activity
     }
 
     private void clearKeys() {
-        SharedPreferences prefs = getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+        SharedPreferences prefs = getSharedPreferences(ACCOUNT_DB_PREFS_NAME, 0);
         Editor edit = prefs.edit();
         edit.clear();
         edit.commit();
@@ -1471,7 +1466,7 @@ public class Cryptonite extends Activity
      * @return Array of [access_key, access_secret], or null if none stored
      */
     private String[] getKeys() {
-        SharedPreferences prefs = getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+        SharedPreferences prefs = getSharedPreferences(ACCOUNT_DB_PREFS_NAME, 0);
         String key = prefs.getString(ACCESS_KEY_NAME, null);
         String secret = prefs.getString(ACCESS_SECRET_NAME, null);
         if (key != null && secret != null) {
@@ -1491,7 +1486,7 @@ public class Cryptonite extends Activity
      */
     private void storeKeys(String key, String secret) {
         // Save the access key for later
-        SharedPreferences prefs = getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+        SharedPreferences prefs = getSharedPreferences(ACCOUNT_DB_PREFS_NAME, 0);
         Editor edit = prefs.edit();
         edit.putString(ACCESS_KEY_NAME, key);
         edit.putString(ACCESS_SECRET_NAME, secret);
@@ -1499,35 +1494,66 @@ public class Cryptonite extends Activity
     }
 
     private void buildSession() {
-        final String[] stored = getKeys();
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
-        builder.setIcon(R.drawable.ic_launcher_cryptonite)
-        .setTitle(R.string.dropbox_access_title)
-        .setMessage(R.string.dropbox_access_msg)
-        .setPositiveButton(R.string.dropbox_full,
-                new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog,
-                    int which) {
-                AppKeyPair appKeyPair = new AppKeyPair(jniFullKey(), jniFullPw());
-                setSession(stored, appKeyPair, AccessType.DROPBOX);
-            }   
-        })  
-        .setNegativeButton(R.string.dropbox_folder,
-                new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog,
-                    int which) {
-                AppKeyPair appKeyPair = new AppKeyPair(jniFolderKey(), jniFolderPw());
-                setSession(stored, appKeyPair, AccessType.APP_FOLDER);
+        // Has the user already decided whether to use an app folder?
+        SharedPreferences prefs = 
+                getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+        if (!prefs.getBoolean("dbDecided", false)) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
+            builder.setIcon(R.drawable.ic_launcher_cryptonite)
+            .setTitle(R.string.dropbox_access_title)
+            .setMessage(R.string.dropbox_access_msg)
+            .setPositiveButton(R.string.dropbox_full,
+                    new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog,
+                        int which) {
+                    setSession(false);
+                }   
+            })  
+            .setNegativeButton(R.string.dropbox_folder,
+                    new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog,
+                        int which) {
+                    setSession(true);
+                }
+            });
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        } else {
+            if (prefs.getBoolean("cb_appfolder", false)) {
+                setSession(true);
+            } else {
+                setSession(false);
             }
-        });
-        AlertDialog dialog = builder.create();
-        dialog.show();
+        }
     }
     
-    private void setSession(String[] stored, AppKeyPair appKeyPair, AccessType accessType) {
+    private void setSession(boolean useAppFolder) {
+        SharedPreferences prefs = 
+                getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+        Editor edit = prefs.edit();
+        edit.putBoolean("dbDecided", true);
+        if (!edit.commit()) {
+            Log.e(Cryptonite.TAG, "Couldn't write preferences");
+        }
+        edit.putBoolean("cb_appfolder", useAppFolder);
+        if (!edit.commit()) {
+            Log.e(Cryptonite.TAG, "Couldn't write preferences");
+        }
+        
         AndroidAuthSession session;
-        if (stored != null) {
+        AppKeyPair appKeyPair;
+        AccessType accessType;
+        
+        String[] stored = getKeys();
+        
+        if (useAppFolder) {
+            appKeyPair = new AppKeyPair(jniFolderKey(), jniFolderPw());
+            accessType = AccessType.APP_FOLDER;
+        } else {
+            appKeyPair = new AppKeyPair(jniFullKey(), jniFullPw());
+            accessType = AccessType.DROPBOX;
+        }
+        if (stored != null && stored.length >= 2) {
             AccessTokenPair accessToken = new AccessTokenPair(stored[0], stored[1]);
             session = new AndroidAuthSession(appKeyPair, accessType, accessToken);
         } else {
