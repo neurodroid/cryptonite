@@ -690,12 +690,13 @@ public class Cryptonite extends Activity
             if (prefs.getBoolean("cb_appfolder", false) != mUseAppFolder) {
                 Editor prefEdit = prefs.edit();
                 prefEdit.putBoolean("dbDecided", true);
+                /* enforce re-authentication */
+                ((CryptoniteApp) getApplication()).setDBApi(null);
                 if (mLoggedIn) {
                     Toast.makeText(Cryptonite.this,
                             R.string.dropbox_forced_logout,
                             Toast.LENGTH_LONG).show();
                     logOut();
-                    ((CryptoniteApp) getApplication()).setDBApi(null);
                 }
             }
             break;
@@ -1519,11 +1520,7 @@ public class Cryptonite extends Activity
             AlertDialog dialog = builder.create();
             dialog.show();
         } else {
-            if (prefs.getBoolean("cb_appfolder", false)) {
-                setSession(true);
-            } else {
-                setSession(false);
-            }
+            setSession(prefs.getBoolean("cb_appfolder", false));
         }
     }
     

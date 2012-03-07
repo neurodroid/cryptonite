@@ -17,8 +17,6 @@
 package csh.cryptonite;
 
 import android.content.Context;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 
 import android.os.Bundle;
 
@@ -27,14 +25,10 @@ import android.preference.PreferenceActivity;
 import android.preference.CheckBoxPreference;
 import android.preference.Preference.OnPreferenceClickListener;
 
-import android.util.Log;
 import android.widget.Toast;
 
 public class Preferences extends PreferenceActivity {
 
-    /*private SharedPreferences prefs;
-    private Editor prefsEdit;*/
-    
     private CheckBoxPreference chkEnableBuiltin;
     private CheckBoxPreference chkNorris;
     private CheckBoxPreference chkExtCache;
