@@ -835,7 +835,7 @@ Java_csh_cryptonite_Cryptonite_jniDecode(JNIEnv* env, jobject thiz, jstring enco
     if (res != EXIT_SUCCESS) {
         return NULL;
     }
-
+    LOGI("string manager");
     jniStringManager mencodedname = jniStringManager(env, encodedname);
 
     std::string name = gRootInfo->root->plainPath(mencodedname.c_str());

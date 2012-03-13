@@ -4,7 +4,7 @@
     android:scrollbars="vertical">
     
 <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
+    android:layout_width="fill_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:stretchColumns="*" >
@@ -12,7 +12,7 @@
   <Button
       android:id="@+id/btnDropbox"
       android:layout_width="0dp"
-      android:layout_height="match_parent"
+      android:layout_height="fill_parent"
       android:layout_weight="1"
       android:text="@string/dropbox_link"
       android:typeface="normal" >
@@ -31,7 +31,7 @@
        <Button
            android:id="@+id/btnDropboxDecrypt"
            android:layout_width="0dp"
-           android:layout_height="match_parent"
+           android:layout_height="fill_parent"
            android:layout_weight="1"
            android:text="@string/dropbox_decrypt"
            android:typeface="normal" >
@@ -40,7 +40,7 @@
        <Button
            android:id="@+id/btnLocalDecrypt"
            android:layout_width="0dp"
-           android:layout_height="match_parent"
+           android:layout_height="fill_parent"
            android:layout_weight="1"
            android:text="@string/local_decrypt"
            android:typeface="normal" >
@@ -51,7 +51,7 @@
        <Button
            android:id="@+id/btnBrowseDecrypted"
            android:layout_width="0dp"
-           android:layout_height="match_parent"
+           android:layout_height="fill_parent"
            android:layout_weight="1"
            android:text="@string/browse_decrypted"
            android:typeface="normal" >
@@ -60,7 +60,7 @@
        <Button
            android:id="@+id/btnForgetDecryption"
            android:layout_width="0dp"
-           android:layout_height="match_parent"
+           android:layout_height="fill_parent"
            android:layout_weight="1"
            android:text="@string/forget_decryption"
            android:typeface="normal" >
@@ -80,7 +80,7 @@
        <Button
            android:id="@+id/btnDropboxCreate"
            android:layout_width="0dp"
-           android:layout_height="match_parent"
+           android:layout_height="fill_parent"
            android:layout_weight="1"
            android:text="@string/dropbox_create"
            android:typeface="normal" >
@@ -89,7 +89,7 @@
        <Button
            android:id="@+id/btnLocalCreate"
            android:layout_width="0dp"
-           android:layout_height="match_parent"
+           android:layout_height="fill_parent"
            android:layout_weight="1"
            android:text="@string/local_create"
            android:typeface="normal" >
@@ -110,7 +110,7 @@
       <Button
           android:id="@+id/btnMount"
           android:layout_width="0dp"
-          android:layout_height="match_parent"
+          android:layout_height="fill_parent"
           android:layout_weight="1"
           android:text="@string/mount"
           android:typeface="normal" >
@@ -119,7 +119,7 @@
       <!-- Button
           android:id="@+id/btnUnmount"
           android:layout_width="0dp"
-          android:layout_height="match_parent"
+          android:layout_height="fill_parent"
           android:layout_weight="1"
           android:text="@string/unmount"
           android:typeface="normal" >
@@ -128,7 +128,7 @@
       <Button
           android:id="@+id/btnViewMount"
           android:layout_width="0dp"
-          android:layout_height="match_parent"
+          android:layout_height="fill_parent"
           android:layout_weight="1"
           android:text="@string/viewmount"
           android:typeface="normal" >

@@ -66,7 +66,7 @@ public class Preferences extends PreferenceActivity {
         chkExtCache.setOnPreferenceClickListener(new OnPreferenceClickListener() {
                 public boolean onPreferenceClick(Preference preference) {
                     if (chkExtCache.isChecked()) {
-                        String extDir = getBaseContext().getExternalCacheDir().getPath();
+                        String extDir = Cryptonite.getExternalCacheDir(getBaseContext()).getPath();
                         Toast.makeText(Preferences.this, getString(R.string.cb_extcache_enabled) + extDir, 
                                 Toast.LENGTH_SHORT).show();
                         return true;

@@ -418,8 +418,8 @@ public class Cryptonite extends Activity
         deleteDir(openDir);
         deleteDir(readDir);
         if (external && externalStorageIsWritable()) {
-            openDir = new File(getExternalCacheDir().getPath() + "/" + OPENPNT);
-            readDir = new File(getExternalCacheDir().getPath() + "/" + READPNT);
+            openDir = new File(getExternalCacheDir(this).getPath() + "/" + OPENPNT);
+            readDir = new File(getExternalCacheDir(this).getPath() + "/" + READPNT);
             openDir.mkdirs();
             readDir.mkdirs();
         } else {
@@ -619,9 +619,8 @@ public class Cryptonite extends Activity
                     currentDialogButtonLabel = Cryptonite.this.getString(R.string.select_exp_short);
                     currentDialogMode = SelectionMode.MODE_OPEN_CREATE;
                     if (externalStorageIsWritable()) {
-                        currentDialogStartPath = Environment
-                                .getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                                .getPath();
+                        currentDialogStartPath = 
+                                getDownloadDir().getPath();
                         File downloadDir = new File(currentDialogStartPath);
                         if (!downloadDir.exists()) {
                             downloadDir.mkdir();
@@ -1563,7 +1562,38 @@ public class Cryptonite extends Activity
         ((CryptoniteApp) getApplication()).getDBApi()
             .getSession().startAuthentication(Cryptonite.this);
     }
-        
+
+    public static File getExternalCacheDir(final Context context) {
+        // return context.getExternalCacheDir(); API level 8
+
+        // e.g. "<sdcard>/Android/data/<package_name>/cache/"
+        final File extCacheDir = new File(Environment.getExternalStorageDirectory(),
+                                          "/Android/data/" + context.getApplicationInfo().packageName + "/cache/");
+        extCacheDir.mkdirs();
+        return extCacheDir;
+    }
+    
+    private static File getDownloadDir() {
+        /* Api >= 8
+        return Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_DOWNLOADS);
+                */
+        /* Api < 8 */
+        File downloadDir = new File(Environment.getExternalStorageDirectory(), "/download");
+        if (!downloadDir.exists()) {
+            File downloadDirD = new File(Environment.getExternalStorageDirectory(), "/Download");
+            if (!downloadDirD.exists()) {
+                /* Make "download" dir */
+                downloadDir.mkdirs();
+                return downloadDir;
+            } else {
+                return downloadDirD;
+            }
+        } else {
+            return downloadDir;
+        }
+    }
+    
     private boolean openEncFSFile(final String encFSFilePath, String fileRoot, final String dbEncFSPath) {
 
         SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);

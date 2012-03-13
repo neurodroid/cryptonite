@@ -6,7 +6,7 @@
 
 AND_ARCH=armeabi-v7a
 AND_NDKDIR=${HOME}/android-ndk-r7
-AND_TOOLCHAIN=${HOME}/android-toolchain
+AND_TOOLCHAIN=${AND_NDKDIR}/platforms/android-5/arch-arm
 AND_AR=arm-linux-androideabi-ar
 AND_RANLIB=arm-linux-androideabi-ranlib
 AND_NM=arm-linux-androideabi-nm

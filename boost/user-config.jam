@@ -109,7 +109,7 @@ modules.poke : NO_BZIP2 : 1 ;
 ANDROID_NDK = ../../../android-ndk-r7 ;
 using gcc : android4.4.3 :
 $(ANDROID_NDK)/toolchains/arm-linux-androideabi-4.4.3/prebuilt/$(androidPlatform)/bin/arm-linux-androideabi-g++ :
-<compileflags>--sysroot=$(ANDROID_NDK)/platforms/android-8/arch-arm
+<compileflags>--sysroot=$(ANDROID_NDK)/platforms/android-5/arch-arm
 <compileflags>-mthumb
 <compileflags>-Os
 <compileflags>-fno-strict-aliasing

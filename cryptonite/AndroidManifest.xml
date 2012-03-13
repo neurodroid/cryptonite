@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest 
     xmlns:android="http://schemas.android.com/apk/res/android" package="csh.cryptonite"
-    android:versionCode="30"
-    android:versionName="0.2.12">
-  <uses-sdk android:minSdkVersion="8" />
+    android:versionCode="31"
+    android:versionName="0.2.13">
+  <uses-sdk android:minSdkVersion="7" />
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
   <uses-permission android:name="android.permission.INTERNET" />
   

@@ -1,7 +1,7 @@
 #! /bin/bash
 
 NDKDIR=${HOME}/android-ndk-r7
-TOOLCHAIN=${HOME}/android-toolchain
+TOOLCHAIN=${NDKDIR}/platforms/android-5/arch-arm
 OPENSSL=${HOME}/openssl-android
 MYAR=arm-linux-androideabi-ar
 MYRANLIB=arm-linux-androideabi-ranlib

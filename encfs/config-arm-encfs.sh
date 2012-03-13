@@ -1,7 +1,7 @@
 #! /bin/bash
 
 NDKDIR=${HOME}/android-ndk-r7
-TOOLCHAIN=${HOME}/android-toolchain
+TOOLCHAIN=${NDKDIR}/platforms/android-5/arch-arm
 FUSEDIR=`pwd`/../../fuse/fuse-android
 OPENSSLDIR=`pwd`/../../openssl/openssl-1.0.0g
 BOOSTDIR=`pwd`/../../boost/boost_1_46_1
