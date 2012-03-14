@@ -2,7 +2,6 @@
 
 NDKDIR=${HOME}/android-ndk-r7
 TOOLCHAIN=${NDKDIR}/platforms/android-8/arch-arm
-OPENSSL=${HOME}/openssl-android
 MYAR=arm-linux-androideabi-ar
 MYRANLIB=arm-linux-androideabi-ranlib
 MYNM=arm-linux-androideabi-nm

@@ -1,4 +1,4 @@
-OPENSSL_VERSION="1.0.0g"
+OPENSSL_VERSION="1.0.0h"
 
 cp -v Makefile.android openssl-${OPENSSL_VERSION}
 cp -v Makefile.android.armv7 openssl-${OPENSSL_VERSION}

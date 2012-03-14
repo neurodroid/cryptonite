@@ -3,7 +3,7 @@
 NDKDIR=${HOME}/android-ndk-r7
 TOOLCHAIN=${NDKDIR}/platforms/android-7/arch-arm
 FUSEDIR=`pwd`/../../fuse/fuse-android
-OPENSSLDIR=`pwd`/../../openssl/openssl-1.0.0g
+OPENSSLDIR=`pwd`/../../openssl/openssl-1.0.0h
 BOOSTDIR=`pwd`/../../boost/boost_1_46_1
 RLOGDIR=`pwd`/../../rlog/rlog-1.4
 MYAR=arm-linux-androideabi-ar

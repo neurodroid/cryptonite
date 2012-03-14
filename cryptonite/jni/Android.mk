@@ -29,7 +29,7 @@ LOCAL_C_INCLUDES := \
     ../fuse/fuse-android/jni/include \
     ../boost/boost_1_46_1 \
     ../rlog/rlog-1.4/${TARGET_ARCH_ABI}/include \
-    ../openssl/openssl-1.0.0g/include
+    ../openssl/openssl-1.0.0h/include
 
 LOCAL_CPPFLAGS := \
     -D_FILE_OFFSET_BITS=64 \
