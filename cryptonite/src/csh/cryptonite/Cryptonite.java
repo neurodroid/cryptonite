@@ -1564,26 +1564,27 @@ public class Cryptonite extends Activity
     }
 
     public static File getExternalCacheDir(final Context context) {
-        // return context.getExternalCacheDir(); API level 8
+        /* Api >= 8 */
+        return context.getExternalCacheDir();
 
+        /* Api < 8
         // e.g. "<sdcard>/Android/data/<package_name>/cache/"
         final File extCacheDir = new File(Environment.getExternalStorageDirectory(),
                                           "/Android/data/" + context.getApplicationInfo().packageName + "/cache/");
         extCacheDir.mkdirs();
-        return extCacheDir;
+        return extCacheDir;*/
     }
     
     private static File getDownloadDir() {
-        /* Api >= 8
+        /* Api >= 8 */
         return Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_DOWNLOADS);
-                */
-        /* Api < 8 */
+        /* Api < 8 
         File downloadDir = new File(Environment.getExternalStorageDirectory(), "/download");
         if (!downloadDir.exists()) {
             File downloadDirD = new File(Environment.getExternalStorageDirectory(), "/Download");
             if (!downloadDirD.exists()) {
-                /* Make "download" dir */
+                // Make "download" dir
                 downloadDir.mkdirs();
                 return downloadDir;
             } else {
@@ -1591,7 +1592,7 @@ public class Cryptonite extends Activity
             }
         } else {
             return downloadDir;
-        }
+        }*/
     }
     
     private boolean openEncFSFile(final String encFSFilePath, String fileRoot, final String dbEncFSPath) {

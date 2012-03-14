@@ -85,9 +85,13 @@ public abstract class Storage {
      */
     public static void decode(String encodedPath, String destRoot, boolean isDir) throws IOException {
 
-        Log.i(Cryptonite.TAG, "encodedPath is " + encodedPath);
-        
         /* Decoded name */
+        /* Don't decode encfs?.xml */
+        String encfsXmlRegex = "\\.encfs.\\.xml";
+        if (new File(encodedPath).getName().matches(encfsXmlRegex)) {
+            return;
+        }
+        
         String decodedPath = Cryptonite.jniDecode(encodedPath);
         
         Log.i(Cryptonite.TAG, "Creating new file" + destRoot + "/" + decodedPath);

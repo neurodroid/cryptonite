@@ -163,13 +163,14 @@ static int processContents( const shared_ptr<EncFS_Root> &lRootInfo,
 	return errCode;
     } else
     {
-        /*std::ostringstream err;
-        err << "writing to " << path << "\n";
-        LOGE(err.str().c_str());*/
-        
 	unsigned char buf[512];
 	int blocks = (node->getSize() + sizeof(buf)-1) / sizeof(buf);
 	// read all the data in blocks
+
+        /* std::ostringstream err;
+        err << "writing " << node->getSize() << " bytes to " << path << "\n";
+        LOGE(err.str().c_str()); */
+        
 	for(int i=0; i<blocks; ++i)
 	{
 	    int bytes = node->read(i*sizeof(buf), buf, sizeof(buf));
@@ -821,7 +822,7 @@ JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_jniExport(JNIEnv * env, jo
     if(!checkDir(mdestdir.str()) && !userAllowMkdir(mdestdir.c_str(), 0700))
 	return EXIT_FAILURE;
 
-    LOGI((std::string("Exporting to ") + mdestdir.str()).c_str());
+    // LOGI((std::string("Exporting to ") + mdestdir.str()).c_str());
     res = (int)exportFiles(gRootInfo, "/", mdestdir.str(), allPaths);
 
     return res;
@@ -835,7 +836,7 @@ Java_csh_cryptonite_Cryptonite_jniDecode(JNIEnv* env, jobject thiz, jstring enco
     if (res != EXIT_SUCCESS) {
         return NULL;
     }
-    LOGI("string manager");
+
     jniStringManager mencodedname = jniStringManager(env, encodedname);
 
     std::string name = gRootInfo->root->plainPath(mencodedname.c_str());
@@ -894,9 +895,9 @@ Java_csh_cryptonite_Cryptonite_jniDecrypt(JNIEnv* env, jobject thiz, jstring enc
     std::string plainPath = gRootInfo->root->plainPath(mencodedname.c_str());
     std::string destname = mdestdir.str() + plainPath;
 
-    std::ostringstream out;
+    /* std::ostringstream out;
     out << "Decoding " << mencodedname.str() << " to " << plainPath << " in " << destname;
-    LOGI(out.str().c_str());
+    LOGI(out.str().c_str()); */
 
     boost::shared_ptr<FileNode> node = 
 	gRootInfo->root->lookupNode( plainPath.c_str(), "encfsctl");
@@ -936,7 +937,7 @@ Java_csh_cryptonite_Cryptonite_jniDecrypt(JNIEnv* env, jobject thiz, jstring enc
             return EXIT_FAILURE;
         }
         WriteOutput output(outfd);
-        /*std::ostringstream out;
+        /* std::ostringstream out;
         out << "Writing to " << destname;
         LOGE(out.str().c_str()); */
         processContents( gRootInfo, plainPath.c_str(), output );
@@ -980,9 +981,9 @@ Java_csh_cryptonite_Cryptonite_jniEncrypt(JNIEnv * env, jobject thiz,
     std::string encodedparentpath = gRootInfo->root->cipherPath(plainparentpath.c_str());
     std::string encodedpath = gRootInfo->root->cipherPath(mplainpath.c_str());
     
-    std::ostringstream out;
+    /* std::ostringstream out;
     out << "Encrypting " << msrcpath.str() << " to " << encodedpath << " in " << encodedparentpath;
-    LOGI(out.str().c_str());
+    LOGI(out.str().c_str()); */
 
     // if the dir doesn't exist, then create it (with user permission)
     if(!checkDir(encodedparentpath) && !userAllowMkdir(encodedparentpath.c_str(), 0700)) {
@@ -1038,6 +1039,8 @@ Java_csh_cryptonite_Cryptonite_jniEncrypt(JNIEnv * env, jobject thiz,
         return EXIT_FAILURE;
     }
 
+    close(outfd);
+
     if (node->open(O_CREAT | O_EXCL | O_WRONLY) < 0) {
         std::ostringstream out;
         out << "Couldn't open "
@@ -1060,7 +1063,8 @@ Java_csh_cryptonite_Cryptonite_jniEncrypt(JNIEnv * env, jobject thiz,
         if (!node->write(i*sizeof(buf), buf, sizeof(buf))) {
             std::ostringstream out;
             out << "Couldn't write to "
-                << encodedpath;
+                << encodedpath << ": "
+                << strerror(errno);
             LOGE(out.str().c_str());
             return EXIT_FAILURE;
         }
@@ -1077,13 +1081,17 @@ Java_csh_cryptonite_Cryptonite_jniEncrypt(JNIEnv * env, jobject thiz,
         }
         if (!node->write(blocks*sizeof(buf), &trunc_buf[0], trunc_buf.size())) {
             std::ostringstream out;
-            out << "Couldn't write to "
-                << encodedpath;
+            out << "Couldn't write remaining "
+                << rem << " bytes to block "
+                << blocks << " at position "
+                << blocks*sizeof(buf) << " in "
+                << encodedpath << ": "
+                << strerror(errno);
             LOGE(out.str().c_str());
             return EXIT_FAILURE;
         }
     }
-    close(outfd);
+
     fclose(fp);
     
     return EXIT_SUCCESS;

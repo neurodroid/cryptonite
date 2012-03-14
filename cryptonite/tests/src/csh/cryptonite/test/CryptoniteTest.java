@@ -42,8 +42,7 @@ import csh.cryptonite.Cryptonite;
 public class CryptoniteTest extends ActivityInstrumentationTestCase2<Cryptonite> {
 
     private Cryptonite mActivity;
-    private static final int[] ENCFS_CONFIG_TYPES =
-        {CreateEncFS.CONFIG_PARANOIA, CreateEncFS.CONFIG_COMPATIBLE};
+    private int[] encfs_config_types;
     private static final String TEST_STRING = "6*8";
     private static final String TEST_DIR="csh.cryptonite.test";
     private static final String DECRYPTED_DIR_NAME = "/arthur/dent"; 
@@ -56,7 +55,12 @@ public class CryptoniteTest extends ActivityInstrumentationTestCase2<Cryptonite>
      */
     public CryptoniteTest() {
         super("csh.cryptonite", Cryptonite.class);
-        for (int encfsConfigType : ENCFS_CONFIG_TYPES) {
+        
+        encfs_config_types = new int[2];
+        encfs_config_types[0] = CreateEncFS.CONFIG_PARANOIA;
+        encfs_config_types[1] = CreateEncFS.CONFIG_COMPATIBLE;
+        
+        for (int encfsConfigType : encfs_config_types) {
             File targetDir = getConfigDir(encfsConfigType);
             Cryptonite.deleteDir(targetDir);
         }
@@ -144,7 +148,7 @@ public class CryptoniteTest extends ActivityInstrumentationTestCase2<Cryptonite>
     }
     
     public void testEncFS_1_Create() {
-        for (int encfsConfigType : ENCFS_CONFIG_TYPES) {
+        for (int encfsConfigType : encfs_config_types) {
             File targetDir = getConfigDir(encfsConfigType);
             Log.d(Cryptonite.TAG, "Creating in " + targetDir.getPath());
             if (targetDir.exists()) {
@@ -178,7 +182,7 @@ public class CryptoniteTest extends ActivityInstrumentationTestCase2<Cryptonite>
         }
         
         /* Encrypt cache file */
-        for (int encfsConfigType : ENCFS_CONFIG_TYPES) {
+        for (int encfsConfigType : encfs_config_types) {
             /* Initialise volume */
             File targetDir = getConfigDir(encfsConfigType);
             assertEquals(Cryptonite.jniSuccess(), 
@@ -211,7 +215,7 @@ public class CryptoniteTest extends ActivityInstrumentationTestCase2<Cryptonite>
     }
     
     public void testEncFS_3_Export() {
-        for (int encfsConfigType : ENCFS_CONFIG_TYPES) {
+        for (int encfsConfigType : encfs_config_types) {
             File targetDir = getConfigDir(encfsConfigType);
             assertEquals(Cryptonite.jniSuccess(), 
                     mActivity.jniInit(targetDir.getPath(), "password"));
