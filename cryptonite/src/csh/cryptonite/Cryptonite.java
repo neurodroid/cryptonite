@@ -184,21 +184,27 @@ public class Cryptonite extends Activity
         tv = (TextView)findViewById(R.id.tvVersion);
         tv.setText(encfsVersion + "\n" + opensslVersion);
 
-        if (externalStorageIsWritable()) {
-            mntDir = Environment.getExternalStorageDirectory().getPath() + MNTPNT;
-            File mntDirF = new File(mntDir);
-            if (!mntDirF.exists()) {
-                mntDirF.mkdirs();
-            }
-        }
-
         SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
         setupReadDirs(prefs.getBoolean("cb_extcache", false));
         
         tvMountInfo = (TextView)findViewById(R.id.tvMountInfo);
         if (!externalStorageIsWritable() || !ShellUtils.supportsFuse()) {
             tvMountInfo.setText(this.getString(R.string.mount_info_unsupported));
+        } else {
+            mntDir = prefs.getString("txt_mntpoint", defaultMntDir());
+            File mntDirF = new File(mntDir);
+            if (!isValidMntDir(mntDirF)) {
+                Editor prefEdit = prefs.edit();
+                prefEdit.putString("txt_mntpoint", defaultMntDir());
+                prefEdit.commit();
+                mntDir = prefs.getString("txt_mntpoint", defaultMntDir());
+                mntDirF = new File(mntDir);
+            }
+            if (!mntDirF.exists()) {
+                mntDirF.mkdirs();
+            }
         }
+
         
         boolean volumeLoaded = (jniVolumeLoaded() == jniSuccess());
         
@@ -426,6 +432,14 @@ public class Cryptonite extends Activity
             openDir = getDir(OPENPNT, Context.MODE_PRIVATE);
             readDir = getDir(READPNT, Context.MODE_WORLD_READABLE);
         }
+    }
+    
+    private boolean isValidMntDir(File mntDirF) {
+        return mntDirF.exists() && mntDirF.canWrite() && mntDirF.isDirectory() && mntDirF.list().length==0;
+    }
+    
+    public static String defaultMntDir() {
+        return Environment.getExternalStorageDirectory().getPath() + MNTPNT;
     }
     
     private boolean needsEncFSBinary() {
@@ -681,14 +695,24 @@ public class Cryptonite extends Activity
             break;
         case REQUEST_PREFS:
             SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+            Editor prefEdit = prefs.edit();
+            
             setupReadDirs(prefs.getBoolean("cb_extcache", false));
+            
+            mntDir = prefs.getString("txt_mntpoint", defaultMntDir());
+            if (!isValidMntDir(new File(mntDir))) {
+                mntDir = defaultMntDir();
+                prefEdit.putString("txt_mntpoint", mntDir);
+                prefEdit.commit();
+            }
+
             /* If app folder settings have changed, we'll have to log out the user
              * from his Dropbox and restart the authentication from scratch during
              * the next login:
              */
             if (prefs.getBoolean("cb_appfolder", false) != mUseAppFolder) {
-                Editor prefEdit = prefs.edit();
                 prefEdit.putBoolean("dbDecided", true);
+                prefEdit.commit();
                 /* enforce re-authentication */
                 ((CryptoniteApp) getApplication()).setDBApi(null);
                 if (mLoggedIn) {

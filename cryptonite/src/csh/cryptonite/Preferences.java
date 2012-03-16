@@ -16,15 +16,23 @@
 
 package csh.cryptonite;
 
+import java.io.File;
+
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 
 import android.os.Bundle;
+import android.os.Environment;
 
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.CheckBoxPreference;
 import android.preference.Preference.OnPreferenceClickListener;
 
+import android.util.Log;
 import android.widget.Toast;
 
 public class Preferences extends PreferenceActivity {
@@ -33,10 +41,14 @@ public class Preferences extends PreferenceActivity {
     private CheckBoxPreference chkNorris;
     private CheckBoxPreference chkExtCache;
     private CheckBoxPreference chkAppFolder;
+    private Preference txtMntPoint;
+    private String currentReturnPath = "";
     
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         addPreferencesFromResource(R.xml.preferences);
+        
+        SharedPreferences prefs = getSharedPreferences(Cryptonite.ACCOUNT_PREFS_NAME, 0);
         
         chkEnableBuiltin = (CheckBoxPreference)getPreferenceScreen().findPreference("cb_builtin");
         chkEnableBuiltin.setOnPreferenceClickListener(new OnPreferenceClickListener() {
@@ -89,13 +101,101 @@ public class Preferences extends PreferenceActivity {
         chkAppFolder.setOnPreferenceClickListener(new OnPreferenceClickListener() {
                 public boolean onPreferenceClick(Preference preference) {
                     if (chkAppFolder.isChecked()) {
-                        Toast.makeText(Preferences.this, getString(R.string.cb_appfolder_enabled), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(Preferences.this, R.string.cb_appfolder_enabled, Toast.LENGTH_SHORT).show();
                         return true;
                     } else {
-                        Toast.makeText(Preferences.this, getString(R.string.cb_appfolder_disabled), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(Preferences.this, R.string.cb_appfolder_disabled, Toast.LENGTH_SHORT).show();
                         return false;
                     }
                 }});
+        
+        txtMntPoint = getPreferenceScreen().findPreference("txt_mntpoint");
+        txtMntPoint.setSummary(prefs.getString("txt_mntpoint", Cryptonite.defaultMntDir()));
+        txtMntPoint.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+            public boolean onPreferenceClick(Preference preference) {
+                String dialogLabel = getString(R.string.select_mount);
+                String dialogButtonLabel = getString(R.string.select_mount_short);
+                int dialogMode = SelectionMode.MODE_OPEN_CREATE;
+                String dialogStartPath = "/";
+                if (Cryptonite.externalStorageIsWritable()) {
+                    dialogStartPath = Environment
+                            .getExternalStorageDirectory()
+                            .getPath();
+                }
+                String dialogRoot = "/";
+                String dialogRootName = dialogRoot;
+                String dialogDBEncFS = "";
+                launchBuiltinFileBrowser(dialogRoot, dialogDBEncFS, dialogRootName,
+                        dialogButtonLabel, dialogStartPath, dialogLabel, dialogMode);
+                
+                return false;
+            }
+        });
+        
+        if (!ShellUtils.supportsFuse() || !new File(Cryptonite.ENCFSBIN).exists()) {
+            txtMntPoint.setEnabled(false);
+            txtMntPoint.setSummary(R.string.mount_info_unsupported);
+        }
 
+    }
+
+    /** Called upon exit from other activities */
+    public synchronized void onActivityResult(final int requestCode,
+                                              int resultCode, final Intent data) {
+
+        switch (requestCode) {
+        case SelectionMode.MODE_OPEN_CREATE:
+            /* file dialog */
+            if (resultCode == Activity.RESULT_OK && data != null) {
+                currentReturnPath = data.getStringExtra(FileDialog.RESULT_EXPORT_PATHS);
+                if (currentReturnPath != null) {
+                    File newMntDir = new File(currentReturnPath);
+                    if (isValidMntDir(newMntDir)) {
+                        SharedPreferences prefs = getSharedPreferences(Cryptonite.ACCOUNT_PREFS_NAME, 0);
+                        Editor prefEdit = prefs.edit();
+                        prefEdit.putString("txt_mntpoint", currentReturnPath);
+                        prefEdit.commit();
+                        txtMntPoint.setSummary(prefs.getString("txt_mntpoint", Cryptonite.defaultMntDir()));
+                    }
+                }
+            }
+            break;
+        default:
+            Log.e(Cryptonite.TAG, "Unknown request code");
+        }
+    }
+    
+    private void launchBuiltinFileBrowser(String dialogRoot, String dialogDBEncFS, String dialogRootName,
+            String dialogButtonLabel, String dialogStartPath, String dialogLabel, int dialogMode) 
+    {
+        Intent intent = new Intent(getBaseContext(), FileDialog.class);
+        intent.putExtra(FileDialog.CURRENT_ROOT, dialogRoot);
+        intent.putExtra(FileDialog.CURRENT_DBROOT, dialogDBEncFS);
+        intent.putExtra(FileDialog.CURRENT_ROOT_NAME, dialogRootName);
+        intent.putExtra(FileDialog.BUTTON_LABEL, dialogButtonLabel);
+        intent.putExtra(FileDialog.START_PATH, dialogStartPath);
+        intent.putExtra(FileDialog.LABEL, dialogLabel);
+        intent.putExtra(FileDialog.SELECTION_MODE, dialogMode);
+        startActivityForResult(intent, dialogMode);
+    }
+    
+    private boolean isValidMntDir(File newMntDir) {
+        if (!newMntDir.exists()) {
+            Toast.makeText(Preferences.this, R.string.txt_mntpoint_nexists, Toast.LENGTH_LONG).show();
+            return false;
+        }
+        if (!newMntDir.isDirectory()) {
+            Toast.makeText(Preferences.this, R.string.txt_mntpoint_nisdir, Toast.LENGTH_LONG).show();
+            return false;
+        }
+        if (!newMntDir.canWrite()) {
+            Toast.makeText(Preferences.this, R.string.txt_mntpoint_ncanwrite, Toast.LENGTH_LONG).show();
+            return false;
+        }
+        if (newMntDir.list().length != 0) {
+            Toast.makeText(Preferences.this, R.string.txt_mntpoint_nempty, Toast.LENGTH_LONG).show();
+            return false;
+        }
+        return true;
     }
 }

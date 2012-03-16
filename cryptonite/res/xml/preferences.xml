@@ -22,5 +22,9 @@
       android:key="cb_appfolder"
       android:title="@string/cb_appfolder_title"
       android:summary="@string/cb_appfolder_summary" />
-  
+    
+    <Preference
+        android:key="txt_mntpoint"
+        android:title="@string/txt_mntpoint_title" />
+    
 </PreferenceScreen>

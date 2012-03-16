@@ -24,7 +24,16 @@
     <string name="cb_appfolder_summary">Restrict access to an app folder on your Dropbox</string>
     <string name="cb_appfolder_enabled">Using app folder</string>
     <string name="cb_appfolder_disabled">Using full Dropbox access</string>
-    
+    <string name="txt_mntpoint_title">Mount point</string>
+    <string name="txt_mntpoint_dlgtitle">Mount point</string>
+    <string name="txt_mntpoint_dlgmsg">EncFS mount path:</string>
+    <string name="txt_mntpoint_posbtn">OK</string>
+    <string name="txt_mntpoint_negbtn">File browser</string>
+    <string name="txt_mntpoint_nexists">Mount point doesn\'t exist</string>
+    <string name="txt_mntpoint_nisdir">Mount point is not a directory</string>
+    <string name="txt_mntpoint_ncanwrite">Mount point isn\'t writable</string>
+    <string name="txt_mntpoint_nempty">Mount point isn\'t empty</string>
+        
     <string name="sdcard_not_writable">Can\'t write to SD card</string>
     <string name="title_password">EncFS password</string>
     <string name="title_new_folder">Create new folder</string>
@@ -114,6 +123,8 @@
     <string name="select">Select</string>
     <string name="select_enc">Select EncFS root directory</string>
     <string name="select_enc_short">Select current folder</string>
+    <string name="select_mount">Select mount point</string>
+    <string name="select_mount_short">Select current folder</string>
     <string name="select_exp">Select export directory</string>
     <string name="select_exp_short">Export to current folder</string>
     <string name="select_create">Select EncFS target directory</string>
