@@ -24,4 +24,4 @@ AR=${MYAR} RANLIB=${MYRANLIB} NM=${MYNM} STRIP=${MYSTRIP} CC=${MYAGCC} CXX=${MYA
     CPPFLAGS="-I${TOOLCHAIN}/sysroot/usr/include" \
     CXXFLAGS="-fexceptions -frtti" \
     LDFLAGS="${LIBSTDCXXLIB} -L$TOOLCHAIN/lib/gcc/arm-linux-androideabi/4.4.3 -lgcc" \
-    ./configure --prefix=${TARGET} --host=x86-linux --build=arm-eabi --enable-static --disable-shared
+    ./configure --prefix=${TARGET} --host=x86-linux --build=arm-eabi --enable-static --disable-shared --disable-docs
