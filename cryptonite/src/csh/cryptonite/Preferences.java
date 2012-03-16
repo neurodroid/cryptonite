@@ -113,6 +113,12 @@ public class Preferences extends PreferenceActivity {
         txtMntPoint.setSummary(prefs.getString("txt_mntpoint", Cryptonite.defaultMntDir()));
         txtMntPoint.setOnPreferenceClickListener(new OnPreferenceClickListener() {
             public boolean onPreferenceClick(Preference preference) {
+                // Don't change mount point while a volume is mounted:
+                if (ShellUtils.isMounted("fuse.encfs")) {
+                    Toast.makeText(Preferences.this, R.string.umount_first,
+                            Toast.LENGTH_LONG).show();
+                    return false;
+                }
                 String dialogLabel = getString(R.string.select_mount);
                 String dialogButtonLabel = getString(R.string.select_mount_short);
                 int dialogMode = SelectionMode.MODE_OPEN_CREATE;

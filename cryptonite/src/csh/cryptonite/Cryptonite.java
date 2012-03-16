@@ -380,6 +380,44 @@ public class Cryptonite extends Activity
                                 getString(R.string.umount_fail) + ": " + e.getMessage(), 
                                 Toast.LENGTH_LONG).show();
                     }
+                    
+                    /* Still mounted? Offer to kill encfs */
+                    if (ShellUtils.isMounted("fuse.encfs")) {
+                        AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
+                        builder.setIcon(R.drawable.ic_launcher_cryptonite)
+                        .setTitle(R.string.warning)
+                        .setMessage(R.string.umount_still_mounted)
+                        .setPositiveButton(R.string.umount_all,
+                                new DialogInterface.OnClickListener()
+                        {
+                            public void onClick(DialogInterface dialog,
+                                    int which) {
+                                String[] killlist = {"killall", "encfs"};
+                                try {
+                                    ShellUtils.runBinary(killlist, BINDIR, null, true);
+                                } catch (IOException e) {
+                                    Toast.makeText(Cryptonite.this, 
+                                            getString(R.string.umount_fail) + ": " + e.getMessage(), 
+                                            Toast.LENGTH_LONG).show();
+                                } catch (InterruptedException e) {
+                                    Toast.makeText(Cryptonite.this, 
+                                            getString(R.string.umount_fail) + ": " + e.getMessage(), 
+                                            Toast.LENGTH_LONG).show();
+                                }
+                                updateMountButtons();
+                            }
+                        })
+                        .setNegativeButton(R.string.cancel,
+                                new DialogInterface.OnClickListener()
+                        {
+                            public void onClick(DialogInterface dialog,
+                                    int which) {
+                                
+                            }
+                        });
+                        AlertDialog dialog = builder.create();
+                        dialog.show();
+                    }
                     updateMountButtons();
                 }
             }});
@@ -512,7 +550,7 @@ public class Cryptonite extends Activity
         buttonMount.setEnabled(hasFuse && hasBin);
         
         if (ism) {
-            buttonMount.setText(R.string.unmount);            
+            buttonMount.setText(R.string.unmount);
         } else {
             buttonMount.setText(R.string.mount);
         }
@@ -700,11 +738,6 @@ public class Cryptonite extends Activity
             setupReadDirs(prefs.getBoolean("cb_extcache", false));
             
             mntDir = prefs.getString("txt_mntpoint", defaultMntDir());
-            if (!isValidMntDir(new File(mntDir))) {
-                mntDir = defaultMntDir();
-                prefEdit.putString("txt_mntpoint", mntDir);
-                prefEdit.commit();
-            }
 
             /* If app folder settings have changed, we'll have to log out the user
              * from his Dropbox and restart the authentication from scratch during
