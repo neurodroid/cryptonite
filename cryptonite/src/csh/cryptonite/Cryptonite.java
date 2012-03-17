@@ -91,7 +91,7 @@ public class Cryptonite extends Activity
         SELECTDBEXPORT_MODE=7, DBEXPORT_MODE=8, SELECTLOCALUPLOAD_MODE=9, SELECTDBUPLOAD_MODE=10;
     private static final int DIRPICK_MODE=0, FILEPICK_MODE=1;
     protected static final int MSG_SHOW_TOAST = 0;
-    public static final int MY_PASSWORD_DIALOG_ID = 0;
+    public static final int MY_PASSWORD_DIALOG_ID = 0, MY_PASSWORD_CONFIRM_DIALOG_ID = 4;
     private static final int DIALOG_MARKETNOTFOUND=1, DIALOG_OI_UNAVAILABLE=2, DIALOG_JNI_FAIL=3;
     private static final int MAX_JNI_SIZE = 512;
     public static final String MNTPNT = "/csh.cryptonite/mnt";
@@ -193,13 +193,6 @@ public class Cryptonite extends Activity
         } else {
             mntDir = prefs.getString("txt_mntpoint", defaultMntDir());
             File mntDirF = new File(mntDir);
-            if (!isValidMntDir(mntDirF)) {
-                Editor prefEdit = prefs.edit();
-                prefEdit.putString("txt_mntpoint", defaultMntDir());
-                prefEdit.commit();
-                mntDir = prefs.getString("txt_mntpoint", defaultMntDir());
-                mntDirF = new File(mntDir);
-            }
             if (!mntDirF.exists()) {
                 mntDirF.mkdirs();
             }
@@ -472,10 +465,38 @@ public class Cryptonite extends Activity
         }
     }
     
-    private boolean isValidMntDir(File mntDirF) {
-        return mntDirF.exists() && mntDirF.canWrite() && mntDirF.isDirectory() && mntDirF.list().length==0;
+    public static boolean isValidMntDir(Context context, File newMntDir) {
+        return isValidMntDir(context, newMntDir, true);
     }
     
+    public static boolean isValidMntDir(Context context, File newMntDir, boolean showToast) {
+        if (!newMntDir.exists()) {
+            if (showToast) {
+                Toast.makeText(context, R.string.txt_mntpoint_nexists, Toast.LENGTH_LONG).show();
+            }
+            return false;
+        }
+        if (!newMntDir.isDirectory()) {
+            if (showToast) {
+                Toast.makeText(context, R.string.txt_mntpoint_nisdir, Toast.LENGTH_LONG).show();
+            }
+            return false;
+        }
+        if (!newMntDir.canWrite()) {
+            if (showToast) {
+                Toast.makeText(context, R.string.txt_mntpoint_ncanwrite, Toast.LENGTH_LONG).show();
+            }
+            return false;
+        }
+        if (newMntDir.list().length != 0) {
+            if (showToast) {
+                Toast.makeText(context, R.string.txt_mntpoint_nempty, Toast.LENGTH_LONG).show();
+            }
+            return false;
+        }
+        return true;
+    }
+
     public static String defaultMntDir() {
         return Environment.getExternalStorageDirectory().getPath() + MNTPNT;
     }
@@ -958,6 +979,10 @@ public class Cryptonite extends Activity
             return;
         }
         
+        if (!isValidMntDir(this, new File(mntDir), true)) {
+            showAlert(R.string.error, R.string.mount_point_invalid);
+            return;
+        }
         final ProgressDialog pd = ProgressDialog.show(this,
                                                       this.getString(R.string.wait_msg),
                                                       this.getString(R.string.running_encfs), true);

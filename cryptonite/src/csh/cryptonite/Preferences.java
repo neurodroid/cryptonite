@@ -156,7 +156,7 @@ public class Preferences extends PreferenceActivity {
                 currentReturnPath = data.getStringExtra(FileDialog.RESULT_EXPORT_PATHS);
                 if (currentReturnPath != null) {
                     File newMntDir = new File(currentReturnPath);
-                    if (isValidMntDir(newMntDir)) {
+                    if (Cryptonite.isValidMntDir(Preferences.this, newMntDir)) {
                         SharedPreferences prefs = getSharedPreferences(Cryptonite.ACCOUNT_PREFS_NAME, 0);
                         Editor prefEdit = prefs.edit();
                         prefEdit.putString("txt_mntpoint", currentReturnPath);
@@ -185,23 +185,4 @@ public class Preferences extends PreferenceActivity {
         startActivityForResult(intent, dialogMode);
     }
     
-    private boolean isValidMntDir(File newMntDir) {
-        if (!newMntDir.exists()) {
-            Toast.makeText(Preferences.this, R.string.txt_mntpoint_nexists, Toast.LENGTH_LONG).show();
-            return false;
-        }
-        if (!newMntDir.isDirectory()) {
-            Toast.makeText(Preferences.this, R.string.txt_mntpoint_nisdir, Toast.LENGTH_LONG).show();
-            return false;
-        }
-        if (!newMntDir.canWrite()) {
-            Toast.makeText(Preferences.this, R.string.txt_mntpoint_ncanwrite, Toast.LENGTH_LONG).show();
-            return false;
-        }
-        if (newMntDir.list().length != 0) {
-            Toast.makeText(Preferences.this, R.string.txt_mntpoint_nempty, Toast.LENGTH_LONG).show();
-            return false;
-        }
-        return true;
-    }
 }

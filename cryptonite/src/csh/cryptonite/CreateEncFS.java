@@ -2,6 +2,7 @@ package csh.cryptonite;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import csh.cryptonite.storage.DropboxStorage;
@@ -42,6 +43,7 @@ public class CreateEncFS extends ListActivity {
     private String[] mMethodDesc;
     
     private String currentReturnPath;
+    private String passwordAttempt, passwordString;
     
     private int currentConfig;
     
@@ -156,16 +158,15 @@ public class CreateEncFS extends ListActivity {
     }
 
     @Override protected Dialog onCreateDialog(int id) {
+        LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        final View layout = inflater.inflate(R.layout.password_dialog, (ViewGroup) findViewById(R.id.root));
+        final EditText password = (EditText) layout.findViewById(R.id.EditText_Pwd);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setView(layout);
+
         switch (id) {
          case Cryptonite.MY_PASSWORD_DIALOG_ID:
-             LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-
-             final View layout = inflater.inflate(R.layout.password_dialog, (ViewGroup) findViewById(R.id.root));
-             final EditText password = (EditText) layout.findViewById(R.id.EditText_Pwd);
-
-             AlertDialog.Builder builder = new AlertDialog.Builder(this);
              builder.setTitle(R.string.title_password);
-             builder.setView(layout);
              builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
                      public void onClick(DialogInterface dialog, int whichButton) {
                          removeDialog(Cryptonite.MY_PASSWORD_DIALOG_ID);
@@ -173,9 +174,33 @@ public class CreateEncFS extends ListActivity {
                  });
              builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                      public void onClick(DialogInterface dialog, int which) {
-                         final String passwordString = password.getText().toString();
+                         passwordAttempt = password.getText().toString();
                          removeDialog(Cryptonite.MY_PASSWORD_DIALOG_ID);
+                         if (passwordAttempt.length() > 0) {
+                             showDialog(Cryptonite.MY_PASSWORD_CONFIRM_DIALOG_ID);
+                         } else {
+                             showToast(R.string.empty_password);
+                         }
+                     }
+                 });
+             return builder.create();
+         case Cryptonite.MY_PASSWORD_CONFIRM_DIALOG_ID:
+             builder.setTitle(R.string.title_confirm_password);
+             builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                     public void onClick(DialogInterface dialog, int whichButton) {
+                         removeDialog(Cryptonite.MY_PASSWORD_CONFIRM_DIALOG_ID);
+                     }
+                 });
+             builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                     public void onClick(DialogInterface dialog, int which) {
+                         passwordString = password.getText().toString();
+                         removeDialog(Cryptonite.MY_PASSWORD_CONFIRM_DIALOG_ID);
                          if (passwordString.length() > 0) {
+                             if (!passwordString.equals(passwordAttempt)) {
+                                 nullPasswords();
+                                 showToast(R.string.pw_mismatch);
+                                 return;
+                             }
                              final ProgressDialog pd = ProgressDialog.show(CreateEncFS.this,
                                      getString(R.string.wait_msg),
                                      getString(R.string.creating_encfs), true);
@@ -187,6 +212,7 @@ public class CreateEncFS extends ListActivity {
                                          public void run() {
                                              if (pd.isShowing())
                                                  pd.dismiss();
+                                             nullPasswords();
                                              Cryptonite.jniResetVolume();
                                              setResult(RESULT_OK, getIntent());
                                              finish();
@@ -201,7 +227,7 @@ public class CreateEncFS extends ListActivity {
                      }
                  });
              return builder.create();
-        }
+         }
         return null;
     }
 
@@ -253,4 +279,13 @@ public class CreateEncFS extends ListActivity {
         });
     }
 
+    private void nullPasswords() {
+        char[] fill = new char[passwordAttempt.length()];
+        Arrays.fill(fill, '\0');
+        passwordAttempt = new String(fill);
+        fill = new char[passwordString.length()];
+        Arrays.fill(fill, '\0');
+        passwordString = new String(fill);
+    }
+    
 }
