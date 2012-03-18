@@ -1,147 +1,236 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="fill_parent" android:layout_height="fill_parent"
-    android:scrollbars="vertical">
-    
-<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<TabHost xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/tabhost"
     android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:stretchColumns="*" >
+    android:layout_height="fill_parent" >
 
-  <Button
-      android:id="@+id/btnDropbox"
-      android:layout_width="0dp"
-      android:layout_height="fill_parent"
-      android:layout_weight="1"
-      android:text="@string/dropbox_link"
-      android:typeface="normal" >
-  </Button>
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:orientation="vertical" >
 
-  <TextView
-      android:id="@+id/tvBrowse" 
-      android:text="@string/browse_info"
-      android:layout_width="fill_parent" 
-      android:layout_height="wrap_content" 
-      android:typeface="normal"
-      android:textStyle="bold">
-  </TextView>
+    <View 
+        android:layout_width="fill_parent" 
+        android:layout_height="0.5dip"
+        android:background="#000" />
+        
+        <TabWidget
+            android:id="@android:id/tabs"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" 
+            android:layout_marginLeft="0dip" android:layout_marginRight="0dip" />
 
-   <TableRow android:layout_width="wrap_content" >
-       <Button
-           android:id="@+id/btnDropboxDecrypt"
-           android:layout_width="0dp"
-           android:layout_height="fill_parent"
-           android:layout_weight="1"
-           android:text="@string/dropbox_decrypt"
-           android:typeface="normal" >
-       </Button>
+        <View 
+            android:layout_width="fill_parent" android:layout_height="2dip"
+            android:background="#696969" />
+        <View android:layout_width="fill_parent" android:layout_height="2dip"
+            android:background="#000" />
+        <FrameLayout
+            android:id="@android:id/tabcontent"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent" >
 
-       <Button
-           android:id="@+id/btnLocalDecrypt"
-           android:layout_width="0dp"
-           android:layout_height="fill_parent"
-           android:layout_weight="1"
-           android:text="@string/local_decrypt"
-           android:typeface="normal" >
-       </Button>
-   </TableRow>
-  <TableRow android:layout_width="wrap_content" >
+            <ScrollView
+                xmlns:android="http://schemas.android.com/apk/res/android"
+                android:id="@+id/tab_db"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:scrollbars="vertical" >
 
-       <Button
-           android:id="@+id/btnBrowseDecrypted"
-           android:layout_width="0dp"
-           android:layout_height="fill_parent"
-           android:layout_weight="1"
-           android:text="@string/browse_decrypted"
-           android:typeface="normal" >
-       </Button>
+                <TableLayout
+                    xmlns:android="http://schemas.android.com/apk/res/android"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:stretchColumns="*" >
 
-       <Button
-           android:id="@+id/btnForgetDecryption"
-           android:layout_width="0dp"
-           android:layout_height="fill_parent"
-           android:layout_weight="1"
-           android:text="@string/forget_decryption"
-           android:typeface="normal" >
-       </Button>
-   </TableRow>
+                    <Button
+                        android:id="@+id/btnAuthDb"
+                        android:layout_width="0dp"
+                        android:layout_height="fill_parent"
+                        android:layout_weight="1"
+                        android:text="@string/dropbox_link"
+                        android:typeface="normal" >
+                    </Button>
 
-  <TextView
-      android:id="@+id/tvCreate" 
-      android:text="@string/create_info"
-      android:layout_width="fill_parent" 
-      android:layout_height="wrap_content" 
-      android:typeface="normal"
-      android:textStyle="bold">
-  </TextView>
+                    <TextView
+                        android:id="@+id/tvBrowseDb"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/browse_info"
+                        android:textStyle="bold"
+                        android:typeface="normal" >
+                    </TextView>
 
-   <TableRow android:layout_width="wrap_content" >
-       <Button
-           android:id="@+id/btnDropboxCreate"
-           android:layout_width="0dp"
-           android:layout_height="fill_parent"
-           android:layout_weight="1"
-           android:text="@string/dropbox_create"
-           android:typeface="normal" >
-       </Button>
+                    <Button
+                        android:id="@+id/btnDecryptDb"
+                        android:layout_width="0dp"
+                        android:layout_height="fill_parent"
+                        android:layout_weight="1"
+                        android:text="@string/dropbox_decrypt"
+                        android:typeface="normal" >
+                    </Button>
 
-       <Button
-           android:id="@+id/btnLocalCreate"
-           android:layout_width="0dp"
-           android:layout_height="fill_parent"
-           android:layout_weight="1"
-           android:text="@string/local_create"
-           android:typeface="normal" >
-       </Button>
-   </TableRow>
-  
-  <TextView
-      android:id="@+id/tvMountInfo" 
-      android:text="@string/mount_info" 
-      android:layout_width="fill_parent" 
-      android:layout_height="wrap_content" 
-      android:typeface="normal"
-      android:textStyle="bold">
-  </TextView>
+                    <TableRow android:layout_width="wrap_content" >
 
-  <TableRow>
+                        <Button
+                            android:id="@+id/btnBrowseDecryptedDb"
+                            android:layout_width="0dp"
+                            android:layout_height="fill_parent"
+                            android:layout_weight="1"
+                            android:text="@string/browse_decrypted"
+                            android:typeface="normal" >
+                        </Button>
 
-      <Button
-          android:id="@+id/btnMount"
-          android:layout_width="0dp"
-          android:layout_height="fill_parent"
-          android:layout_weight="1"
-          android:text="@string/mount"
-          android:typeface="normal" >
-      </Button>
+                        <Button
+                            android:id="@+id/btnForgetDecryptionDb"
+                            android:layout_width="0dp"
+                            android:layout_height="fill_parent"
+                            android:layout_weight="1"
+                            android:text="@string/forget_decryption"
+                            android:typeface="normal" >
+                        </Button>
+                    </TableRow>
 
-      <!-- Button
-          android:id="@+id/btnUnmount"
-          android:layout_width="0dp"
-          android:layout_height="fill_parent"
-          android:layout_weight="1"
-          android:text="@string/unmount"
-          android:typeface="normal" >
-      </Button -->
+                    <TextView
+                        android:id="@+id/tvCreateDb"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/create_info"
+                        android:textStyle="bold"
+                        android:typeface="normal" >
+                    </TextView>
 
-      <Button
-          android:id="@+id/btnViewMount"
-          android:layout_width="0dp"
-          android:layout_height="fill_parent"
-          android:layout_weight="1"
-          android:text="@string/viewmount"
-          android:typeface="normal" >
-      </Button>
-  </TableRow>
+                    <Button
+                        android:id="@+id/btnCreateDb"
+                        android:layout_width="0dp"
+                        android:layout_height="fill_parent"
+                        android:layout_weight="1"
+                        android:text="@string/dropbox_create"
+                        android:typeface="normal" >
+                    </Button>
 
-  <TextView
-      android:id="@+id/tvVersion" 
-      android:layout_width="fill_parent" 
-      android:layout_height="wrap_content" 
-      android:typeface="normal"
-      android:textStyle="bold">
-  </TextView>
+                    <TextView
+                        android:id="@+id/tvVersionDb"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:textStyle="bold"
+                        android:typeface="normal" >
+                    </TextView>
+                </TableLayout>
+            </ScrollView>
 
-</TableLayout>
-</ScrollView>
+            <ScrollView
+                xmlns:android="http://schemas.android.com/apk/res/android"
+                android:id="@+id/tab_local"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:scrollbars="vertical" >
+
+                <TableLayout
+                    xmlns:android="http://schemas.android.com/apk/res/android"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:stretchColumns="*" >
+
+                    <TextView
+                        android:id="@+id/tvBrowseLocal"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/browse_info"
+                        android:textStyle="bold"
+                        android:typeface="normal" >
+                    </TextView>
+
+                    <Button
+                        android:id="@+id/btnDecryptLocal"
+                        android:layout_width="0dp"
+                        android:layout_height="fill_parent"
+                        android:layout_weight="1"
+                        android:text="@string/local_decrypt"
+                        android:typeface="normal" >
+                    </Button>
+
+                    <TableRow android:layout_width="wrap_content" >
+
+                        <Button
+                            android:id="@+id/btnBrowseDecryptedLocal"
+                            android:layout_width="0dp"
+                            android:layout_height="fill_parent"
+                            android:layout_weight="1"
+                            android:text="@string/browse_decrypted"
+                            android:typeface="normal" >
+                        </Button>
+
+                        <Button
+                            android:id="@+id/btnForgetDecryptionLocal"
+                            android:layout_width="0dp"
+                            android:layout_height="fill_parent"
+                            android:layout_weight="1"
+                            android:text="@string/forget_decryption"
+                            android:typeface="normal" >
+                        </Button>
+                    </TableRow>
+
+                    <TextView
+                        android:id="@+id/tvCreateLocal"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/create_info"
+                        android:textStyle="bold"
+                        android:typeface="normal" >
+                    </TextView>
+
+                    <Button
+                        android:id="@+id/btnCreateLocal"
+                        android:layout_width="0dp"
+                        android:layout_height="fill_parent"
+                        android:layout_weight="1"
+                        android:text="@string/local_create"
+                        android:typeface="normal" >
+                    </Button>
+
+                    <TextView
+                        android:id="@+id/tvMountInfo"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/mount_info"
+                        android:textStyle="bold"
+                        android:typeface="normal" >
+                    </TextView>
+
+                    <TableRow>
+
+                        <Button
+                            android:id="@+id/btnMount"
+                            android:layout_width="0dp"
+                            android:layout_height="fill_parent"
+                            android:layout_weight="1"
+                            android:text="@string/mount"
+                            android:typeface="normal" >
+                        </Button>
+
+                        <Button
+                            android:id="@+id/btnViewMount"
+                            android:layout_width="0dp"
+                            android:layout_height="fill_parent"
+                            android:layout_weight="1"
+                            android:text="@string/viewmount"
+                            android:typeface="normal" >
+                        </Button>
+                    </TableRow>
+
+                    <TextView
+                        android:id="@+id/tvVersionLocal"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:textStyle="bold"
+                        android:typeface="normal" >
+                    </TextView>
+                </TableLayout>
+            </ScrollView>
+        </FrameLayout>
+    </LinearLayout>
+
+</TabHost>

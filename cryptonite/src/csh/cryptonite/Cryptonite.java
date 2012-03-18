@@ -63,6 +63,7 @@ import android.view.View.OnClickListener;
 import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -124,12 +125,15 @@ public class Cryptonite extends Activity
     private int currentDialogMode = SelectionMode.MODE_OPEN;
 
     private String mntDir = "/sdcard" + MNTPNT;
-    private TextView tv;
+    private TextView tvDb;
+    private TextView tvLocal;
     private TextView tvMountInfo;
     private String encfsVersion, opensslVersion, encfsoutput;
-    private Button buttonDropbox, buttonDropboxDecrypt, buttonLocalDecrypt,
-        buttonBrowseDecrypted, buttonForgetDecryption,
-        buttonDropboxCreate, buttonLocalCreate,
+    private Button buttonAuthDb, 
+        buttonDecryptDb, buttonDecryptLocal,
+        buttonBrowseDecryptedDb, buttonBrowseDecryptedLocal,
+        buttonForgetDecryptionDb, buttonForgetDecryptionLocal,
+        buttonCreateDb, buttonCreateLocal,
         buttonMount, buttonViewMount;
     private int opMode = -1;
     private int prevMode = -1;
@@ -142,6 +146,7 @@ public class Cryptonite extends Activity
     private boolean triedLogin = false;
     private boolean mInstrumentation = false;
     private boolean mUseAppFolder;
+    private TabHost mTabHost;
     
     // If you'd like to change the access type to the full Dropbox instead of
     // an app folder, change this value.
@@ -166,6 +171,22 @@ public class Cryptonite extends Activity
             return;
         }
         
+        mTabHost = (TabHost)findViewById(android.R.id.tabhost);
+        mTabHost.setup();
+
+        mTabHost.getTabWidget().setDividerDrawable(R.drawable.tab_divider);
+        
+        mTabHost.addTab(mTabHost.newTabSpec("tab_db")
+                .setIndicator(createTabView(mTabHost.getContext(), 
+                        getString(R.string.dropbox_tabtitle)))
+                .setContent(R.id.tab_db));
+        mTabHost.addTab(mTabHost.newTabSpec("tab_local")
+                .setIndicator(createTabView(mTabHost.getContext(), 
+                        getString(R.string.local_tabtitle)))
+                .setContent(R.id.tab_local));
+        
+        mTabHost.setCurrentTab(0);
+
         /* Running from Instrumentation? */
         if (getIntent() != null) {
             mInstrumentation = getIntent().getBooleanExtra("csh.cryptonite.instrumentation", false);
@@ -178,8 +199,10 @@ public class Cryptonite extends Activity
         encfsVersion = "EncFS " + jniEncFSVersion();
         opensslVersion = jniOpenSSLVersion();
         Log.v(TAG, encfsVersion + " " + opensslVersion);
-        tv = (TextView)findViewById(R.id.tvVersion);
-        tv.setText(encfsVersion + "\n" + opensslVersion);
+        tvDb = (TextView)findViewById(R.id.tvVersionDb);
+        tvDb.setText(encfsVersion + "\n" + opensslVersion);
+        tvLocal = (TextView)findViewById(R.id.tvVersionLocal);
+        tvLocal.setText(encfsVersion + "\n" + opensslVersion);
 
         SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
         setupReadDirs(prefs.getBoolean("cb_extcache", false));
@@ -218,8 +241,8 @@ public class Cryptonite extends Activity
         }
         
         /* Link with Dropbox */
-        buttonDropbox = (Button)findViewById(R.id.btnDropbox);
-        buttonDropbox.setOnClickListener(new OnClickListener() {
+        buttonAuthDb = (Button)findViewById(R.id.btnAuthDb);
+        buttonAuthDb.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     // If necessary, we create a new AuthSession 
                     // so that we can use the Dropbox API.
@@ -239,11 +262,11 @@ public class Cryptonite extends Activity
                     }
                 }});
 
-        buttonDropbox.setEnabled(true);
+        buttonAuthDb.setEnabled(true);
         
         /* Decrypt EncFS volume on Dropbox */
-        buttonDropboxDecrypt = (Button)findViewById(R.id.btnDropboxDecrypt);
-        buttonDropboxDecrypt.setOnClickListener(new OnClickListener() {
+        buttonDecryptDb = (Button)findViewById(R.id.btnDecryptDb);
+        buttonDecryptDb.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     opMode = SELECTDBENCFS_MODE;
                     currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
@@ -259,11 +282,11 @@ public class Cryptonite extends Activity
                     }
                 }});
 
-        buttonDropboxDecrypt.setEnabled(mLoggedIn && !volumeLoaded);
+        buttonDecryptDb.setEnabled(mLoggedIn && !volumeLoaded);
         
         /* Decrypt local encFS volume */
-        buttonLocalDecrypt = (Button)findViewById(R.id.btnLocalDecrypt);
-        buttonLocalDecrypt.setOnClickListener(new OnClickListener() {
+        buttonDecryptLocal = (Button)findViewById(R.id.btnDecryptLocal);
+        buttonDecryptLocal.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     opMode = SELECTLOCALENCFS_MODE;
                     currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
@@ -283,44 +306,63 @@ public class Cryptonite extends Activity
                     }
                 }});
 
-        buttonLocalDecrypt.setEnabled(!volumeLoaded);
+        buttonDecryptLocal.setEnabled(!volumeLoaded);
 
         /* Browse decrypted volume */
-        buttonBrowseDecrypted = (Button)findViewById(R.id.btnBrowseDecrypted);
-        buttonBrowseDecrypted.setOnClickListener(new OnClickListener() {
+        buttonBrowseDecryptedDb = (Button)findViewById(R.id.btnBrowseDecryptedDb);
+        buttonBrowseDecryptedDb.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     browseEncFS(currentBrowsePath, currentBrowseStartPath);
                 }});
 
-        buttonBrowseDecrypted.setEnabled(volumeLoaded);
+        buttonBrowseDecryptedDb.setEnabled(volumeLoaded && mStorage.type == Storage.STOR_DROPBOX);
+        
+        /* Browse decrypted volume */
+        buttonBrowseDecryptedLocal = (Button)findViewById(R.id.btnBrowseDecryptedLocal);
+        buttonBrowseDecryptedLocal.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    browseEncFS(currentBrowsePath, currentBrowseStartPath);
+                }});
+
+        buttonBrowseDecryptedLocal.setEnabled(volumeLoaded && mStorage.type == Storage.STOR_LOCAL);
         
         /* Clear decryption information */
-        buttonForgetDecryption = (Button)findViewById(R.id.btnForgetDecryption);
-        buttonForgetDecryption.setOnClickListener(new OnClickListener() {
+        buttonForgetDecryptionDb = (Button)findViewById(R.id.btnForgetDecryptionDb);
+        buttonForgetDecryptionDb.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     cleanUpDecrypted();
                     updateDecryptButtons();
                 }});
 
-        buttonForgetDecryption.setEnabled(volumeLoaded);
+        buttonForgetDecryptionDb.setEnabled(volumeLoaded);
+        
+        /* Clear decryption information */
+        buttonForgetDecryptionLocal = (Button)findViewById(R.id.btnForgetDecryptionLocal);
+        buttonForgetDecryptionLocal.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    cleanUpDecrypted();
+                    updateDecryptButtons();
+                }});
+
+        buttonForgetDecryptionLocal.setEnabled(volumeLoaded);
         
         /* Create EncFS volume on Dropbox */
-        buttonDropboxCreate = (Button)findViewById(R.id.btnDropboxCreate);
-        buttonDropboxCreate.setOnClickListener(new OnClickListener() {
+        buttonCreateDb = (Button)findViewById(R.id.btnCreateDb);
+        buttonCreateDb.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     createEncFS(true);
                 }});
 
-        buttonDropboxCreate.setEnabled(mLoggedIn && !volumeLoaded);
+        buttonCreateDb.setEnabled(mLoggedIn && !volumeLoaded);
 
         /* Create local EncFS volume */
-        buttonLocalCreate = (Button)findViewById(R.id.btnLocalCreate);
-        buttonLocalCreate.setOnClickListener(new OnClickListener() {
+        buttonCreateLocal = (Button)findViewById(R.id.btnCreateLocal);
+        buttonCreateLocal.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     createEncFS(false);
                 }});
 
-        buttonLocalCreate.setEnabled(!volumeLoaded);
+        buttonCreateLocal.setEnabled(!volumeLoaded);
         
         /* Mount local EncFS volume */
         buttonMount = (Button)findViewById(R.id.btnMount);
@@ -438,6 +480,13 @@ public class Cryptonite extends Activity
         }
     }
 
+    private static View createTabView(final Context context, final String text) {
+        View view = LayoutInflater.from(context).inflate(R.layout.tabs_bg, null);
+        TextView tv = (TextView) view.findViewById(R.id.tabsText);
+        tv.setText(text);
+        return view;
+    }
+
     private void setupReadDirs(boolean external) {
         deleteDir(openDir);
         deleteDir(readDir);
@@ -538,12 +587,14 @@ public class Cryptonite extends Activity
     private void updateDecryptButtons() {
         boolean volumeLoaded = (jniVolumeLoaded() == jniSuccess());
 
-        buttonLocalDecrypt.setEnabled(!volumeLoaded);
-        buttonDropboxDecrypt.setEnabled(!volumeLoaded && mLoggedIn);
-        buttonBrowseDecrypted.setEnabled(volumeLoaded);
-        buttonForgetDecryption.setEnabled(volumeLoaded);
-        buttonDropboxCreate.setEnabled(!volumeLoaded && mLoggedIn);
-        buttonLocalCreate.setEnabled(!volumeLoaded);
+        buttonDecryptDb.setEnabled(!volumeLoaded && mLoggedIn);
+        buttonDecryptLocal.setEnabled(!volumeLoaded);
+        buttonBrowseDecryptedDb.setEnabled(volumeLoaded && mStorage.type == Storage.STOR_DROPBOX);
+        buttonBrowseDecryptedLocal.setEnabled(volumeLoaded && mStorage.type == Storage.STOR_LOCAL);
+        buttonForgetDecryptionDb.setEnabled(volumeLoaded);
+        buttonForgetDecryptionLocal.setEnabled(volumeLoaded);
+        buttonCreateDb.setEnabled(!volumeLoaded && mLoggedIn);
+        buttonCreateLocal.setEnabled(!volumeLoaded);
 
         if (!volumeLoaded) {
             mStorage = null;
@@ -952,8 +1003,8 @@ public class Cryptonite extends Activity
     /** This will run the shipped encfs binary and spawn a daemon on rooted devices
      */
     private void mountEncFS(final String srcDir) {
-        tv.setText(encfsVersion + "\n" + opensslVersion);
-        tv.invalidate();
+        tvLocal.setText(encfsVersion + "\n" + opensslVersion);
+        tvLocal.invalidate();
 
         if (jniIsValidEncFS(srcDir) != jniSuccess()) {
             showAlert(R.string.error, R.string.invalid_encfs);
@@ -966,8 +1017,8 @@ public class Cryptonite extends Activity
             return;
         }
         final ProgressDialog pd = ProgressDialog.show(this,
-                                                      this.getString(R.string.wait_msg),
-                                                      this.getString(R.string.running_encfs), true);
+                this.getString(R.string.wait_msg),
+                this.getString(R.string.running_encfs), true);
         Log.v(TAG, "Running encfs with " + srcDir + " " + mntDir);
         alertMsg = "";
         new Thread(new Runnable(){
@@ -986,7 +1037,7 @@ public class Cryptonite extends Activity
                                 if (pd.isShowing())
                                     pd.dismiss();
                                 if (encfsoutput.length() > 0) {
-                                    tv.setText(encfsVersion + "\n" + encfsoutput);
+                                    tvLocal.setText(encfsVersion + "\n" + encfsoutput);
                                 }
                                 if (!alertMsg.equals("")) {
                                     showAlert(R.string.error, alertMsg);
@@ -1008,8 +1059,10 @@ public class Cryptonite extends Activity
      * @param pwd password
      */
    private void initEncFS(final String srcDir) {
-       tv.setText(encfsVersion + "\n" + opensslVersion);
-       tv.invalidate();
+       tvLocal.setText(encfsVersion + "\n" + opensslVersion);
+       tvLocal.invalidate();
+       tvDb.setText(encfsVersion + "\n" + opensslVersion);
+       tvDb.invalidate();
        alertMsg = "";
        
        final ProgressDialog pd = ProgressDialog.show(this, 
@@ -1372,11 +1425,11 @@ public class Cryptonite extends Activity
     private void setLoggedIn(boolean loggedIn) {
         mLoggedIn = loggedIn;
         if (loggedIn) {
-            buttonDropbox.setText(R.string.dropbox_unlink);
-            buttonDropboxDecrypt.setEnabled(true);
+            buttonAuthDb.setText(R.string.dropbox_unlink);
+            buttonDecryptDb.setEnabled(true);
         } else {
-            buttonDropbox.setText(R.string.dropbox_link);
-            buttonDropboxDecrypt.setEnabled(false);
+            buttonAuthDb.setText(R.string.dropbox_link);
+            buttonDecryptDb.setEnabled(false);
             if (mStorage != null && mStorage.type == Storage.STOR_DROPBOX) {
                 jniResetVolume();
                 mStorage = null;

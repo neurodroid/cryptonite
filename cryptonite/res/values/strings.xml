@@ -97,6 +97,7 @@
     <string name="jni_fail">Failed to load native library. Please report an issue or send me an email so that I can fix this bug. Will exit now.</string>
     <string name="crash_report">Cryptonite crash report</string>
     <string name="crash_report_content">Please provide information about your device, manufacturer, and Android version.</string>
+    <string name="local_tabtitle">LOCAL</string>
     
     <!-- Dropbox -->
     <string name="dropbox_link">Link with Dropbox</string>
@@ -124,6 +125,7 @@
     <string name="dropbox_full">Full</string>
     <string name="dropbox_folder">App Folder</string>
     <string name="dropbox_forced_logout">Unlinked from Dropbox to enable new access settings</string>
+    <string name="dropbox_tabtitle">DROPBOX</string>
     
     <!-- File Browser -->
     <string name="select">Select</string>
