@@ -29,6 +29,7 @@ import com.dropbox.client2.exception.DropboxException;
 import csh.cryptonite.Cryptonite;
 import csh.cryptonite.CryptoniteApp;
 import csh.cryptonite.R;
+import csh.cryptonite.SelectionMode;
 import android.content.Context;
 import android.util.Log;
 
@@ -37,9 +38,59 @@ public class DropboxStorage extends Storage {
     public DropboxStorage(Context context, CryptoniteApp app) {
         super(context, app);
         type = STOR_DROPBOX;
+        fdSelectionMode = SelectionMode.MODE_OPEN_MULTISELECT_DB;
+        selectExportMode = Cryptonite.SELECTDBEXPORT_MODE;
+        exportMode = Cryptonite.DBEXPORT_MODE;
+        uploadMode = Cryptonite.SELECTDBUPLOAD_MODE;
         waitString = mApp.getString(R.string.dropbox_reading);
+        browsePnt = Cryptonite.DROPBOXPNT;
     }
     
+    @Override
+    public boolean initEncFS(String srcDir, String initRoot) {
+        /* Download encfs*.xml from Dropbox 
+         * to browse folder */
+        String dbPath = srcDir.substring(initRoot.length());
+        try {
+            Entry dbEntry = mApp.getDBEntry(dbPath); 
+            if (dbEntry != null) {
+                if (dbEntry.isDir) {
+                    if (dbEntry.contents != null) {
+                        if (dbEntry.contents.size() > 0) {
+                            for (Entry dbChild : dbEntry.contents) {
+                                if (!dbChild.isDir) {
+                                    if (dbChild.fileName().matches(ENCFS_XML_REGEX)) {
+                                        String localEncfsXmlPath = initRoot + dbChild.path;
+                                        FileOutputStream fos = new FileOutputStream(localEncfsXmlPath);
+                                        mApp.getDBApi()
+                                            .getFile(dbChild.path, null, fos, null);
+                                        Log.i(Cryptonite.TAG, "Downloaded " + dbChild.fileName() + " to " + localEncfsXmlPath);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (DropboxException e) {
+            handleUIToastRequest(e.getMessage() + " " + 
+                    mAppContext.getString(R.string.dropbox_read_fail));
+            return false;
+        } catch (FileNotFoundException e) {
+            handleUIToastRequest(e.getMessage() + " " + 
+                    mAppContext.getString(R.string.dropbox_read_fail));
+            return false;
+        }
+        
+        if (Cryptonite.jniIsValidEncFS(srcDir) != Cryptonite.jniSuccess()) {
+            handleUIToastRequest(R.string.invalid_encfs);
+            Log.e(Cryptonite.TAG, "Invalid EncFS");
+            return false;
+        }
+
+        return true;
+    }
+
     @Override
     public String encodedExists(String stripstr) {
 

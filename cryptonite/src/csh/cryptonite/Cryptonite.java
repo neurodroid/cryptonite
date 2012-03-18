@@ -18,7 +18,6 @@ package csh.cryptonite;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
@@ -68,9 +67,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.dropbox.client2.DropboxAPI;
-import com.dropbox.client2.DropboxAPI.Entry;
 import com.dropbox.client2.android.AndroidAuthSession;
-import com.dropbox.client2.exception.DropboxException;
 import com.dropbox.client2.session.AccessTokenPair;
 import com.dropbox.client2.session.AppKeyPair;
 import com.dropbox.client2.session.Session.AccessType;
@@ -86,7 +83,7 @@ public class Cryptonite extends Activity
 {
 
     private static final int REQUEST_PREFS=0, REQUEST_CODE_PICK_FILE_OR_DIRECTORY=1;
-    private static final int MOUNT_MODE=0, SELECTLOCALENCFS_MODE=1, SELECTDBENCFS_MODE=2,
+    public static final int MOUNT_MODE=0, SELECTLOCALENCFS_MODE=1, SELECTDBENCFS_MODE=2,
         VIEWMOUNT_MODE=3, SELECTLOCALEXPORT_MODE=4, LOCALEXPORT_MODE=5, DROPBOX_AUTH_MODE=6,
         SELECTDBEXPORT_MODE=7, DBEXPORT_MODE=8, SELECTLOCALUPLOAD_MODE=9, SELECTDBUPLOAD_MODE=10;
     private static final int DIRPICK_MODE=0, FILEPICK_MODE=1;
@@ -102,7 +99,7 @@ public class Cryptonite extends Activity
 
     public static final String BROWSEPNT = "browse";
     public static final String OPENPNT = "open";
-    private static final String DROPBOXPNT = "dropbox";
+    public static final String DROPBOXPNT = "dropbox";
     private static final String READPNT = "read";
     private static final String CACHEPNT = "cache";
 
@@ -204,8 +201,8 @@ public class Cryptonite extends Activity
         /* Copy the encfs binaries to binDir and make executable. */
         if (needsEncFSBinary()) {
             final ProgressDialog pd = ProgressDialog.show(this,
-                                                          this.getString(R.string.wait_msg),
-                                                          this.getString(R.string.copying_bins), true);
+                    this.getString(R.string.wait_msg),
+                    this.getString(R.string.copying_bins), true);
             new Thread(new Runnable(){
                     public void run(){
                         cpEncFSBin();
@@ -292,17 +289,7 @@ public class Cryptonite extends Activity
         buttonBrowseDecrypted = (Button)findViewById(R.id.btnBrowseDecrypted);
         buttonBrowseDecrypted.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-                    switch (mStorage.type) {
-                    case Storage.STOR_LOCAL:
-                        localBrowseEncFS(currentBrowsePath, currentBrowseStartPath);
-                        break;
-                    case Storage.STOR_DROPBOX:
-                        dbBrowseEncFS(currentBrowsePath, currentBrowseStartPath);
-                        break;
-                    default:
-                        break;
-                    }
-                    
+                    browseEncFS(currentBrowsePath, currentBrowseStartPath);
                 }});
 
         buttonBrowseDecrypted.setEnabled(volumeLoaded);
@@ -326,7 +313,7 @@ public class Cryptonite extends Activity
 
         buttonDropboxCreate.setEnabled(mLoggedIn && !volumeLoaded);
 
-        /* Clear local EncFS volume */
+        /* Create local EncFS volume */
         buttonLocalCreate = (Button)findViewById(R.id.btnLocalCreate);
         buttonLocalCreate.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
@@ -581,7 +568,8 @@ public class Cryptonite extends Activity
 
     /** Called upon exit from other activities */
     public synchronized void onActivityResult(final int requestCode,
-                                              int resultCode, final Intent data) {
+            int resultCode, final Intent data) 
+    {
 
         switch (requestCode) {
         case SelectionMode.MODE_OPEN:
@@ -707,13 +695,10 @@ public class Cryptonite extends Activity
                     currentDialogRoot = "/";
                     currentDialogRootName = currentDialogRoot;
                     /* currentDialogDBEncFS = ""; Leave this untouched for dbExport */
-                    switch (opMode) {
-                    case SELECTLOCALEXPORT_MODE:
-                        opMode = LOCALEXPORT_MODE;
-                        break;
-                    case SELECTDBEXPORT_MODE:
-                        opMode = DBEXPORT_MODE;
-                        break;
+                    if (mStorage != null) {
+                        opMode = mStorage.exportMode;
+                    } else {
+                        return;
                     }
                     launchBuiltinFileBrowser();
                 } else {
@@ -736,13 +721,10 @@ public class Cryptonite extends Activity
                             }
                             currentDialogRoot = "/";
                             currentDialogRootName = currentDialogRoot;
-                            switch (opMode) {
-                            case SELECTLOCALEXPORT_MODE:
-                                opMode = SELECTLOCALUPLOAD_MODE;
-                                break;
-                            case SELECTDBEXPORT_MODE:
-                                opMode = SELECTDBUPLOAD_MODE;
-                                break;
+                            if (mStorage != null) {
+                                opMode = mStorage.uploadMode;
+                            } else {
+                                return;
                             }
                             launchBuiltinFileBrowser();
                         }
@@ -969,7 +951,7 @@ public class Cryptonite extends Activity
     
     /** This will run the shipped encfs binary and spawn a daemon on rooted devices
      */
-    private void mountEncFS(final String srcDir, String pwd) {
+    private void mountEncFS(final String srcDir) {
         tv.setText(encfsVersion + "\n" + opensslVersion);
         tv.invalidate();
 
@@ -1018,222 +1000,88 @@ public class Cryptonite extends Activity
             
     }
     
-    /** Initialize a local EncFS volume. This will check
+    /** Initialize an EncFS volume. This will check
      * whether the EncFS volume is valid an initialize the EncFS
      * root information
      * 
      * @param srcDir Path to EncFS volume
      * @param pwd password
      */
-     private void localInitEncFS(final String srcDir, final String pwd) {
-        
-        alertMsg = "";
+   private void initEncFS(final String srcDir) {
+       tv.setText(encfsVersion + "\n" + opensslVersion);
+       tv.invalidate();
+       alertMsg = "";
+       
+       final ProgressDialog pd = ProgressDialog.show(this, 
+               this.getString(R.string.wait_msg), 
+               this.getString(R.string.running_encfs), true);
+       new Thread(new Runnable(){
+               public void run(){
+                   if (!mStorage.initEncFS(srcDir, currentDialogRoot)) {
+                       alertMsg = getString(R.string.invalid_encfs);
+                       mStorage = null;
+                   } else {
+                       currentBrowsePath = currentReturnPath;
+                       currentBrowseStartPath = currentDialogStartPath;
+                       currentDialogDBEncFS = currentReturnPath.substring(currentDialogStartPath.length());
+                       Log.i(TAG, "Dialog root is " + currentReturnPath);
+                       if (jniInit(srcDir, currentPassword) != jniSuccess()) {
+                           Log.v(TAG, getString(R.string.browse_failed));
+                           alertMsg = getString(R.string.browse_failed);
+                           mStorage = null;
+                       } else {
+                           Log.v(TAG, "Decoding succeeded");
+                       }
+                   }
+                   runOnUiThread(new Runnable(){
+                           public void run() {
+                               if (pd.isShowing())
+                                   pd.dismiss();
+                               nullPassword();
+                               updateDecryptButtons();
+                               if (alertMsg.length()!=0) {
+                                   showAlert(R.string.error, alertMsg);
+                               }
+                           }
+                       });
+               }
+           }).start();
+                   
+   }
 
-        final ProgressDialog pd = ProgressDialog.show(this,
-                                                      this.getString(R.string.wait_msg),
-                                                      this.getString(R.string.running_encfs), true);
-        new Thread(new Runnable(){
-                public void run(){
-                    if (jniIsValidEncFS(srcDir) != jniSuccess()) {
-                        alertMsg = getString(R.string.invalid_encfs);
-                        Log.e(TAG, "Invalid EncFS");
-                        return;
-                    }
-                    /* Order is important here: DB root has to store
-                     * the previous state of the dialog root.
-                     */
-                    currentBrowsePath = currentReturnPath;
-                    currentBrowseStartPath = currentDialogStartPath;
-                    currentDialogDBEncFS = currentReturnPath.substring(currentDialogStartPath.length());
-                    Log.i(TAG, "Dialog DB root is " + currentReturnPath);
-                    if (jniInit(srcDir, pwd) != jniSuccess()) {
-                        Log.v(TAG, getString(R.string.browse_failed));
-                        alertMsg = getString(R.string.browse_failed);
-                    } else {
-                        Log.v(TAG, "Decoding succeeded");
-                    }
-                    runOnUiThread(new Runnable(){
-                            public void run() {
-                                if (pd.isShowing())
-                                    pd.dismiss();
-                                nullPassword();
-                                updateDecryptButtons();
+   /** Browse an EncFS volume using a virtual file system.
+    * File names are queried on demand when a directory is opened.
+    * @param browsePath EncFS path 
+    * @param browseStartPath Root path
+    */
+   private void browseEncFS(final String browsePath, final String browseStartPath) {
+       final VirtualFile browseDirF = new VirtualFile(VirtualFile.VIRTUAL_TAG + "/" + mStorage.browsePnt);
+       browseDirF.mkdirs();
 
-                                mStorage = new LocalStorage(Cryptonite.this, 
-                                        ((CryptoniteApp)getApplication()));
-                                if (alertMsg.length()!=0) {
-                                    showAlert(R.string.error, alertMsg);
-                                }
-                            }
-                        });
-                }
-            }).start();
-            
-    }
-
-    /** Browse a local encFS directory using a virtual file system.
-     * File names are queried on demand when a directory is opened.
-     * @param browsePath EncFS path 
-     * @param browseStartPath Root path
-     */
-     private void localBrowseEncFS(final String browsePath, final String browseStartPath) {
-        final VirtualFile browseDirF = new VirtualFile(VirtualFile.VIRTUAL_TAG + "/" + BROWSEPNT);
-        browseDirF.mkdirs();
-        
-        final ProgressDialog pd = ProgressDialog.show(this,
-                                                      this.getString(R.string.wait_msg),
-                                                      this.getString(R.string.running_encfs), true);
-        new Thread(new Runnable(){
-                public void run(){
-                    currentDialogDBEncFS = browsePath.substring(browseStartPath.length());
-                    Log.i(TAG, "Dialog DB root is " + browsePath);
-                    currentDialogStartPath = browseDirF.getPath();
-                    currentDialogLabel = getString(R.string.select_file_export);
-                    currentDialogButtonLabel = getString(R.string.export);
-                    currentDialogRoot = currentDialogStartPath;
-                    encfsBrowseRoot = currentDialogRoot;
-                    currentDialogRootName = getString(R.string.encfs_root);
-                    currentDialogMode = SelectionMode.MODE_OPEN_MULTISELECT;
-                    runOnUiThread(new Runnable(){
-                            public void run() {
-                                if (pd.isShowing())
-                                    pd.dismiss();
-                                opMode = SELECTLOCALEXPORT_MODE;
-                                launchBuiltinFileBrowser();
-                            }
-                        });
-                }
-            }).start();
-            
-    }
-    
-    /** Initialize an EncFS volume on Dropbox. This will check
-     * whether the EncFS volume is valid an initialize the EncFS
-     * root information
-     * 
-     * @param srcDir Path to EncFS volume
-     * @param pwd password
-     */
-    private void dbInitEncFS(final String srcDir, String pwd) {
-        tv.setText(encfsVersion + "\n" + opensslVersion);
-        tv.invalidate();
-
-        /* Download encfs*.xml from Dropbox 
-         * to browse folder */
-        final String dbPath = srcDir.substring(currentDialogRoot.length());
-        final String encfsXmlRegex = "\\.encfs.\\.xml";
-        
-        alertMsg = "";
-        final ProgressDialog pd = ProgressDialog.show(this, 
-                this.getString(R.string.wait_msg), 
-                this.getString(R.string.running_encfs), true);
-        new Thread(new Runnable(){
-                public void run(){
-                    try {
-                        Entry dbEntry = ((CryptoniteApp) getApplication()).getDBEntry(dbPath); 
-                        if (dbEntry != null) {
-                            if (dbEntry.isDir) {
-                                if (dbEntry.contents != null) {
-                                    if (dbEntry.contents.size() > 0) {
-                                        for (Entry dbChild : dbEntry.contents) {
-                                            if (!dbChild.isDir) {
-                                                if (dbChild.fileName().matches(encfsXmlRegex)) {
-                                                    String localEncfsXmlPath = currentDialogRoot + dbChild.path;
-                                                    FileOutputStream fos = new FileOutputStream(localEncfsXmlPath);
-                                                    ((CryptoniteApp) getApplication()).getDBApi()
-                                                        .getFile(dbChild.path, null, fos, null);
-                                                    Log.i(TAG, "Downloaded " + dbChild.fileName() + " to " + localEncfsXmlPath);
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    } catch (DropboxException e) {
-                        alertMsg = e.getMessage() + " " + getString(R.string.dropbox_read_fail);
-                        return;
-                    } catch (FileNotFoundException e) {
-                        alertMsg = e.getMessage() + " " + getString(R.string.dropbox_read_fail);
-                        return;
-                    }
-                    
-                    if (jniIsValidEncFS(srcDir) != jniSuccess()) {
-                        alertMsg = getString(R.string.invalid_encfs);
-                        Log.e(TAG, "Invalid EncFS");
-                        return;
-                    }
-                    /* Order is important here: DB root has to store
-                     * the previous state of the dialog root.
-                     */
-                    currentBrowsePath = currentReturnPath;
-                    currentBrowseStartPath = currentDialogStartPath;
-                    currentDialogDBEncFS = currentReturnPath.substring(currentDialogStartPath.length());
-                    Log.i(TAG, "Dialog DB root is " + currentReturnPath);
-                    if (jniInit(srcDir, currentPassword) != jniSuccess()) {
-                        Log.v(TAG, getString(R.string.browse_failed));
-                        alertMsg = getString(R.string.browse_failed);
-                    } else {
-                        Log.v(TAG, "Decoding succeeded");
-                    }
-                    runOnUiThread(new Runnable(){
-                            public void run() {
-                                if (pd.isShowing())
-                                    pd.dismiss();
-                                nullPassword();
-                                if (alertMsg.length()!=0) {
-                                    showAlert(R.string.error, alertMsg);
-                                } else {
-                                    mStorage = new DropboxStorage(Cryptonite.this,
-                                            ((CryptoniteApp)getApplication()));
-                                }
-                                updateDecryptButtons();
-                            }
-                        });
-                }
-            }).start();
-            
-    }
- 
-    /** Browse an encFS directory on Dropbox using a virtual file system.
-     * File names are queried on demand when a directory is opened.
-     * See https://www.dropbox.com/developers/reference/bestpractice
-     * @param browsePath EncFS path 
-     * @param browseStartPath Dropbox path
-     */
-    private void dbBrowseEncFS(final String browsePath, final String browseStartPath) {
- 
-        final VirtualFile browseDirF = new VirtualFile(VirtualFile.VIRTUAL_TAG + "/" + DROPBOXPNT);
-        browseDirF.mkdirs();
-        
-        final ProgressDialog pd = ProgressDialog.show(this, 
-                this.getString(R.string.wait_msg), 
-                this.getString(R.string.running_encfs), true);
-        new Thread(new Runnable(){
-                public void run(){
-                    /* Order is important here: DB root has to store
-                     * the previous state of the dialog root.
-                     */
-                    currentDialogDBEncFS = browsePath.substring(browseStartPath.length());
-                    Log.i(TAG, "Dialog DB root is " + browsePath);
-                    currentDialogStartPath = browseDirF.getPath();
-                    currentDialogLabel = getString(R.string.select_file_export);
-                    currentDialogButtonLabel = getString(R.string.export);
-                    currentDialogRoot = currentDialogStartPath;
-                    encfsBrowseRoot = currentDialogRoot;
-                    currentDialogRootName = getString(R.string.encfs_root);
-                    currentDialogMode = SelectionMode.MODE_OPEN_MULTISELECT_DB;
-                    runOnUiThread(new Runnable(){
-                            public void run() {
-                                if (pd.isShowing())
-                                    pd.dismiss();
-                                opMode = SELECTDBEXPORT_MODE;
-                                launchBuiltinFileBrowser();
-                            }
-                        });
-                }
-            }).start();
-            
+       final ProgressDialog pd = ProgressDialog.show(this,
+               this.getString(R.string.wait_msg),
+               this.getString(R.string.running_encfs), true);
+       new Thread(new Runnable(){
+               public void run(){
+                   currentDialogDBEncFS = browsePath.substring(browseStartPath.length());
+                   Log.i(TAG, "Dialog root is " + browsePath);
+                   currentDialogStartPath = browseDirF.getPath();
+                   currentDialogLabel = getString(R.string.select_file_export);
+                   currentDialogButtonLabel = getString(R.string.export);
+                   currentDialogRoot = currentDialogStartPath;
+                   encfsBrowseRoot = currentDialogRoot;
+                   currentDialogRootName = getString(R.string.encfs_root);
+                   currentDialogMode = mStorage.fdSelectionMode;
+                   runOnUiThread(new Runnable(){
+                           public void run() {
+                               if (pd.isShowing())
+                                   pd.dismiss();
+                               opMode = mStorage.selectExportMode;
+                               launchBuiltinFileBrowser();
+                           }
+                       });
+               }
+           }).start();
     }
     
     public File getPrivateDir(String label) {
@@ -1283,15 +1131,20 @@ public class Cryptonite extends Activity
                          if (currentPassword.length() > 0) {
                              switch (opMode) {
                               case MOUNT_MODE:
-                                  mountEncFS(currentReturnPath, currentPassword);
+                                  mountEncFS(currentReturnPath);
                                   opMode = prevMode;
                                   break;
                               case SELECTLOCALENCFS_MODE:
-                                  localInitEncFS(currentReturnPath, currentPassword);
+                                  mStorage = new LocalStorage(Cryptonite.this,
+                                          ((CryptoniteApp)getApplication()));
                                   break;
                               case SELECTDBENCFS_MODE:
-                                  dbInitEncFS(currentReturnPath, currentPassword);
+                                  mStorage = new DropboxStorage(Cryptonite.this,
+                                          ((CryptoniteApp)getApplication()));
                                   break;
+                             }
+                             if (opMode == SELECTLOCALENCFS_MODE || opMode == SELECTDBENCFS_MODE) {
+                                 initEncFS(currentReturnPath);
                              }
                          } else {
                              showAlert(R.string.error, R.string.empty_password);
@@ -1361,7 +1214,6 @@ public class Cryptonite extends Activity
                  builder.show();
                  return true;
              } catch (PackageManager.NameNotFoundException e) {
-                 // TODO Auto-generated catch block
                  return false;
              }
          default:
@@ -1817,7 +1669,7 @@ public class Cryptonite extends Activity
      */
     public native int     jniFailure();
     public static native int jniSuccess();
-    public native int     jniIsValidEncFS(String srcDir);
+    public static native int     jniIsValidEncFS(String srcDir);
     public static native int jniVolumeLoaded();
     public static native int jniResetVolume();
     public native int     jniBrowse(String srcDir, String destDir, String password);

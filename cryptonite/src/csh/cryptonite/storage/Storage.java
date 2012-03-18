@@ -22,6 +22,7 @@ import java.io.IOException;
 import csh.cryptonite.Cryptonite;
 import csh.cryptonite.CryptoniteApp;
 import csh.cryptonite.R;
+import csh.cryptonite.SelectionMode;
 import csh.cryptonite.UploadEncrypted;
 import android.content.Context;
 import android.os.Handler;
@@ -34,11 +35,18 @@ import android.widget.Toast;
 public abstract class Storage {
 
     public static final int STOR_UNDEFINED=-1, STOR_LOCAL=0, STOR_DROPBOX=1;
+    public static final String ENCFS_XML_REGEX = "\\.encfs.\\.xml";
+
     public Context mCallingContext;
     public Context mAppContext;
     public CryptoniteApp mApp;
     public int type;
+    public int fdSelectionMode;
+    public int selectExportMode;
+    public int exportMode;
+    public int uploadMode;
     public String waitString;
+    public String browsePnt;
     
     private UIHandler uiHandler;
     
@@ -47,12 +55,18 @@ public abstract class Storage {
         mAppContext = context.getApplicationContext();
         mApp = app;
         type = STOR_UNDEFINED;
+        fdSelectionMode = SelectionMode.MODE_OPEN_MULTISELECT;
+        selectExportMode = Cryptonite.SELECTLOCALEXPORT_MODE;
+        exportMode = Cryptonite.LOCALEXPORT_MODE;
+        uploadMode = Cryptonite.SELECTLOCALUPLOAD_MODE;
         waitString = "";
+        browsePnt = "";
         Thread uiThread = new HandlerThread("UIHandler");
         uiThread.start();
         uiHandler = new UIHandler(((HandlerThread) uiThread).getLooper());
     }
-            
+    abstract public boolean initEncFS(String srcDir, String initRoot);
+    
     abstract public boolean uploadEncFSFile(String stripstr, String srcPath);
     
     abstract public boolean decryptEncFSFile(String encodedPath, String targetPath, String encfsPath);
