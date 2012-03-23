@@ -106,7 +106,7 @@ else if [ os.name ] = MACOSX
     androidPlatform = darwin-x86 ;
 }
 modules.poke : NO_BZIP2 : 1 ;
-ANDROID_NDK = ../../../android-ndk-r7 ;
+ANDROID_NDK = ../../../android-ndk-r7b ;
 using gcc : android4.4.3 :
 $(ANDROID_NDK)/toolchains/arm-linux-androideabi-4.4.3/prebuilt/$(androidPlatform)/bin/arm-linux-androideabi-g++ :
 <compileflags>--sysroot=$(ANDROID_NDK)/platforms/android-8/arch-arm

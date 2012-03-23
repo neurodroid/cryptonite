@@ -1,6 +1,6 @@
 #! /bin/bash
 
-NDKDIR=${HOME}/android-ndk-r7
+NDKDIR=${HOME}/android-ndk-r7b
 TOOLCHAIN=${NDKDIR}/platforms/android-8/arch-arm
 MYAR=arm-linux-androideabi-ar
 MYRANLIB=arm-linux-androideabi-ranlib
@@ -15,13 +15,15 @@ else
     ARCH=armeabi
 fi
 
-LIBSTDCXXLIB="-L${NDKDIR}/sources/cxx-stl/gnu-libstdc++/libs/${ARCH} -lgnustl_static"
+STDCXXDIR="${NDKDIR}/sources/cxx-stl/gnu-libstdc++"
+LIBSTDCXXLIB="-L${STDCXXDIR}/libs/${ARCH} -lgnustl_static"
+LIBSTDCXXINC="-I${STDCXXDIR}/include -I${STDCXXDIR}/libs/${ARCH}/include"
 
 TARGET=`pwd`/${ARCH}
 
 AR=${MYAR} RANLIB=${MYRANLIB} NM=${MYNM} STRIP=${MYSTRIP} CC=${MYAGCC} CXX=${MYAGCC} \
     PKG_CONFIG="" \
-    CPPFLAGS="-I${TOOLCHAIN}/sysroot/usr/include" \
+    CPPFLAGS="-I${TOOLCHAIN}/usr/include ${LIBSTDCXXINC}" \
     CXXFLAGS="-fexceptions -frtti" \
     LDFLAGS="${LIBSTDCXXLIB} -L$TOOLCHAIN/lib/gcc/arm-linux-androideabi/4.4.3 -lgcc" \
     ./configure --prefix=${TARGET} --host=x86-linux --build=arm-eabi --enable-static --disable-shared --disable-docs
