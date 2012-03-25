@@ -128,7 +128,7 @@ public class Cryptonite extends Activity
     private TextView tvDb;
     private TextView tvLocal;
     private TextView tvMountInfo;
-    private String encfsVersion, opensslVersion, encfsoutput;
+    private String encfsVersion, opensslVersion;
     private Button buttonAuthDb, 
         buttonDecryptDb, buttonDecryptLocal,
         buttonBrowseDecryptedDb, buttonBrowseDecryptedLocal,
@@ -1023,6 +1023,7 @@ public class Cryptonite extends Activity
         alertMsg = "";
         new Thread(new Runnable(){
                 public void run(){
+                    String encfsoutput = "";
                     String[] cmdlist = {ENCFSBIN, "--public", "--stdinpass",
                             "\"" + srcDir + "\"", "\"" + mntDir + "\""};
                     try {
@@ -1032,12 +1033,13 @@ public class Cryptonite extends Activity
                     } catch (InterruptedException e) {
                         alertMsg = getString(R.string.mount_fail) + ": " + e.getMessage();
                     }
+                    final String fEncfsOutput = encfsoutput;
                     runOnUiThread(new Runnable(){
                             public void run() {
                                 if (pd.isShowing())
                                     pd.dismiss();
-                                if (encfsoutput.length() > 0) {
-                                    tvLocal.setText(encfsVersion + "\n" + encfsoutput);
+                                if (fEncfsOutput != null && fEncfsOutput.length() > 0) {
+                                    tvLocal.setText(encfsVersion + "\n" + fEncfsOutput);
                                 }
                                 if (!alertMsg.equals("")) {
                                     showAlert(R.string.error, alertMsg);
