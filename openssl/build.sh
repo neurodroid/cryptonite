@@ -1,3 +1,5 @@
+# Don't attempt a parallel build! (-jN)
+
 OPENSSL_VERSION="1.0.0h"
 
 cp -v Makefile.android openssl-${OPENSSL_VERSION}

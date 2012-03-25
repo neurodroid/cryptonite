@@ -1,7 +1,7 @@
 #! /bin/bash
 
 NDKDIR=${HOME}/android-ndk-r7b
-TOOLCHAIN=${NDKDIR}/platforms/android-8/arch-arm
+TOOLCHAIN=${HOME}/android-toolchain
 MYAR=arm-linux-androideabi-ar
 MYRANLIB=arm-linux-androideabi-ranlib
 MYNM=arm-linux-androideabi-nm
@@ -23,7 +23,11 @@ TARGET=`pwd`/${ARCH}
 
 AR=${MYAR} RANLIB=${MYRANLIB} NM=${MYNM} STRIP=${MYSTRIP} CC=${MYAGCC} CXX=${MYAGCC} \
     PKG_CONFIG="" \
-    CPPFLAGS="-I${TOOLCHAIN}/usr/include ${LIBSTDCXXINC}" \
+    CPPFLAGS="-I${TOOLCHAIN}/sysroot/usr/include ${LIBSTDCXXINC}" \
     CXXFLAGS="-fexceptions -frtti" \
     LDFLAGS="${LIBSTDCXXLIB} -L$TOOLCHAIN/lib/gcc/arm-linux-androideabi/4.4.3 -lgcc" \
-    ./configure --prefix=${TARGET} --host=x86-linux --build=arm-eabi --enable-static --disable-shared --disable-docs
+    ./configure \
+        --prefix=${TARGET} \
+        --host=arm-eabi --build=x86-linux \
+        --enable-static --disable-shared \
+        --disable-docs
