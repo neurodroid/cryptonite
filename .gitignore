@@ -70,6 +70,14 @@ openssl/openssl-*
 
 encfs/encfs-1*
 
+# tc source
+
+tc/truecrypt-*
+
+# wx source
+
+wx/wxWidgets*
+
 # build output directories
 
 cryptonite/assets
