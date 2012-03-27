@@ -26,11 +26,12 @@ TARGET=`pwd`/${ARCH}
 
 AR=${MYAR} RANLIB=${MYRANLIB} NM=${MYNM} STRIP=${MYSTRIP} CC=${MYAGCC} CXX=${MYAGCC} \
     PKG_CONFIG="" \
-    CPPFLAGS="-I${SYSROOT}/usr/include -DUNICODE" \
+    CPPFLAGS="-I${SYSROOT}/usr/include" \
     CXXFLAGS="${LIBSTDCXXINC} -fexceptions -frtti" \
     LDFLAGS="${LIBSTDCXXLIB} -lgcc" \
     ../configure \
         --disable-gui \
+        --disable-debug \
         --enable-unicode \
         --without-libjpeg \
         --without-libpng \
@@ -54,4 +55,4 @@ AR=${MYAR} RANLIB=${MYRANLIB} NM=${MYNM} STRIP=${MYSTRIP} CC=${MYAGCC} CXX=${MYA
         --enable-static \
         --disable-shared
 
-# cp ./setup.h.0 ./lib/wx/include/arm-eabi-base-unicode-release-static-2.8/wx/setup.h
+cp ./../../setup.h.0 ./lib/wx/include/arm-eabi-base-unicode-release-static-2.8/wx/setup.h
