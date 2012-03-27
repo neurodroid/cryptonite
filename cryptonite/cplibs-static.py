@@ -39,3 +39,24 @@ for arch in archs:
     cpfile("../openssl/openssl-%s/%s/libcrypto.a" % (openssl_version, arch), target_dir)
     cpfile("%s/sources/cxx-stl/gnu-libstdc++/libs/%s/libgnustl_static.a" % (ndk, arch), target_dir)
     cpfile("%s/lib/gcc/arm-linux-androideabi/4.4.3/libgcc.a" % toolchain, target_dir)
+
+
+arch = "armeabi"
+
+try:
+    os.makedirs("./assets/%s" % arch)
+except os.error:
+    pass
+
+# Split into 1M chunks for Android <= 2.2:
+
+# truecrypt
+p = subprocess.Popen("/usr/bin/split -b 1m truecrypt truecrypt.split", 
+                     cwd="../tc/truecrypt-7.1-source/Main", 
+                     shell=True)
+p.wait()
+
+splitfiles = glob.glob("../tc/truecrypt-7.1-source/Main/truecrypt.split*" % arch)
+print splitfiles
+for splitfile in splitfiles:
+    cpfile(splitfile, "./assets/%s/" % arch)

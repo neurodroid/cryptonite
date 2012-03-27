@@ -1,15 +1,14 @@
 #! /bin/bash
 
-NDKDIR=${HOME}/android-ndk-r7b
 TOOLCHAIN=${HOME}/android-toolchain
 FUSEDIR=`pwd`/../../fuse/fuse-android
 OPENSSLDIR=`pwd`/../../openssl/openssl-1.0.0h
 BOOSTDIR=`pwd`/../../boost/boost_1_46_1
 RLOGDIR=`pwd`/../../rlog/rlog-1.4
-MYAR=arm-linux-androideabi-ar
-MYRANLIB=arm-linux-androideabi-ranlib
-MYNM=arm-linux-androideabi-nm
-MYSTRIP=arm-linux-androideabi-strip
+MYAR=${TOOLCHAIN}/bin/arm-linux-androideabi-ar
+MYRANLIB=${TOOLCHAIN}/bin/arm-linux-androideabi-ranlib
+MYNM=${TOOLCHAIN}/bin/arm-linux-androideabi-nm
+MYSTRIP=${TOOLCHAIN}/bin/arm-linux-androideabi-strip
 
 if test -n "$1"; then
     MYAGCC=agcc-vfp
@@ -19,9 +18,8 @@ else
     ARCH=armeabi
 fi
 
-STDCXXDIR="${NDKDIR}/sources/cxx-stl/gnu-libstdc++"
-LIBSTDCXXLIB="-L${STDCXXDIR}/libs/${ARCH} -lgnustl_static"
-LIBSTDCXXINC="-I${STDCXXDIR}/include -I${STDCXXDIR}/libs/${ARCH}/include"
+LIBSTDCXXINC=""
+LIBSTDCXXLIB="-lstdc++"
 
 TARGET=`pwd`/${ARCH}
 

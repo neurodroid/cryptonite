@@ -35,8 +35,8 @@ export BASE_DIR := $(CURDIR)
 export BUILD_INC := $(BASE_DIR)/Build/Include
 
 export AR := arm-linux-androideabi-ar
-export CC := agcc
-export CXX := agcc
+export CC := $(HOME)/neurodroid/nrn/agcc-crystax
+export CXX := $(HOME)/neurodroid/nrn/agcc-crystax
 export AS := arm-linux-androideabi-as
 export RANLIB := arm-linux-androideabi-ranlib
 

@@ -1,11 +1,11 @@
 #! /bin/bash
 
-NDKDIR=${HOME}/android-ndk-r7b
 TOOLCHAIN=${HOME}/android-toolchain
-MYAR=arm-linux-androideabi-ar
-MYRANLIB=arm-linux-androideabi-ranlib
-MYNM=arm-linux-androideabi-nm
-MYSTRIP=arm-linux-androideabi-strip
+SYSROOT=${TOOLCHAIN}/sysroot
+MYAR=${TOOLCHAIN}/bin/arm-linux-androideabi-ar
+MYRANLIB=${TOOLCHAIN}/bin/arm-linux-androideabi-ranlib
+MYNM=${TOOLCHAIN}/bin/arm-linux-androideabi-nm
+MYSTRIP=${TOOLCHAIN}/bin/arm-linux-androideabi-strip
 
 if test -n "$1"; then
     MYAGCC=agcc-vfp
@@ -15,17 +15,16 @@ else
     ARCH=armeabi
 fi
 
-STDCXXDIR="${NDKDIR}/sources/cxx-stl/gnu-libstdc++"
-LIBSTDCXXLIB="-L${STDCXXDIR}/libs/${ARCH} -lgnustl_static"
-LIBSTDCXXINC="-I${STDCXXDIR}/include -I${STDCXXDIR}/libs/${ARCH}/include"
+LIBSTDCXXINC=""
+LIBSTDCXXLIB="-lstdc++"
 
 TARGET=`pwd`/${ARCH}
 
 AR=${MYAR} RANLIB=${MYRANLIB} NM=${MYNM} STRIP=${MYSTRIP} CC=${MYAGCC} CXX=${MYAGCC} \
     PKG_CONFIG="" \
-    CPPFLAGS="-I${TOOLCHAIN}/sysroot/usr/include ${LIBSTDCXXINC}" \
-    CXXFLAGS="-fexceptions -frtti" \
-    LDFLAGS="${LIBSTDCXXLIB} -L$TOOLCHAIN/lib/gcc/arm-linux-androideabi/4.4.3 -lgcc" \
+    CPPFLAGS="-I${SYSROOT}/usr/include" \
+    CXXFLAGS="${LIBSTDCXXINC} -fexceptions -frtti" \
+    LDFLAGS="${LIBSTDCXXLIB} -lgcc" \
     ./configure \
         --prefix=${TARGET} \
         --host=arm-eabi --build=x86-linux \
