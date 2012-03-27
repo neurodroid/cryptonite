@@ -19,8 +19,8 @@ fi
 # LIBSTDCXXLIB="-L${NDKDIR}/sources/cxx-stl/gnu-libstdc++/libs/${ARCH} -lgnustl_static"
 # LIBSTDCXXINC="-I${NDKDIR}/sources/cxx-stl/stlport/stlport"
 # LIBSTDCXXLIB="-L${NDKDIR}/sources/cxx-stl/stlport/libs/${ARCH} -lstlport_static"
-LIBSTDCXXINC="-L${TOOLCHAIN}/arm-linux-androideabi/include/c++/4.6.3"
-LIBSTDCXXLIB="-L${TOOLCHAIN}/arm-linux-androideabi/lib/${ARCH} -lstdc++"
+LIBSTDCXXINC=""
+LIBSTDCXXLIB="-L${TOOLCHAIN}/arm-linux-androideabi/lib/${ARCH} -lcrystax"
 
 TARGET=`pwd`/${ARCH}
 
