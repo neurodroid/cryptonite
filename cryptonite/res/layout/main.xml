@@ -255,6 +255,7 @@
                         android:typeface="normal" >
                     </TextView>
                        
+                    <TableRow>
                     <Button
                         android:id="@+id/btnTermPrompt"
                         android:layout_width="0dp"
@@ -263,6 +264,15 @@
                         android:text="@string/term_prompt"
                         android:typeface="normal" >
                     </Button>
+                    <Button
+                        android:id="@+id/btnTermPromptRoot"
+                        android:layout_width="0dp"
+                        android:layout_height="fill_parent"
+                        android:layout_weight="1"
+                        android:text="@string/term_prompt_root"
+                        android:typeface="normal" >
+                    </Button>
+                    </TableRow>
                     
                     <TextView
                         android:id="@+id/tvVersionExpert"

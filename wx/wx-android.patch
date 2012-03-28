@@ -1,0 +1,75 @@
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.1' -x 'bld*' -x '*~' -ur /home/cs/wxWidgets-2.8.12/configure ./wxWidgets-2.8.12/configure
+--- /home/cs/wxWidgets-2.8.12/configure	2011-03-22 11:59:37.000000000 +0000
++++ ./wxWidgets-2.8.12/configure	2012-03-27 08:56:17.477148042 +0100
+@@ -1884,7 +1884,7 @@
+ 
+             CPPFLAGS="-D_HPUX_SOURCE $CPPFLAGS"
+   ;;
+-  *-*-linux* )
++  *-*-linux* | *-*-eabi* )
+     USE_LINUX=1
+     cat >>confdefs.h <<\_ACEOF
+ #define __LINUX__ 1
+@@ -25042,7 +25042,7 @@
+         fi
+         ;;
+ 
+-    *-*-linux* )
++    *-*-linux* | *-*-eabi* )
+                 if test "$ac_cv_sizeof_void_p" = 8 -a \
+                 -d "/usr/lib64" -a ! -h "/usr/lib64"; then
+             wx_cv_std_libpath="lib64"
+@@ -29423,7 +29423,7 @@
+         echo "$as_me:$LINENO: checking for libmgl location" >&5
+ echo $ECHO_N "checking for libmgl location... $ECHO_C" >&6
+                                 case "${host}" in
+-            *-*-linux* )
++            *-*-linux* | *-*-eabi* )
+                                           if test "x$wxUSE_SHARED" = xyes ; then
+                   mgl_os_candidates="linux/gcc/x86/so linux/gcc/x86/a linux/gcc/glibc.so linux/gcc/glibc"
+               else
+@@ -33671,7 +33671,7 @@
+ 
+ 
+     case "${host}" in
+-      *-*-linux* | *-*-gnu* )
++      *-*-linux* | *-*-gnu* | *-*-eabi* )
+         SAMPLES_RPATH_FLAG="-Wl,-rpath,\$(wx_top_builddir)/lib"
+         WXCONFIG_RPATH="-Wl,-rpath,\$libdir"
+         ;;
+@@ -48446,7 +48446,7 @@
+         fi
+       ;;
+ 
+-      *-*-linux* )
++      *-*-linux* | *-*-eabi* )
+                         if test "$INTELCC" = "yes" -a "$INTELCC8" != "yes"; then
+             PIC_FLAG="-KPIC"
+         elif test "x$SUNCXX" = "xyes"; then
+@@ -49258,7 +49258,7 @@
+ 
+     case "${BAKEFILE_HOST}" in
+       *-*-linux* | *-*-freebsd* | *-*-openbsd* | *-*-netbsd* | \
+-      *-*-k*bsd*-gnu | *-*-mirbsd* )
++      *-*-k*bsd*-gnu | *-*-mirbsd* | *-*-eabi* )
+         if test "x$SUNCXX" = "xyes"; then
+             SONAME_FLAG="-h "
+         else
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.1' -x 'bld*' -x '*~' -ur /home/cs/wxWidgets-2.8.12/src/common/filename.cpp ./wxWidgets-2.8.12/src/common/filename.cpp
+--- /home/cs/wxWidgets-2.8.12/src/common/filename.cpp	2011-03-22 11:59:41.000000000 +0000
++++ ./wxWidgets-2.8.12/src/common/filename.cpp	2012-03-27 08:56:33.777146716 +0100
+@@ -2320,11 +2320,11 @@
+     if ( wxStat( GetFullPath().fn_str(), &stBuf) == 0 )
+     {
+         if ( dtAccess )
+-            dtAccess->Set(stBuf.st_atime);
++            dtAccess->Set(static_cast<time_t>(stBuf.st_atime));
+         if ( dtMod )
+-            dtMod->Set(stBuf.st_mtime);
++            dtMod->Set(static_cast<time_t>(stBuf.st_mtime));
+         if ( dtCreate )
+-            dtCreate->Set(stBuf.st_ctime);
++            dtCreate->Set(static_cast<time_t>(stBuf.st_ctime));
+ 
+         return true;
+     }

@@ -1,0 +1,429 @@
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+# Copyright (c) 2012, Christoph Schmidt-Hieber
+
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur /home/cs/truecrypt-7.1a-source/Core/Unix/CoreUnix.cpp ./truecrypt-7.1a-source/Core/Unix/CoreUnix.cpp
+--- /home/cs/truecrypt-7.1a-source/Core/Unix/CoreUnix.cpp	2012-02-07 10:36:48.000000000 +0000
++++ ./truecrypt-7.1a-source/Core/Unix/CoreUnix.cpp	2012-03-28 12:54:51.657147243 +0100
+@@ -74,7 +74,11 @@
+ 		args.push_back ("--");
+ 		args.push_back (mountPoint);
+ 
++#ifndef TC_ANDROID
+ 		Process::Execute ("umount", args);
++#else
++		Process::Execute ("/system/xbin/umount", args);
++#endif
+ 	}
+ 
+ 	shared_ptr <VolumeInfo> CoreUnix::DismountVolume (shared_ptr <VolumeInfo> mountedVolume, bool ignoreOpenFiles, bool syncVolumeInfo)
+@@ -120,7 +124,11 @@
+ 		{
+ 			try
+ 			{
++#ifndef TC_ANDROID
+ 				Process::Execute ("umount", args);
++#else
++				Process::Execute ("/system/xbin/umount", args);
++#endif
+ 				break;
+ 			}
+ 			catch (ExecutedProcessFailed&)
+@@ -326,8 +334,12 @@
+ 	
+ 	string CoreUnix::GetTempDirectory () const
+ 	{
+-		char *envDir = getenv ("TMPDIR");
+-		return envDir ? envDir : "/tmp";
++#ifndef TC_ANDROID
++                char *envDir = getenv ("TMPDIR");
++	        return envDir ? envDir : "/tmp";
++#else
++                return "/sdcard/Android/data/csh.cryptonite";
++#endif
+ 	}
+ 
+ 	bool CoreUnix::IsMountPointAvailable (const DirectoryPath &mountPoint) const
+@@ -373,7 +385,11 @@
+ 		args.push_back (devicePath);
+ 		args.push_back (mountPoint);
+ 
++#ifndef TC_ANDROID
+ 		Process::Execute ("mount", args);
++#else
++		Process::Execute ("/system/xbin/mount", args);
++#endif
+ 	}
+ 
+ 	VolumeSlotNumber CoreUnix::MountPointToSlotNumber (const DirectoryPath &mountPoint) const
+@@ -533,14 +549,18 @@
+ 
+ 			try
+ 			{
++#ifndef TC_ANDROID
+ 				try
+ 				{
+ 					MountVolumeNative (volume, options, fuseMountPoint);
+ 				}
+ 				catch (NotApplicable&)
+ 				{
++#endif
+ 					MountAuxVolumeImage (fuseMountPoint, options);
++#ifndef TC_ANDROID
+ 				}
++#endif
+ 			}
+ 			catch (...)
+ 			{
+@@ -553,6 +573,9 @@
+ 		{
+ 			try
+ 			{
++#if defined(TC_ANDROID) && defined(DEBUG)
++                                std::cerr << "Mount failure; aborting now" << std::endl;
++#endif
+ 				VolumeInfoList mountedVolumes = GetMountedVolumes (*options.Path);
+ 				if (mountedVolumes.size() > 0)
+ 				{
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur /home/cs/truecrypt-7.1a-source/Core/Unix/Linux/CoreLinux.cpp ./truecrypt-7.1a-source/Core/Unix/Linux/CoreLinux.cpp
+--- /home/cs/truecrypt-7.1a-source/Core/Unix/Linux/CoreLinux.cpp	2012-02-07 10:36:48.000000000 +0000
++++ ./truecrypt-7.1a-source/Core/Unix/Linux/CoreLinux.cpp	2012-03-28 13:04:00.937147797 +0100
+@@ -22,6 +22,110 @@
+ #include "Driver/Fuse/FuseService.h"
+ #include "Core/Unix/CoreServiceProxy.h"
+ 
++#ifdef TC_ANDROID
++/*
++ * Copyright (C) 2000-2006 Erik Andersen <andersen@uclibc.org>
++ *
++ * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
++ */
++
++/* Reentrant version of getmntent.  */
++    struct mntent *getmntent_r (FILE *filep,
++                                struct mntent *mnt, char *buff, int bufsize)
++{
++    char *cp, *ptrptr;
++    const char *sep = " \t\n";
++
++    if (!filep || !mnt || !buff)
++        return NULL;
++
++    /* Loop on the file, skipping comment lines. - FvK 03/07/93 */
++    while ((cp = fgets(buff, bufsize, filep)) != NULL) {
++        if (buff[0] == '#' || buff[0] == '\n')
++            continue;
++        break;
++    }
++
++    /* At the EOF, the buffer should be unchanged. We should
++     * check the return value from fgets ().
++     */
++    if (cp == NULL)
++        return NULL;
++
++    ptrptr = 0;
++    mnt->mnt_fsname = strtok_r(buff, sep, &ptrptr);
++    if (mnt->mnt_fsname == NULL)
++        return NULL;
++
++    mnt->mnt_dir = strtok_r(NULL, sep, &ptrptr);
++    if (mnt->mnt_dir == NULL)
++        return NULL;
++
++    mnt->mnt_type = strtok_r(NULL, sep, &ptrptr);
++    if (mnt->mnt_type == NULL)
++        return NULL;
++
++    mnt->mnt_opts = strtok_r(NULL, sep, &ptrptr);
++    if (mnt->mnt_opts == NULL)
++        mnt->mnt_opts = (char*)"";
++
++    cp = strtok_r(NULL, sep, &ptrptr);
++    mnt->mnt_freq = (cp != NULL) ? atoi(cp) : 0;
++
++    cp = strtok_r(NULL, sep, &ptrptr);
++    mnt->mnt_passno = (cp != NULL) ? atoi(cp) : 0;
++
++    return mnt;
++}
++
++struct mntent *getmntent(FILE * filep)
++{
++    struct mntent *tmp;
++    static char *buff = NULL;
++    static struct mntent mnt;
++
++    if (!buff) {
++        buff = (char*)malloc(BUFSIZ);
++        if (!buff)
++            abort();
++    }
++
++    tmp = getmntent_r(filep, &mnt, buff, BUFSIZ);
++
++    return(tmp);
++}
++
++int addmntent(FILE * filep, const struct mntent *mnt)
++{
++    if (fseek(filep, 0, SEEK_END) < 0)
++        return 1;
++
++    if (fprintf (filep, "%s %s %s %s %d %d\n", mnt->mnt_fsname, mnt->mnt_dir,
++                 mnt->mnt_type, mnt->mnt_opts, mnt->mnt_freq, mnt->mnt_passno) < 1)
++        return 1;
++
++    return 0;
++}
++
++char *hasmntopt(const struct mntent *mnt, const char *opt)
++{
++    return strstr(mnt->mnt_opts, opt);
++}
++
++FILE *setmntent(const char *name, const char *mode)
++{
++    return fopen(name, mode);
++}
++
++int endmntent(FILE * filep)
++{
++    if (filep != NULL)
++        fclose(filep);
++    return 1;
++}
++
++#endif
++
+ namespace TrueCrypt
+ {
+ 	CoreLinux::CoreLinux ()
+@@ -35,9 +139,13 @@
+ 	DevicePath CoreLinux::AttachFileToLoopDevice (const FilePath &filePath, bool readOnly) const
+ 	{
+ 		list <string> loopPaths;
++#ifndef TC_ANDROID
+ 		loopPaths.push_back ("/dev/loop");
+ 		loopPaths.push_back ("/dev/loop/");
+ 		loopPaths.push_back ("/dev/.static/dev/loop");
++#else
++		loopPaths.push_back ("/dev/block/loop");
++#endif
+ 
+ 		for (int devIndex = 0; devIndex < 256; devIndex++)
+ 		{
+@@ -222,6 +330,7 @@
+ 		MountedFilesystemList mountedFilesystems;
+ 		DevicePath realDevicePath = devicePath;
+ 
++#ifndef TC_ANDROID
+ 		if (!devicePath.IsEmpty())
+ 		{
+ 			char *resolvedPath = realpath (string (devicePath).c_str(), NULL);
+@@ -231,6 +340,7 @@
+ 				free (resolvedPath);
+ 			}
+ 		}
++#endif
+ 
+ 		FILE *mtab = fopen ("/etc/mtab", "r");
+ 
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur /home/cs/truecrypt-7.1a-source/Driver/Fuse/Driver.make ./truecrypt-7.1a-source/Driver/Fuse/Driver.make
+--- /home/cs/truecrypt-7.1a-source/Driver/Fuse/Driver.make	2012-02-07 10:36:48.000000000 +0000
++++ ./truecrypt-7.1a-source/Driver/Fuse/Driver.make	2012-03-27 08:55:09.467146427 +0100
+@@ -7,10 +7,10 @@
+ #
+ 
+ NAME := Driver
+-
++FUSEDIR := $(HOME)/cryptonite/fuse/fuse-android
+ OBJS :=
+ OBJS += FuseService.o
+ 
+-CXXFLAGS += $(shell pkg-config fuse --cflags)
++CXXFLAGS += -I$(FUSEDIR)/jni/include
+ 
+ include $(BUILD_INC)/Makefile.inc
+Only in ./truecrypt-7.1a-source: License.txt.h
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur /home/cs/truecrypt-7.1a-source/Main/CommandLineInterface.cpp ./truecrypt-7.1a-source/Main/CommandLineInterface.cpp
+--- /home/cs/truecrypt-7.1a-source/Main/CommandLineInterface.cpp	2012-02-07 10:36:48.000000000 +0000
++++ ./truecrypt-7.1a-source/Main/CommandLineInterface.cpp	2012-03-28 13:05:38.637146327 +0100
+@@ -479,7 +479,11 @@
+ 			ArgVolumes = GetMountedVolumes (parser.GetParamCount() > 0 ? parser.GetParam (0) : wxString());
+ 
+ 		if (ArgCommand == CommandId::None && Application::GetUserInterfaceType() == UserInterfaceType::Text)
++#ifndef TC_ANDROID                    
+ 			parser.Usage();
++#else
++			ArgCommand = CommandId::Help;
++#endif
+ 	}
+ 
+ 	CommandLineInterface::~CommandLineInterface ()
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur /home/cs/truecrypt-7.1a-source/Main/Main.make ./truecrypt-7.1a-source/Main/Main.make
+--- /home/cs/truecrypt-7.1a-source/Main/Main.make	2012-02-07 10:36:48.000000000 +0000
++++ ./truecrypt-7.1a-source/Main/Main.make	2012-03-28 01:34:17.077146653 +0100
+@@ -96,7 +96,7 @@
+ 
+ #------ FUSE configuration ------
+ 
+-FUSE_LIBS = $(shell pkg-config fuse --libs)
++FUSE_LIBS = -L$(HOME)/cryptonite/fuse/fuse-android/obj/local/armeabi -lfuse
+ 
+ 
+ #------ Executable ------
+@@ -105,11 +105,11 @@
+ 
+ $(APPNAME): $(LIBS) $(OBJS)
+ 	@echo Linking $@
+-	$(CXX) -o $(APPNAME) $(LFLAGS) $(OBJS) $(LIBS) $(FUSE_LIBS) $(WX_LIBS)
++	$(CXX) -o $(APPNAME) $(LFLAGS) $(OBJS) $(LIBS) $(FUSE_LIBS) $(WX_LIBS) $(LIBSTDCXXLIB)
+ 
+ ifeq "$(TC_BUILD_CONFIG)" "Release"
+ ifndef NOSTRIP
+-	strip $(APPNAME)
++	$(HOME)/android-toolchain-crystax/bin/arm-linux-androideabi-strip $(APPNAME)
+ endif
+ 
+ ifndef NOTEST
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur /home/cs/truecrypt-7.1a-source/Main/TextUserInterface.cpp ./truecrypt-7.1a-source/Main/TextUserInterface.cpp
+--- /home/cs/truecrypt-7.1a-source/Main/TextUserInterface.cpp	2012-02-07 10:36:48.000000000 +0000
++++ ./truecrypt-7.1a-source/Main/TextUserInterface.cpp	2012-03-28 13:09:00.557147800 +0100
+@@ -1247,7 +1247,11 @@
+ 		if (!TextInputStream.get() || feof (stdin) || ferror (stdin))
+ 			throw UserAbort (SRC_POS);
+ 
++#ifndef TC_ANDROID
+ 		line = TextInputStream->ReadLine();
++#else
++		line = wstring(TextInputStream->ReadLine());
++#endif
+ 
+ 		if (ferror (stdin) || (line.empty() && feof (stdin)))
+ 			throw UserAbort (SRC_POS);
+Only in ./truecrypt-7.1a-source/Main: truecrypt
+Only in ./truecrypt-7.1a-source/Main: truecrypt.splitaa
+Only in ./truecrypt-7.1a-source/Main: truecrypt.splitab
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur /home/cs/truecrypt-7.1a-source/Main/UserInterface.cpp ./truecrypt-7.1a-source/Main/UserInterface.cpp
+--- /home/cs/truecrypt-7.1a-source/Main/UserInterface.cpp	2012-02-07 10:36:48.000000000 +0000
++++ ./truecrypt-7.1a-source/Main/UserInterface.cpp	2012-03-28 13:12:06.167147608 +0100
+@@ -1400,7 +1400,12 @@
+ 		EncryptionTest::TestAll();
+ 
+ 		// StringFormatter
++#ifndef TC_ANDROID
+ 		if (StringFormatter (L"{9} {8} {7} {6} {5} {4} {3} {2} {1} {0} {{0}}", "1", L"2", '3', L'4', 5, 6, 7, 8, 9, 10) != L"10 9 8 7 6 5 4 3 2 1 {0}")
++#else
++                wxString testString = StringFormatter (L"{9} {8} {7} {6} {5} {4} {3} {2} {1} {0} {{0}}", "1", L"2", '3', L'4', 5, 6, 7, 8, 9, 10);
++		if (testString != L"10 9 8 7 6 5 4 3 2 1 {0}")
++#endif
+ 			throw TestFailed (SRC_POS);
+ 		try
+ 		{
+Only in ./truecrypt-7.1a-source: Pkcs11
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur /home/cs/truecrypt-7.1a-source/Platform/StringConverter.cpp ./truecrypt-7.1a-source/Platform/StringConverter.cpp
+--- /home/cs/truecrypt-7.1a-source/Platform/StringConverter.cpp	2012-02-07 10:36:48.000000000 +0000
++++ ./truecrypt-7.1a-source/Platform/StringConverter.cpp	2012-03-27 20:48:04.847147038 +0100
+@@ -213,6 +213,7 @@
+ 	{
+ 		try
+ 		{
++#ifndef TC_ANDROID
+ 			mbstate_t mbState;
+ 			Memory::Zero (&mbState, sizeof (mbState));
+ 			const wchar_t *src = wstr.c_str();
+@@ -230,6 +231,11 @@
+ 			str.clear();
+ 			str.insert (0, &buf.front(), size);
+ 			Memory::Erase (&buf.front(), buf.size());
++#else
++                        str.clear();
++                        str.assign(wstr.begin(), wstr.end());
++                        str = string(str.c_str());
++#endif
+ 		}
+ 		catch (...)
+ 		{
+@@ -298,6 +304,7 @@
+ 	{
+ 		try
+ 		{
++#ifndef TC_ANDROID                    
+ 			mbstate_t mbState;
+ 			Memory::Zero (&mbState, sizeof (mbState));
+ 			const char *src = str.c_str();
+@@ -315,6 +322,11 @@
+ 			wstring s;
+ 			s.insert (s.begin(), buf.begin(), buf.begin() + size);
+ 			return s;
++#else
++                        wstring s;
++                        s.insert(s.begin(), str.begin(), str.end());
++                        return s;
++#endif
+ 		}
+ 		catch (...)
+ 		{
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur /home/cs/truecrypt-7.1a-source/Platform/Unix/File.cpp ./truecrypt-7.1a-source/Platform/Unix/File.cpp
+--- /home/cs/truecrypt-7.1a-source/Platform/Unix/File.cpp	2012-02-07 10:36:48.000000000 +0000
++++ ./truecrypt-7.1a-source/Platform/Unix/File.cpp	2012-03-28 13:15:16.017148086 +0100
+@@ -15,6 +15,11 @@
+ #include <sys/mount.h>
+ #endif
+ 
++#ifdef TC_ANDROID
++#include <sys/ioctl.h>
++#include <linux/fs.h>
++#endif
++
+ #ifdef TC_BSD
+ #include <sys/disk.h>
+ #endif
+@@ -184,7 +189,7 @@
+ 
+ 	void File::Open (const FilePath &path, FileOpenMode mode, FileShareMode shareMode, FileOpenFlags flags)
+ 	{
+-#ifdef TC_LINUX
++#if defined(TC_LINUX) && !defined(TC_ANDROID)
+ 		int sysFlags = O_LARGEFILE;
+ #else
+ 		int sysFlags = 0;
+@@ -224,7 +229,12 @@
+ 			ModTime = statData.st_mtime;
+ 		}
+ 
++#ifndef TC_ANDROID
+ 		FileHandle = open (string (path).c_str(), sysFlags, S_IRUSR | S_IWUSR);
++#else
++                string ansii_path = StringConverter::ToSingle(wstring(path));
++		FileHandle = open (ansii_path.c_str(), sysFlags, S_IRUSR | S_IWUSR);
++#endif
+ 		throw_sys_sub_if (FileHandle == -1, wstring (path));
+ 
+ #if 0 // File locking is disabled to avoid remote filesystem locking issues
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur /home/cs/truecrypt-7.1a-source/Platform/Unix/Process.cpp ./truecrypt-7.1a-source/Platform/Unix/Process.cpp
+--- /home/cs/truecrypt-7.1a-source/Platform/Unix/Process.cpp	2012-02-07 10:36:48.000000000 +0000
++++ ./truecrypt-7.1a-source/Platform/Unix/Process.cpp	2012-03-28 13:19:48.087146325 +0100
+@@ -189,6 +189,9 @@
+ 			if (!errOutput.empty())
+ 				strErrOutput.insert (strErrOutput.begin(), errOutput.begin(), errOutput.end());
+ 
++#if defined(TC_ANDROID) && defined(DEBUG)
++                        std::cout << strErrOutput << std::endl;
++#endif
+ 			throw ExecutedProcessFailed (SRC_POS, processName, exitCode, strErrOutput);
+ 		}
+ 

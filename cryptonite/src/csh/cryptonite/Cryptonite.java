@@ -137,7 +137,8 @@ public class Cryptonite extends Activity
         buttonBrowseDecryptedDb, buttonBrowseDecryptedLocal,
         buttonForgetDecryptionDb, buttonForgetDecryptionLocal,
         buttonCreateDb, buttonCreateLocal,
-        buttonMount, buttonViewMount;
+        buttonMount, buttonViewMount,
+        buttonTermPrompt, buttonTermPromptRoot;
     private int opMode = -1;
     private int prevMode = -1;
     private boolean alert = false;
@@ -479,10 +480,17 @@ public class Cryptonite extends Activity
                 }});
 
         /* Run terminal with environment set up */
-        Button buttonTermPrompt = (Button)findViewById(R.id.btnTermPrompt);
+        buttonTermPrompt = (Button)findViewById(R.id.btnTermPrompt);
         buttonTermPrompt.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     launchTerm();
+                }});
+
+        /* Run terminal with environment set up */
+        buttonTermPromptRoot = (Button)findViewById(R.id.btnTermPromptRoot);
+        buttonTermPromptRoot.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    launchTerm(true);
                 }});
 
         hasFuse = ShellUtils.supportsFuse();
@@ -1774,6 +1782,10 @@ public class Cryptonite extends Activity
     }
 
     private void launchTerm() {
+        launchTerm(false);
+    }
+    
+    private void launchTerm(boolean root) {
         /* Is a reminal emulator running? */
         
             /* If Terminal Emulator is not installed or outdated,
@@ -1794,7 +1806,7 @@ public class Cryptonite extends Activity
                     } else {
                         Intent intent = new Intent(Intent.ACTION_MAIN);
                         intent.setComponent(termComp);
-                        runTerm(intent, extTermRunning());
+                        runTerm(intent, extTermRunning(), root);
                     }
 
                 } catch (PackageManager.NameNotFoundException e) {
@@ -1803,7 +1815,7 @@ public class Cryptonite extends Activity
             }
     }
 
-    private void runTerm(Intent intent, boolean running) {
+    private void runTerm(Intent intent, boolean running, boolean root) {
         /* If the terminal is running, abort */
         if (running) {
             new AlertDialog.Builder(Cryptonite.this)
@@ -1820,7 +1832,9 @@ public class Cryptonite extends Activity
         }
         
         String initCmd = "export PATH=" + binDirPath + ":${PATH};";
-
+        if (root) {
+            initCmd += " su;";
+        }
         intent.putExtra("jackpal.androidterm.iInitialCommand", initCmd);
         startActivity(intent);
     }
