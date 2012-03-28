@@ -52,11 +52,11 @@ except os.error:
 
 # truecrypt
 p = subprocess.Popen("/usr/bin/split -b 1m truecrypt truecrypt.split", 
-                     cwd="../tc/truecrypt-7.1-source/Main", 
+                     cwd="../tc/truecrypt-7.1a-source/Main", 
                      shell=True)
 p.wait()
 
-splitfiles = glob.glob("../tc/truecrypt-7.1-source/Main/truecrypt.split*" % arch)
+splitfiles = glob.glob("../tc/truecrypt-7.1a-source/Main/truecrypt.split*")
 print splitfiles
 for splitfile in splitfiles:
     cpfile(splitfile, "./assets/%s/" % arch)

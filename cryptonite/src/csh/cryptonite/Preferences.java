@@ -137,8 +137,8 @@ public class Preferences extends PreferenceActivity {
                 return false;
             }
         });
-        
-        if (!ShellUtils.supportsFuse() || !new File(Cryptonite.ENCFSBIN).exists()) {
+        String encfsBin = getFilesDir().getParentFile().getPath() + "/encfs";        
+        if (!ShellUtils.supportsFuse() || !new File(encfsBin).exists()) {
             txtMntPoint.setEnabled(false);
             txtMntPoint.setSummary(R.string.mount_info_unsupported);
         }

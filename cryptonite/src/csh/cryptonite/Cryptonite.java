@@ -25,11 +25,14 @@ import java.net.URLConnection;
 import java.util.Arrays;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.app.ActivityManager.RunningServiceInfo;
 
 import android.content.ActivityNotFoundException;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -90,12 +93,11 @@ public class Cryptonite extends Activity
     private static final int DIRPICK_MODE=0, FILEPICK_MODE=1;
     protected static final int MSG_SHOW_TOAST = 0;
     public static final int MY_PASSWORD_DIALOG_ID = 0, MY_PASSWORD_CONFIRM_DIALOG_ID = 4;
-    private static final int DIALOG_MARKETNOTFOUND=1, DIALOG_OI_UNAVAILABLE=2, DIALOG_JNI_FAIL=3;
+    private static final int DIALOG_MARKETNOTFOUND=1, DIALOG_OI_UNAVAILABLE=2, DIALOG_JNI_FAIL=3, 
+            DIALOG_TERM_UNAVAILABLE=5;
     private static final int MAX_JNI_SIZE = 512;
+    public static final int TERM_UNAVAILABLE=0, TERM_OUTDATED=1, TERM_AVAILABLE=2;
     public static final String MNTPNT = "/csh.cryptonite/mnt";
-    public static final String BINDIR = "/data/data/csh.cryptonite";
-    public static final String ENCFSBIN = BINDIR + "/encfs";
-    public static final String ENCFSCTLBIN = BINDIR + "/encfsctl";
     public static final String TAG = "cryptonite";
 
     public static final String BROWSEPNT = "browse";
@@ -124,9 +126,10 @@ public class Cryptonite extends Activity
     private String[] currentReturnPathList = {};
     private int currentDialogMode = SelectionMode.MODE_OPEN;
 
+    private String binDirPath;
+    private String encfsBin;
     private String mntDir = "/sdcard" + MNTPNT;
-    private TextView tvDb;
-    private TextView tvLocal;
+    private TextView tvDb, tvLocal, tvExpert;
     private TextView tvMountInfo;
     private String encfsVersion, opensslVersion;
     private Button buttonAuthDb, 
@@ -184,6 +187,10 @@ public class Cryptonite extends Activity
                 .setIndicator(createTabView(mTabHost.getContext(), 
                         getString(R.string.local_tabtitle)))
                 .setContent(R.id.tab_local));
+        mTabHost.addTab(mTabHost.newTabSpec("tab_expert")
+                .setIndicator(createTabView(mTabHost.getContext(), 
+                        getString(R.string.expert_tabtitle)))
+                .setContent(R.id.tab_expert));
         
         mTabHost.setCurrentTab(0);
 
@@ -203,9 +210,14 @@ public class Cryptonite extends Activity
         tvDb.setText(encfsVersion + "\n" + opensslVersion);
         tvLocal = (TextView)findViewById(R.id.tvVersionLocal);
         tvLocal.setText(encfsVersion + "\n" + opensslVersion);
+        tvExpert = (TextView)findViewById(R.id.tvVersionExpert);
+        tvExpert.setText(encfsVersion + "\n" + opensslVersion);
 
         SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
         setupReadDirs(prefs.getBoolean("cb_extcache", false));
+ 
+        binDirPath = getFilesDir().getParentFile().getPath();
+        encfsBin = binDirPath + "/encfs";
         
         tvMountInfo = (TextView)findViewById(R.id.tvMountInfo);
         if (!externalStorageIsWritable() || !ShellUtils.supportsFuse()) {
@@ -221,14 +233,15 @@ public class Cryptonite extends Activity
         
         boolean volumeLoaded = (jniVolumeLoaded() == jniSuccess());
         
-        /* Copy the encfs binaries to binDir and make executable. */
+        /* Copy the encfs binaries to binDirPath and make executable. */
         if (needsEncFSBinary()) {
             final ProgressDialog pd = ProgressDialog.show(this,
                     this.getString(R.string.wait_msg),
                     this.getString(R.string.copying_bins), true);
             new Thread(new Runnable(){
                     public void run(){
-                        cpEncFSBin();
+                        cpBin("encfs");
+                        cpBin("truecrypt");
                         runOnUiThread(new Runnable(){
                                 public void run() {
                                     if (pd.isShowing())
@@ -392,7 +405,7 @@ public class Cryptonite extends Activity
                 } else {
                     String[] umountlist = {"umount", mntDir};
                     try {
-                        ShellUtils.runBinary(umountlist, BINDIR, null, true);
+                        ShellUtils.runBinary(umountlist, binDirPath, null, true);
                     } catch (IOException e) {
                         Toast.makeText(Cryptonite.this, 
                                 getString(R.string.umount_fail) + ": " + e.getMessage(), 
@@ -416,7 +429,7 @@ public class Cryptonite extends Activity
                                     int which) {
                                 String[] killlist = {"killall", "encfs"};
                                 try {
-                                    ShellUtils.runBinary(killlist, BINDIR, null, true);
+                                    ShellUtils.runBinary(killlist, binDirPath, null, true);
                                 } catch (IOException e) {
                                     Toast.makeText(Cryptonite.this, 
                                             getString(R.string.umount_fail) + ": " + e.getMessage(), 
@@ -465,6 +478,13 @@ public class Cryptonite extends Activity
                     opMode = prevMode;
                 }});
 
+        /* Run terminal with environment set up */
+        Button buttonTermPrompt = (Button)findViewById(R.id.btnTermPrompt);
+        buttonTermPrompt.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    launchTerm();
+                }});
+
         hasFuse = ShellUtils.supportsFuse();
         updateMountButtons();
         updateDecryptButtons();
@@ -488,8 +508,14 @@ public class Cryptonite extends Activity
     }
 
     private void setupReadDirs(boolean external) {
-        deleteDir(openDir);
-        deleteDir(readDir);
+        if (openDir != null) {
+            deleteDir(openDir);
+        }
+        if (readDir != null) {
+            deleteDir(readDir);
+        }   
+        getExternalCacheDir(this).mkdirs();
+        
         if (external && externalStorageIsWritable()) {
             openDir = new File(getExternalCacheDir(this).getPath() + "/" + OPENPNT);
             readDir = new File(getExternalCacheDir(this).getPath() + "/" + READPNT);
@@ -538,7 +564,7 @@ public class Cryptonite extends Activity
     }
     
     private boolean needsEncFSBinary() {
-        if (!(new File(ENCFSBIN)).exists()) {
+        if (!(new File(encfsBin)).exists()) {
             return true;
         }
         
@@ -603,7 +629,7 @@ public class Cryptonite extends Activity
 
     private void updateMountButtons() {
         boolean ism = ShellUtils.isMounted("fuse.encfs");
-        boolean hasBin = new File(ENCFSBIN).exists();
+        boolean hasBin = new File(encfsBin).exists();
         
         Log.v(TAG, "EncFS mount state: " + ism + "; FUSE support: " + hasFuse);
         buttonMount.setEnabled(hasFuse && hasBin);
@@ -900,23 +926,18 @@ public class Cryptonite extends Activity
         updateDecryptButtons();
     }
 
-    /** Copy encfs to binDir and make executable */
-    public void cpEncFSBin() {
-        cpEncFSBin("encfs");
-    }
-    
-    /** Copy encfs to binDir and make executable */
-    public void cpEncFSBin(String trunk) {
+    /** Copy encfs to binDirPath and make executable */
+    public void cpBin(String trunk) {
         String arch = "armeabi";
         /* if (withVfp) {
             arch += "-v7a";
             } */
             
-        File binDir = new File(BINDIR);
+        File binDir = new File(binDirPath);
         if (!binDir.exists()) {
             throw new RuntimeException("Couldn't find binary directory");
         }
-        String binName = BINDIR + "/" + trunk;
+        String binName = binDir + "/" + trunk;
 
         /* Catenate split files */
         Log.v(TAG, "Looking for assets in " + arch);
@@ -926,7 +947,7 @@ public class Cryptonite extends Activity
             FileOutputStream os = new FileOutputStream(newf);
             for (String assetsFile : assetsFiles) {
                 if (assetsFile.substring(0, assetsFile.indexOf(".")).compareTo(trunk) == 0) {
-                    Log.v(TAG, "Found EncFS binary part: " + assetsFile);
+                    Log.v(TAG, "Found " + trunk + " binary part: " + assetsFile);
                     InputStream is = getAssets().open(arch + "/" + assetsFile);
 
                     byte[] buffer = new byte[is.available()]; 
@@ -943,9 +964,9 @@ public class Cryptonite extends Activity
             
         }
         catch (IOException e) {
-            Log.e(TAG, "Problem while copying encFS binary: " + e.toString());
+            Log.e(TAG, "Problem while copying binary: " + e.toString());
         } catch (InterruptedException e) {
-            Log.e(TAG, "Problem while copying encFS binary: " + e.toString());
+            Log.e(TAG, "Problem while copying binary: " + e.toString());
         }
 
     }
@@ -1003,8 +1024,8 @@ public class Cryptonite extends Activity
     /** This will run the shipped encfs binary and spawn a daemon on rooted devices
      */
     private void mountEncFS(final String srcDir) {
-        tvLocal.setText(encfsVersion + "\n" + opensslVersion);
-        tvLocal.invalidate();
+        tvExpert.setText(encfsVersion + "\n" + opensslVersion);
+        tvExpert.invalidate();
 
         if (jniIsValidEncFS(srcDir) != jniSuccess()) {
             showAlert(R.string.error, R.string.invalid_encfs);
@@ -1024,10 +1045,10 @@ public class Cryptonite extends Activity
         new Thread(new Runnable(){
                 public void run(){
                     String encfsoutput = "";
-                    String[] cmdlist = {ENCFSBIN, "--public", "--stdinpass",
+                    String[] cmdlist = {encfsBin, "--public", "--stdinpass",
                             "\"" + srcDir + "\"", "\"" + mntDir + "\""};
                     try {
-                        encfsoutput = ShellUtils.runBinary(cmdlist, BINDIR, currentPassword, true);
+                        encfsoutput = ShellUtils.runBinary(cmdlist, binDirPath, currentPassword, true);
                     } catch (IOException e) {
                         alertMsg = getString(R.string.mount_fail) + ": " + e.getMessage();
                     } catch (InterruptedException e) {
@@ -1039,7 +1060,7 @@ public class Cryptonite extends Activity
                                 if (pd.isShowing())
                                     pd.dismiss();
                                 if (fEncfsOutput != null && fEncfsOutput.length() > 0) {
-                                    tvLocal.setText(encfsVersion + "\n" + fEncfsOutput);
+                                    tvExpert.setText(encfsVersion + "\n" + fEncfsOutput);
                                 }
                                 if (!alertMsg.equals("")) {
                                     showAlert(R.string.error, alertMsg);
@@ -1065,6 +1086,8 @@ public class Cryptonite extends Activity
        tvLocal.invalidate();
        tvDb.setText(encfsVersion + "\n" + opensslVersion);
        tvDb.invalidate();
+       tvExpert.setText(encfsVersion + "\n" + opensslVersion);
+       tvExpert.invalidate();
        alertMsg = "";
        
        final ProgressDialog pd = ProgressDialog.show(this, 
@@ -1228,6 +1251,22 @@ public class Cryptonite extends Activity
                          }
                      })
                  .create();
+         case DIALOG_TERM_UNAVAILABLE:
+             return new AlertDialog.Builder(Cryptonite.this)
+                 .setIcon(R.drawable.app_terminal)
+                 .setTitle(R.string.app_terminal_missing)
+                 .setPositiveButton(R.string.app_terminal_get, new DialogInterface.OnClickListener() {
+                         public void onClick(DialogInterface dialog, int whichButton) {
+                             Intent intent = new Intent(Intent.ACTION_VIEW,
+                                                        Uri.parse("market://details?id=jackpal.androidterm"));
+                             try {
+                                 startActivity(intent);
+                             } catch (ActivityNotFoundException e) {
+                                 showDialog(DIALOG_MARKETNOTFOUND);
+                             }
+                         }
+                     })
+                 .create();             
          case DIALOG_MARKETNOTFOUND:
              return new AlertDialog.Builder(Cryptonite.this)
                  .setIcon(android.R.drawable.ic_dialog_alert)
@@ -1718,6 +1757,84 @@ public class Cryptonite extends Activity
         return true;
     }
 
+    public static int hasExtterm(Context context) {
+        ComponentName termComp = new ComponentName("jackpal.androidterm", "jackpal.androidterm.Term");
+        try {
+            PackageInfo pinfo = context.getPackageManager().getPackageInfo(termComp.getPackageName(), 0);
+            int patchCode = pinfo.versionCode;
+
+            if (patchCode < 32) {
+                return TERM_OUTDATED;
+            } else {
+                return TERM_AVAILABLE;
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            return TERM_UNAVAILABLE;
+        }
+    }
+
+    private void launchTerm() {
+        /* Is a reminal emulator running? */
+        
+            /* If Terminal Emulator is not installed or outdated,
+             * offer to download
+             */
+            if (hasExtterm(getBaseContext())!=TERM_AVAILABLE) {
+                showDialog(DIALOG_TERM_UNAVAILABLE);
+            } else {
+                ComponentName termComp = new ComponentName("jackpal.androidterm", "jackpal.androidterm.Term");
+                try {
+                    PackageInfo pinfo = getBaseContext().getPackageManager().getPackageInfo(termComp.getPackageName(), 0);
+                    String patchVersion = pinfo.versionName;
+                    Log.v(TAG, "Terminal Emulator version: " + patchVersion);
+                    int patchCode = pinfo.versionCode;
+
+                    if (patchCode < 32) {
+                        showAlert(R.string.error, R.string.app_terminal_outdated);
+                    } else {
+                        Intent intent = new Intent(Intent.ACTION_MAIN);
+                        intent.setComponent(termComp);
+                        runTerm(intent, extTermRunning());
+                    }
+
+                } catch (PackageManager.NameNotFoundException e) {
+                    Toast.makeText(Cryptonite.this, R.string.app_terminal_missing, Toast.LENGTH_LONG).show();
+                }
+            }
+    }
+
+    private void runTerm(Intent intent, boolean running) {
+        /* If the terminal is running, abort */
+        if (running) {
+            new AlertDialog.Builder(Cryptonite.this)
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .setTitle(R.string.warning)
+                .setMessage(R.string.term_service_running)
+                .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        ;
+                    }
+                })
+                .create().show();
+            return;
+        }
+        
+        String initCmd = "export PATH=" + binDirPath + ":${PATH};";
+
+        intent.putExtra("jackpal.androidterm.iInitialCommand", initCmd);
+        startActivity(intent);
+    }
+
+    private boolean extTermRunning() {
+        ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+        for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+             if ("jackpal.androidterm.TermService".equals(service.service.getClassName())) {
+                 return true;
+             }
+        }
+        return false;
+    }
+    
     /* Native methods are implemented by the
      * 'cryptonite' native library, which is packaged
      * with this application.

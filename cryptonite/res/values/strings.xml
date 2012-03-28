@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Cryptonite</string>
-    <string name="about">Cryptonite\nhttp://code.google.com/p/cryptonite\n\nBased on EncFS\nhttp://www.arg0.net/encfs</string>
+    <string name="about">Cryptonite\nhttp://code.google.com/p/cryptonite\n\nBased on EncFS\nhttp://www.arg0.net/encfs\n\nBased on TrueCrypt, freely available at http://www.truecrypt.org/</string>
 
     <!-- Options Menu -->
     <string name="pref_name">Cryptonite preferences</string>
@@ -98,6 +98,15 @@
     <string name="crash_report">Cryptonite crash report</string>
     <string name="crash_report_content">Please provide information about your device, manufacturer, and Android version.</string>
     <string name="local_tabtitle">LOCAL</string>
+    <string name="expert_tabtitle">EXPERT</string>
+
+    <!-- Terminal -->
+    <string name="term_info">Run EncFS and TrueCrypt in terminal</string>
+    <string name="term_prompt">Start external terminal</string>
+    <string name="app_terminal_missing">Terminal emulator not installed or outdated.</string>
+    <string name="app_terminal_get">Go to Market</string>
+    <string name="app_terminal_outdated">Your version of Android Terminal Emulator is outdated. Please update.</string>
+    <string name="term_service_running">A terminal session is still running in the background. Please close before proceeding.</string>
     
     <!-- Dropbox -->
     <string name="dropbox_link">Link with Dropbox</string>
@@ -144,7 +153,7 @@
     <string name="nnew">New</string>
     <string name="file_name">File name:</string>
     <string name="cancel">Cancel</string>
-    <string name="ok">Ok</string>
+    <string name="ok">OK</string>
     <string name="create">Create new folder</string>
     <string name="no_data">No Data</string>
     <string name="location">Location</string>
