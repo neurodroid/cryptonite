@@ -9,5 +9,9 @@
         android:id="@+id/context_export"
         android:title="@string/context_export"
     />
-
+    <item
+        android:id="@+id/context_delete"
+        android:title="@string/context_delete"
+    />
+    
 </menu>

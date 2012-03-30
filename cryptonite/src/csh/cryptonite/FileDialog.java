@@ -618,6 +618,9 @@ public class FileDialog extends ListActivity {
       case R.id.context_export:
           showExportWarning(new String[]{pathName});
           return true;
+      case R.id.context_delete:
+          showDeleteWarning(pathName);
+          return true;
       default:
         return super.onContextItemSelected(item);
       }
@@ -752,6 +755,46 @@ public class FileDialog extends ListActivity {
             setResult(RESULT_OK, getIntent());
             finish();
         }
+    }
+    
+    private void showDeleteWarning(final String deletePath) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(FileDialog.this);
+        builder.setIcon(R.drawable.ic_launcher_cryptonite)
+        .setTitle(R.string.warning)
+        .setMessage(R.string.delete_warning)
+        .setPositiveButton(R.string.delete_short,
+                new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog,
+                    int which) {
+                /* normalise path names */
+                String bRoot = new File(currentRoot).getPath();
+                String stripstr = deletePath.substring(bRoot.length());
+                if (!stripstr.startsWith("/")) {
+                    stripstr = "/" + stripstr;
+                }
+                
+                /* Convert current path to encoded file name */
+                String encodedPath = Cryptonite.jniEncode(stripstr);
+
+                if (mStorage.deleteFile(encodedPath)) {
+                    /* remove virtual decoded file as well */
+                    if (!new VirtualFile(deletePath).delete()) {
+                        showToast(R.string.delete_fail_virtual);
+                    }
+                    
+                    /* reload current directory */
+                    getDir(currentPath, currentRoot, currentRootLabel, currentDBEncFS);
+                }
+            }
+        })
+        .setNegativeButton(R.string.cancel,
+                new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog,
+                    int which) {
+            }
+        });  
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
     
     private void showUploadWarning(final String uploadPath) {

@@ -216,7 +216,7 @@ public class DropboxStorage extends Storage {
      * @throws DropboxException
      */
     @Override
-    public boolean export(String[] exportPaths, String exportRoot,
+    public boolean exportEncFSFiles(String[] exportPaths, String exportRoot,
             String destDir, String encFSPath) {
         try {
             for (String path : exportPaths) {
@@ -227,6 +227,38 @@ public class DropboxStorage extends Storage {
             return false;
         } catch (DropboxException e) {
             handleUIToastRequest(mAppContext.getString(R.string.export_failed) + e.toString());
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean deleteFile(String path) {
+        /* Create dir on DB */
+        File browseRoot = mAppContext.getDir(Cryptonite.BROWSEPNT, Context.MODE_PRIVATE);
+        String targetPath = path.substring(browseRoot.getPath().length());
+        
+        /* Does the _en_crypted directory exist on Dropbox? */
+        String dbPath = new File(targetPath).getParent() + "/" + new File(path).getName();
+        boolean fileExists = true;
+        try {
+            fileExists = mApp.dbFileExists(dbPath);
+        } catch (DropboxException e) {
+            handleUIToastRequest(mAppContext.getString(R.string.delete_fail) + ": " + e.toString());
+            return false;
+        }
+        if (fileExists) {
+            try {
+                mApp.getDBApi().delete(dbPath);
+                mApp.removeDBHashMapEntry(dbPath);
+                mApp.removeDBHashMapEntry(new File(dbPath).getParent());
+            } catch (DropboxException e) {
+                handleUIToastRequest(mAppContext.getString(R.string.delete_fail) +
+                        ": " + e.toString());
+                return false;
+            }
+        } else {
+            handleUIToastRequest(R.string.delete_fail_nexists);
             return false;
         }
         return true;
@@ -314,12 +346,14 @@ public class DropboxStorage extends Storage {
             Entry dbEntry = mApp.getDBEntry(encodedPath);
             
             if (dbEntry != null) {
-                if (dbEntry.isDir) {
+                if (dbEntry.isDir && !dbEntry.isDeleted) {
                     if (dbEntry.contents != null) {
                         if (dbEntry.contents.size()>0) {
                             for (Entry dbChild : dbEntry.contents) {
+                                if (!dbChild.isDeleted) {
                                     decode(dbChild.path.substring(encFSPath.length()), 
                                             rootPath, dbChild.isDir);
+                                }
                             }
                         }
                     }
@@ -341,11 +375,13 @@ public class DropboxStorage extends Storage {
             Entry dbEntry = mApp.getDBEntry(path);
 
             if (dbEntry != null) {
-                if (dbEntry.isDir) {
+                if (dbEntry.isDir && !dbEntry.isDeleted) {
                     if (dbEntry.contents != null) {
                         if (dbEntry.contents.size()>0) {
                             for (Entry dbChild : dbEntry.contents) {
-                                DropboxStorage.dbTouch(dbChild, rootPath);
+                                if (!dbChild.isDeleted) {
+                                    DropboxStorage.dbTouch(dbChild, rootPath);
+                                }
                             }
                         }
                     }
@@ -514,6 +550,9 @@ public class DropboxStorage extends Storage {
         /* Find file in Dropbox */
         Entry dbEntry = mApp.getDBEntry(dbPath);
         if (dbEntry == null) {
+            return;
+        }
+        if (dbEntry.isDeleted) {
             return;
         }
         if (dbEntry.isDir) {

@@ -104,7 +104,7 @@ public class LocalStorage extends Storage {
      * @return true upon success
      */
     @Override
-    public boolean export(String[] exportPaths, String exportRoot,
+    public boolean exportEncFSFiles(String[] exportPaths, String exportRoot,
             String destDir, String encFSPath) {
         Set<String> errorList = new HashSet<String>();
 
@@ -113,6 +113,11 @@ public class LocalStorage extends Storage {
         }
 
         return errorList.size() == 0;
+    }
+    
+    @Override
+    public boolean deleteFile(String path) {
+        return (new File(path)).delete();
     }
     
     @Override

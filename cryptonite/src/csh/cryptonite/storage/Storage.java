@@ -71,11 +71,13 @@ public abstract class Storage {
     
     abstract public boolean decryptEncFSFile(String encodedPath, String targetPath, String encfsPath);
     
-    abstract public boolean export(String[] exportPaths, String exportRoot, 
+    abstract public boolean exportEncFSFiles(String[] exportPaths, String exportRoot, 
             String destDir, String encFSPath);
-
+    
     abstract public boolean createEncFS(String currentReturnPath, String passwordString, 
             File browseRoot, int config);
+    
+    abstract public boolean deleteFile(String path);
     
     abstract public String encodedExists(String stripstr);
     

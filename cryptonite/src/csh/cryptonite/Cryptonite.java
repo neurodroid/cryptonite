@@ -687,7 +687,7 @@ public class Cryptonite extends Activity
                                     if (!new File(exportName).exists()) {
                                         alert = true;
                                     } else {
-                                        alert = !mStorage.export(currentReturnPathList, encfsBrowseRoot, 
+                                        alert = !mStorage.exportEncFSFiles(currentReturnPathList, encfsBrowseRoot, 
                                                     currentReturnPath + "/Cryptonite", currentDialogDBEncFS);
                                     }
                                     runOnUiThread(new Runnable(){

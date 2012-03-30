@@ -57,6 +57,27 @@ public enum VirtualFileSystem {
         return null;
         
     }
+
+    private boolean recDel(String filepath, VirtualFile currentFile) {
+        if (currentFile.isDirectory()) {
+            for (VirtualFile child : currentFile.listFiles()) {
+                if (child.getPath().equals(filepath)) {
+                    return currentFile.getChildren().remove(child);
+                } else {
+                    if (recDel(filepath, child)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        return false;
+        
+    }
+    
+    public boolean delete(VirtualFile delFile) {
+        return recDel(delFile.getPath(), root);
+    }
     
     public String getRootPath() {
         return root.getPath();

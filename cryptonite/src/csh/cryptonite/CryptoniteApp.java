@@ -80,6 +80,10 @@ public class CryptoniteApp extends Application {
         dbHashMap.clear();
     }
     
+    public void removeDBHashMapEntry(String dbPath) {
+        dbHashMap.remove(dbPath);
+    }
+    
     public boolean dbFileExists(String dbPath) throws DropboxException {
         Entry dbEntry;
         try {

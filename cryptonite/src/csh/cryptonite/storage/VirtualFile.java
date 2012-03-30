@@ -164,6 +164,15 @@ public class VirtualFile extends File {
         
     }
     
+    @Override
+    public boolean delete() {
+        if (!isVirtual) {
+            return super.delete();
+        } else {
+            return VirtualFileSystem.INSTANCE.delete(this);
+        }
+    }
+    
     protected boolean addChild(VirtualFile child) {
         if (!isDir) {
             return false;
