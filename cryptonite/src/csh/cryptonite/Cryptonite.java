@@ -902,7 +902,7 @@ public class Cryptonite extends Activity
             // activity from which session.startAuthentication() was called, so
             // that Dropbox authentication completes properly.
             // Make sure we're returning from an authentication attempt at all.
-            if (triedLogin && session.authenticationSuccessful()) {
+            if (session.authenticationSuccessful()) {
                 triedLogin = false;
                 try {
                     // Mandatory call to complete the auth
