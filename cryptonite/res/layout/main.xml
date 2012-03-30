@@ -191,31 +191,6 @@
                         android:typeface="normal" >
                     </Button>
 
- 
-                    <TextView
-                        android:id="@+id/tvVersionLocal"
-                        android:layout_width="fill_parent"
-                        android:layout_height="wrap_content"
-                        android:textStyle="bold"
-                        android:typeface="normal" >
-                    </TextView>
-                </TableLayout>
-            </ScrollView>
-
-            <ScrollView
-                xmlns:android="http://schemas.android.com/apk/res/android"
-                android:id="@+id/tab_expert"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
-                android:scrollbars="vertical" >
-
-                <TableLayout
-                    xmlns:android="http://schemas.android.com/apk/res/android"
-                    android:layout_width="fill_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:stretchColumns="*" >
-
                     <TextView
                         android:id="@+id/tvMountInfo"
                         android:layout_width="fill_parent"
@@ -245,6 +220,31 @@
                             android:typeface="normal" >
                         </Button>
                     </TableRow>
+
+                    
+                    <TextView
+                        android:id="@+id/tvVersionLocal"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:textStyle="bold"
+                        android:typeface="normal" >
+                    </TextView>
+                </TableLayout>
+            </ScrollView>
+
+            <ScrollView
+                xmlns:android="http://schemas.android.com/apk/res/android"
+                android:id="@+id/tab_expert"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:scrollbars="vertical" >
+
+                <TableLayout
+                    xmlns:android="http://schemas.android.com/apk/res/android"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:stretchColumns="*" >
 
                     <TextView
                         android:id="@+id/tvTermInfo"
