@@ -49,6 +49,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 
+import android.support.v4.app.FragmentActivity;
 import android.text.SpannableString;
 import android.text.util.Linkify;
 import android.text.method.ScrollingMovementMethod;
@@ -83,7 +84,7 @@ import csh.cryptonite.storage.Storage;
 import csh.cryptonite.storage.VirtualFile;
 import csh.cryptonite.storage.VirtualFileSystem;
 
-public class Cryptonite extends Activity
+public class Cryptonite extends FragmentActivity
 {
 
     private static final int REQUEST_PREFS=0, REQUEST_CODE_PICK_FILE_OR_DIRECTORY=1;
