@@ -360,10 +360,10 @@ public class DropboxStorage extends Storage {
                 }
             }
         } catch (DropboxException e) {
-            String alertMsg = e.getMessage() + " " + mAppContext.getString(R.string.dropbox_read_fail);
+            String alertMsg = mAppContext.getString(R.string.dropbox_read_fail) + ": " + e.getMessage();
             handleUIToastRequest(alertMsg);
         } catch (IOException e) {
-            String alertMsg = e.getMessage() + " " + mAppContext.getString(R.string.dropbox_read_fail);
+            String alertMsg = mAppContext.getString(R.string.dropbox_read_fail) + ": " + e.getMessage();
             handleUIToastRequest(alertMsg);
         }
     }
@@ -388,10 +388,10 @@ public class DropboxStorage extends Storage {
                 }
             }
         } catch (DropboxException e) {
-            String alertMsg = e.getMessage() + " " + mAppContext.getString(R.string.dropbox_read_fail);
+            String alertMsg = mAppContext.getString(R.string.dropbox_read_fail) + ": " + e.getMessage();
             handleUIToastRequest(alertMsg);
         } catch (IOException e) {
-            String alertMsg = e.getMessage() + " " + mAppContext.getString(R.string.dropbox_read_fail);
+            String alertMsg = mAppContext.getString(R.string.dropbox_read_fail) + ": " + e.getMessage();
             handleUIToastRequest(alertMsg);
         }
     }
