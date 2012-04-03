@@ -774,17 +774,26 @@ public class FileDialog extends ListActivity {
                 }
                 
                 /* Convert current path to encoded file name */
-                String encodedPath = Cryptonite.jniEncode(stripstr);
-
-                if (mStorage.deleteFile(encodedPath)) {
-                    /* remove virtual decoded file as well */
-                    if (!new VirtualFile(deletePath).delete()) {
-                        showToast(R.string.delete_fail_virtual);
+                final String encodedPath = Cryptonite.jniEncode(stripstr);
+                /* Run in separate thread in case a network operation is involved */
+                new Thread(new Runnable(){
+                    public void run(){
+                        final boolean deleted = mStorage.deleteFile(encodedPath);
+                        runOnUiThread(new Runnable(){
+                            public void run() {
+                                if (deleted) {
+                                    if (!new VirtualFile(deletePath).delete()) {
+                                        showToast(R.string.delete_fail_virtual);
+                                    }
+                                    
+                                    /* reload current directory */
+                                    getDir(currentPath, currentRoot, currentRootLabel, currentDBEncFS);
+                                }
+                            }
+                        });
                     }
-                    
-                    /* reload current directory */
-                    getDir(currentPath, currentRoot, currentRootLabel, currentDBEncFS);
-                }
+                }).start();
+                
             }
         })
         .setNegativeButton(R.string.cancel,
@@ -861,7 +870,7 @@ public class FileDialog extends ListActivity {
         }
     }
 
-    private boolean createEncFSFolder(String decodedFolderName) {
+    private void createEncFSFolder(String decodedFolderName) {
         /* normalise path names */
         String bRoot = new File(currentRoot).getPath();
         String bPath = new File(currentPath).getPath();
@@ -874,15 +883,23 @@ public class FileDialog extends ListActivity {
             stripstr = stripstr.substring(0, stripstr.length()-1);
         }
 
-        /* Convert current path to encoded file name */
-        String encodedPath = Cryptonite.jniEncode(stripstr);
-        
-        boolean folderMade = mStorage.mkDirEncrypted(encodedPath);
-        if (folderMade) {
-            /* reload current directory */
-            getDir(currentPath, currentRoot, currentRootLabel, currentDBEncFS);
-        }
-        return folderMade;
+        final String fStripStr = stripstr;
+        /* Run in separate thread in case a network operation is involved */
+        new Thread(new Runnable(){
+            public void run(){
+                /* Convert current path to encoded file name */
+                String encodedPath = Cryptonite.jniEncode(fStripStr);
+                final boolean folderMade = mStorage.mkDirEncrypted(encodedPath);
+                runOnUiThread(new Runnable(){
+                    public void run() {
+                        if (folderMade) {
+                            /* reload current directory */
+                            getDir(currentPath, currentRoot, currentRootLabel, currentDBEncFS);
+                        }
+                    }
+                });
+            }
+        }).start();
     }
     
     protected void mkDir(String newFolderString) {
@@ -896,11 +913,22 @@ public class FileDialog extends ListActivity {
         while (stripstr.endsWith(" ")) {
             stripstr = stripstr.substring(0, stripstr.length()-1);
         }
+        final String fStripStr = stripstr;
         
-        if (mStorage.mkDirPlain(stripstr)) {
-            /* reload current directory */
-            getDir(currentPath, currentRoot, currentRootLabel, currentDBEncFS);
-        }
+        /* Run in separate thread in case a network operation is involved */
+        new Thread(new Runnable(){
+            public void run(){
+                final boolean madeDir = mStorage.mkDirPlain(fStripStr);
+                runOnUiThread(new Runnable(){
+                    public void run() {
+                        if (madeDir) {
+                            /* reload current directory */
+                            getDir(currentPath, currentRoot, currentRootLabel, currentDBEncFS);
+                        }
+                    }
+                });
+            }
+        }).start();
         return;
     }
     

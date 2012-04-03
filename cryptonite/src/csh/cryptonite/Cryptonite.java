@@ -634,39 +634,7 @@ public class Cryptonite extends FragmentActivity
                     case SELECTLOCALUPLOAD_MODE:
                         final String srcPath = data.getStringExtra(FileDialog.RESULT_SELECTED_FILE);
                         /* Does the file exist? */
-                        final String stripstr = mApp.getStorage().stripStr(currentUploadPath, encfsBrowseRoot, srcPath);
-                        final String nextFilePath = mApp.getStorage().encodedExists(stripstr);
-                        if (!nextFilePath.equals(stripstr)) {
-                            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                            builder.setIcon(R.drawable.ic_launcher_cryptonite)
-                                .setTitle(R.string.file_exists)
-                                .setMessage(R.string.file_exists_options)
-                                .setPositiveButton(R.string.overwrite,
-                                        new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog,
-                                            int which) {
-                                        uploadEncFSFile(stripstr, srcPath);
-                                    }
-                                })
-                                .setNeutralButton(R.string.rename, 
-                                        new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog,
-                                            int which) {
-                                        uploadEncFSFile(nextFilePath, srcPath);
-                                    }
-                                })
-                                .setNegativeButton(R.string.cancel,
-                                        new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog,
-                                            int which) {
-                    
-                                    }
-                                });  
-                            AlertDialog dialog = builder.create();
-                            dialog.show();
-                        }else {
-                            uploadEncFSFile(stripstr, srcPath);
-                        }
+                        uploadEncFSFile(srcPath);
                         break;
                     }
                 }
@@ -791,7 +759,53 @@ public class Cryptonite extends FragmentActivity
         }
     }
 
-    private void uploadEncFSFile(final String targetPath, final String srcPath) {
+    private void uploadEncFSFile(final String srcPath) {
+        final String stripstr = mApp.getStorage().stripStr(currentUploadPath, encfsBrowseRoot, srcPath);
+        
+        /* Run in separate thread in case this involves a network operation */
+        new Thread(new Runnable(){
+            public void run(){
+                final String nextFilePath = mApp.getStorage().encodedExists(stripstr);
+                runOnUiThread(new Runnable(){
+                    public void run() {
+                        if (!nextFilePath.equals(stripstr)) {
+                            AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
+                            builder.setIcon(R.drawable.ic_launcher_cryptonite)
+                            .setTitle(R.string.file_exists)
+                            .setMessage(R.string.file_exists_options)
+                            .setPositiveButton(R.string.overwrite,
+                                    new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog,
+                                        int which) {
+                                    uploadEncFSFileExec(stripstr, srcPath);
+                                }
+                            })
+                            .setNeutralButton(R.string.rename, 
+                                    new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog,
+                                        int which) {
+                                    uploadEncFSFileExec(nextFilePath, srcPath);
+                                }
+                            })
+                            .setNegativeButton(R.string.cancel,
+                                    new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog,
+                                        int which) {
+
+                                }
+                            });  
+                            AlertDialog dialog = builder.create();
+                            dialog.show();
+                        }else {
+                            uploadEncFSFileExec(stripstr, srcPath);
+                        }
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void uploadEncFSFileExec(final String targetPath, final String srcPath) {
         final ProgressDialog pd = ProgressDialog.show(this,
                 this.getString(R.string.wait_msg),
                 this.getString(R.string.encrypting), true);
