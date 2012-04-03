@@ -35,8 +35,7 @@ public class LocalFragment extends Fragment {
         mAct = (Cryptonite)getActivity();
         
         tv = (TextView)v.findViewById(R.id.tvVersionLocal);
-        String versionText = mAct.encfsVersion + "\n" + mAct.opensslVersion;
-        tv.setText(versionText);
+        tv.setText(mAct.textOut);
 
         tvMountInfo = (TextView)v.findViewById(R.id.tvMountInfo);
         tvMountInfo.setText(mAct.mountInfo);
@@ -244,6 +243,10 @@ public class LocalFragment extends Fragment {
         super.onResume();
         updateMountButtons();
         updateDecryptButtons();
+        if (tv != null) {
+            tv.setText(mAct.textOut);
+            tv.invalidate();
+        }
     }
 }
 

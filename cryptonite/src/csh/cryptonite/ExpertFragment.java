@@ -26,8 +26,7 @@ public class ExpertFragment extends Fragment {
         mAct = (Cryptonite)getActivity();
         
         tv = (TextView)v.findViewById(R.id.tvVersionExpert);
-        String versionText = mAct.encfsVersion + "\n" + mAct.opensslVersion;
-        tv.setText(versionText);
+        tv.setText(mAct.textOut);
 
 
         /* Run terminal with environment set up */
@@ -45,6 +44,15 @@ public class ExpertFragment extends Fragment {
                 }});
 
         return v;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (tv != null) {
+            tv.setText(mAct.textOut);
+            tv.invalidate();
+        }
     }
 }
 

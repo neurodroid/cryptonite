@@ -26,8 +26,7 @@ public class DropboxFragment extends Fragment {
         mAct = (Cryptonite)getActivity();
         
         tv = (TextView)v.findViewById(R.id.tvVersionDb);
-        String versionText = mAct.encfsVersion + "\n" + mAct.opensslVersion;
-        tv.setText(versionText);
+        tv.setText(mAct.textOut);
 
         /* Link with Dropbox */
         buttonAuth = (Button)v.findViewById(R.id.btnAuthDb);
@@ -126,7 +125,7 @@ public class DropboxFragment extends Fragment {
         buttonBrowseDecrypted.setEnabled(volumeLoaded && mAct.mApp.isDropbox());
         buttonForgetDecryption.setEnabled(volumeLoaded);
         buttonCreate.setEnabled(!volumeLoaded && mAct.mLoggedIn);
-        
+
         updateLoginButtons();
     }
     
@@ -148,6 +147,10 @@ public class DropboxFragment extends Fragment {
     public void onResume() {
         super.onResume();
         updateDecryptButtons();
+        if (tv != null) {
+            tv.setText(mAct.textOut);
+            tv.invalidate();
+        }
     }
 
 }

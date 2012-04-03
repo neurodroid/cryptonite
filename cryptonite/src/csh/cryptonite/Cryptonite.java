@@ -97,9 +97,10 @@ public class Cryptonite extends FragmentActivity
     public static final String TAG = "cryptonite";
     public static final String DBTAB_TAG = "tab_db", LOCALTAB_TAG="tab_local", EXPERTTAB_TAG="tab_expert";
 
-    public String encfsVersion;
-    public String opensslVersion;
+    private String encfsVersion;
+    private String opensslVersion;
     public String mountInfo;
+    public String textOut;
     
     private static boolean hasJni = false;
     
@@ -164,6 +165,7 @@ public class Cryptonite extends FragmentActivity
         
         encfsVersion = "EncFS " + jniEncFSVersion();
         opensslVersion = jniOpenSSLVersion();
+        textOut = encfsVersion + "\n" + opensslVersion;
         Log.v(TAG, encfsVersion + " " + opensslVersion);
 
         SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
@@ -249,17 +251,8 @@ public class Cryptonite extends FragmentActivity
         dbFragment = (DropboxFragment)mTabsAdapter.getItem(0);
         localFragment = (LocalFragment)mTabsAdapter.getItem(1);
         expertFragment = (ExpertFragment)mTabsAdapter.getItem(2);
-        
     }
 
-    /** Called when the activity is first created. */
-    @Override protected void onStart() {
-        super.onStart();
-        
-        localFragment.updateMountButtons();
-        updateDecryptButtons();
-    }
-    
     public static boolean isValidMntDir(Context context, File newMntDir) {
         return isValidMntDir(context, newMntDir, true);
     }
@@ -597,10 +590,6 @@ public class Cryptonite extends FragmentActivity
         } else {
             setLoggedIn(false);
         }
-
-        localFragment.updateMountButtons();
-      
-        updateDecryptButtons();
     }
 
     public void showAlert(int alert_id, int msg_id) {
@@ -656,8 +645,7 @@ public class Cryptonite extends FragmentActivity
     /** This will run the shipped encfs binary and spawn a daemon on rooted devices
      */
     private void mountEncFS(final String srcDir) {
-        expertFragment.tv.setText(encfsVersion + "\n" + opensslVersion);
-        expertFragment.tv.invalidate();
+        textOut = encfsVersion + "\n" + opensslVersion;
 
         if (jniIsValidEncFS(srcDir) != jniSuccess()) {
             showAlert(R.string.error, R.string.invalid_encfs);
@@ -692,7 +680,7 @@ public class Cryptonite extends FragmentActivity
                                 if (pd.isShowing())
                                     pd.dismiss();
                                 if (fEncfsOutput != null && fEncfsOutput.length() > 0) {
-                                    expertFragment.tv.setText(encfsVersion + "\n" + fEncfsOutput);
+                                    textOut = encfsVersion + "\n" + fEncfsOutput;
                                 }
                                 if (!alertMsg.equals("")) {
                                     showAlert(R.string.error, alertMsg);
@@ -714,12 +702,6 @@ public class Cryptonite extends FragmentActivity
      * @param pwd password
      */
    private void initEncFS(final String srcDir) {
-       localFragment.tv.setText(encfsVersion + "\n" + opensslVersion);
-       localFragment.tv.invalidate();
-       dbFragment.tv.setText(encfsVersion + "\n" + opensslVersion);
-       dbFragment.tv.invalidate();
-       expertFragment.tv.setText(encfsVersion + "\n" + opensslVersion);
-       expertFragment.tv.invalidate();
        alertMsg = "";
        
        final ProgressDialog pd = ProgressDialog.show(this, 
@@ -756,7 +738,6 @@ public class Cryptonite extends FragmentActivity
                        });
                }
            }).start();
-                   
    }
 
    /** Browse an EncFS volume using a virtual file system.
