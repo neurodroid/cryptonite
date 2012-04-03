@@ -48,6 +48,8 @@ public abstract class Storage {
     public String waitString;
     public String browsePnt;
     
+    protected String encFSPath;
+    
     private UIHandler uiHandler;
     
     public Storage(Context context, CryptoniteApp app) {
@@ -61,6 +63,7 @@ public abstract class Storage {
         uploadMode = Cryptonite.SELECTLOCALUPLOAD_MODE;
         waitString = "";
         browsePnt = "";
+        encFSPath = "";
         Thread uiThread = new HandlerThread("UIHandler");
         uiThread.start();
         uiHandler = new UIHandler(((HandlerThread) uiThread).getLooper());
@@ -69,10 +72,10 @@ public abstract class Storage {
     
     abstract public boolean uploadEncFSFile(String stripstr, String srcPath);
     
-    abstract public boolean decryptEncFSFile(String encodedPath, String targetPath, String encfsPath);
+    abstract public boolean decryptEncFSFile(String encodedPath, String targetPath);
     
     abstract public boolean exportEncFSFiles(String[] exportPaths, String exportRoot, 
-            String destDir, String encFSPath);
+            String destDir);
     
     abstract public boolean createEncFS(String currentReturnPath, String passwordString, 
             File browseRoot, int config);
@@ -81,9 +84,9 @@ public abstract class Storage {
     
     abstract public String encodedExists(String stripstr);
     
-    abstract public void mkVisibleDecoded(String path, String encFSRoot, String encFSPath, String rootPath);
+    abstract public void mkVisibleDecoded(String path, String encFSRoot, String rootPath);
     
-    abstract public void mkVisiblePlain(String path, String encFSPath, String rootPath);
+    abstract public void mkVisiblePlain(String path, String rootPath);
     
     abstract public boolean mkDirEncrypted(String encodedPath);
 
@@ -243,5 +246,12 @@ public abstract class Storage {
         uiHandler.sendMessage(msg);
     }
 
+    public String getEncFSPath() {
+        return encFSPath;
+    }
+    
+    public void setEncFSPath(String value) {
+        encFSPath = value;
+    }
 
 }

@@ -109,7 +109,6 @@ public class CreateEncFS extends ListActivity {
         String dialogStartPath = "";
         String dialogRoot = "";
         String dialogRootName = dialogRoot;
-        String dialogDBEncFS = "";
         switch (mStorage.type) {
         case Storage.STOR_LOCAL:
             if (Cryptonite.externalStorageIsWritable()) {
@@ -121,7 +120,6 @@ public class CreateEncFS extends ListActivity {
             }
             dialogRoot = "/";
             dialogRootName = dialogRoot;
-            dialogDBEncFS = "";
             break;
         case Storage.STOR_DROPBOX:
             dialogMode = SelectionMode.MODE_OPEN_CREATE_DB;
@@ -131,7 +129,7 @@ public class CreateEncFS extends ListActivity {
             break;
         default:
         }
-        launchBuiltinFileBrowser(dialogRoot, dialogDBEncFS, dialogRootName,
+        launchBuiltinFileBrowser(dialogRoot, dialogRootName,
                 dialogButtonLabel, dialogStartPath, dialogLabel, dialogMode);
         
     }
@@ -231,12 +229,11 @@ public class CreateEncFS extends ListActivity {
         return null;
     }
 
-    private void launchBuiltinFileBrowser(String dialogRoot, String dialogDBEncFS, String dialogRootName,
+    private void launchBuiltinFileBrowser(String dialogRoot, String dialogRootName,
             String dialogButtonLabel, String dialogStartPath, String dialogLabel, int dialogMode) 
     {
         Intent intent = new Intent(getBaseContext(), FileDialog.class);
         intent.putExtra(FileDialog.CURRENT_ROOT, dialogRoot);
-        intent.putExtra(FileDialog.CURRENT_DBROOT, dialogDBEncFS);
         intent.putExtra(FileDialog.CURRENT_ROOT_NAME, dialogRootName);
         intent.putExtra(FileDialog.BUTTON_LABEL, dialogButtonLabel);
         intent.putExtra(FileDialog.START_PATH, dialogStartPath);

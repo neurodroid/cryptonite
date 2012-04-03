@@ -89,7 +89,7 @@ public class LocalStorage extends Storage {
     }
 
     @Override
-    public boolean decryptEncFSFile(String encodedPath, String targetPath, String encfsPath) {
+    public boolean decryptEncFSFile(String encodedPath, String targetPath) {
         /* Copy decrypted file */
         return (Cryptonite.jniDecrypt(encodedPath, targetPath, true) == Cryptonite.jniSuccess());
     }
@@ -105,7 +105,7 @@ public class LocalStorage extends Storage {
      */
     @Override
     public boolean exportEncFSFiles(String[] exportPaths, String exportRoot,
-            String destDir, String encFSPath) {
+            String destDir) {
         Set<String> errorList = new HashSet<String>();
 
         for (String path : exportPaths) {
@@ -138,7 +138,7 @@ public class LocalStorage extends Storage {
     }
 
     @Override
-    public void mkVisibleDecoded(String path, String encFSRoot, String encFSPath, String rootPath) {
+    public void mkVisibleDecoded(String path, String encFSRoot, String rootPath) {
 
         String prevRoot = encFSRoot.substring(0, encFSRoot.length()-encFSPath.length());
         String encodedPath = Cryptonite.jniEncode(path).substring(prevRoot.length()-1);
@@ -167,7 +167,7 @@ public class LocalStorage extends Storage {
     }
     
     @Override
-    public void mkVisiblePlain(String path, String encFSPath, String rootPath) {
+    public void mkVisiblePlain(String path, String rootPath) {
         /* Does nothing because the files are already visible */
         return;
     }

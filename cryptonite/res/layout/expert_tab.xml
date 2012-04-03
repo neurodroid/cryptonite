@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/expert_sv"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:scrollbars="vertical" >
+
+    <TableLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:stretchColumns="*" >
+
+        <TextView
+            android:id="@+id/tvTermInfo"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/term_info"
+            android:textStyle="bold"
+            android:typeface="normal" >
+        </TextView>
+
+        <TableRow>
+
+            <Button
+                android:id="@+id/btnTermPrompt"
+                android:layout_width="0dp"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+                android:text="@string/term_prompt"
+                android:typeface="normal" >
+            </Button>
+
+            <Button
+                android:id="@+id/btnTermPromptRoot"
+                android:layout_width="0dp"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+                android:text="@string/term_prompt_root"
+                android:typeface="normal" >
+            </Button>
+        </TableRow>
+
+        <TextView
+            android:id="@+id/tvVersionExpert"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:typeface="normal" >
+        </TextView>
+    </TableLayout>
+
+</ScrollView>

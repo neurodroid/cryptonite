@@ -48,6 +48,7 @@ import android.os.Bundle;
 import android.os.Environment;
 
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.view.ViewPager;
 import android.text.SpannableString;
 import android.text.util.Linkify;
 import android.text.method.ScrollingMovementMethod;
@@ -60,13 +61,10 @@ import android.view.MenuItem;
 import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.View.OnClickListener;
 
 import android.webkit.MimeTypeMap;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TabHost;
-import android.widget.TabHost.OnTabChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -87,7 +85,8 @@ public class Cryptonite extends FragmentActivity
     public static final int MOUNT_MODE=0, SELECTLOCALENCFS_MODE=1, SELECTDBENCFS_MODE=2,
         VIEWMOUNT_MODE=3, SELECTLOCALEXPORT_MODE=4, LOCALEXPORT_MODE=5, DROPBOX_AUTH_MODE=6,
         SELECTDBEXPORT_MODE=7, DBEXPORT_MODE=8, SELECTLOCALUPLOAD_MODE=9, SELECTDBUPLOAD_MODE=10;
-    private static final int DIRPICK_MODE=0, FILEPICK_MODE=1;
+    private static final int DIRPICK_MODE=0;
+    public static final int FILEPICK_MODE=1;
     protected static final int MSG_SHOW_TOAST = 0;
     public static final int MY_PASSWORD_DIALOG_ID = 0, MY_PASSWORD_CONFIRM_DIALOG_ID = 4;
     private static final int DIALOG_MARKETNOTFOUND=1, DIALOG_OI_UNAVAILABLE=2, DIALOG_JNI_FAIL=3, 
@@ -97,45 +96,47 @@ public class Cryptonite extends FragmentActivity
     public static final String MNTPNT = "/csh.cryptonite/mnt";
     public static final String TAG = "cryptonite";
     public static final String DBTAB_TAG = "tab_db", LOCALTAB_TAG="tab_local", EXPERTTAB_TAG="tab_expert";
+
+    public String encfsVersion;
+    public String opensslVersion;
+    public String mountInfo;
     
     private static boolean hasJni = false;
     
-    private String currentDialogStartPath = "/";
-    private String currentDialogLabel = "";
-    private String currentDialogButtonLabel = "OK";
-    private String currentDialogRoot = "/";
-    private String currentDialogRootName = currentDialogRoot;
+    public String currentDialogStartPath = "/";
+    public String currentDialogLabel = "";
+    public String currentDialogButtonLabel = "OK";
+    public String currentDialogRoot = "/";
+    public String currentDialogRootName = currentDialogRoot;
     private String currentReturnPath = "/";
     private String currentOpenPath = "/";
     private String currentUploadPath = "/";
     private String currentPassword = "\0";
     private String encfsBrowseRoot = "/";
     private String[] currentReturnPathList = {};
-    private int currentDialogMode = SelectionMode.MODE_OPEN;
+    public int currentDialogMode = SelectionMode.MODE_OPEN;
 
-    private String mntDir = "/sdcard" + MNTPNT;
-    private TextView tvDb, tvLocal, tvExpert;
-    private TextView tvMountInfo;
-    private String encfsVersion, opensslVersion;
-    private Button buttonAuthDb, 
-        buttonDecryptDb, buttonDecryptLocal,
-        buttonBrowseDecryptedDb, buttonBrowseDecryptedLocal,
-        buttonForgetDecryptionDb, buttonForgetDecryptionLocal,
-        buttonCreateDb, buttonCreateLocal,
-        buttonMount, buttonViewMount,
-        buttonTermPrompt, buttonTermPromptRoot;
-    private int opMode = -1;
-    private int prevMode = -1;
+    public String mntDir = "/sdcard" + MNTPNT;
+    public int opMode = -1;
+    public int prevMode = -1;
     private boolean alert = false;
     private String alertMsg = "";
  
-    private boolean mLoggedIn = false;
-    private boolean hasFuse = false;
-    private boolean triedLogin = false;
+    public boolean mLoggedIn = false;
+    public boolean hasFuse = false;
+    public boolean triedLogin = false;
     private boolean mInstrumentation = false;
     private boolean mUseAppFolder;
+    
     private TabHost mTabHost;
-    private CryptoniteApp mApp;
+    private ViewPager  mViewPager;
+    private TabsAdapter mTabsAdapter;
+    
+    private DropboxFragment dbFragment;
+    private LocalFragment localFragment;
+    private ExpertFragment expertFragment;
+    
+    public CryptoniteApp mApp;
     
     // If you'd like to change the access type to the full Dropbox instead of
     // an app folder, change this value.
@@ -161,32 +162,25 @@ public class Cryptonite extends FragmentActivity
             return;
         }
         
-        mTabHost = (TabHost)findViewById(android.R.id.tabhost);
-        mTabHost.setup();
+        encfsVersion = "EncFS " + jniEncFSVersion();
+        opensslVersion = jniOpenSSLVersion();
+        Log.v(TAG, encfsVersion + " " + opensslVersion);
 
-        mTabHost.getTabWidget().setDividerDrawable(R.drawable.tab_divider);
-        
-        mTabHost.addTab(mTabHost.newTabSpec(DBTAB_TAG)
-                .setIndicator(createTabView(mTabHost.getContext(), 
-                        getString(R.string.dropbox_tabtitle)))
-                .setContent(R.id.tab_db));
-        mTabHost.addTab(mTabHost.newTabSpec(LOCALTAB_TAG)
-                .setIndicator(createTabView(mTabHost.getContext(), 
-                        getString(R.string.local_tabtitle)))
-                .setContent(R.id.tab_local));
-        mTabHost.addTab(mTabHost.newTabSpec(EXPERTTAB_TAG)
-                .setIndicator(createTabView(mTabHost.getContext(), 
-                        getString(R.string.expert_tabtitle)))
-                .setContent(R.id.tab_expert));
-        
-        mTabHost.setOnTabChangedListener(new OnTabChangeListener() {
+        SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+        mApp.setupReadDirs(prefs.getBoolean("cb_extcache", false));
 
-            public void onTabChanged(String tabId) {
-                mApp.setCurrentTabTag(tabId);
+        if (!externalStorageIsWritable() || !ShellUtils.supportsFuse()) {
+            mountInfo = getString(R.string.mount_info_unsupported);
+        } else {
+            mountInfo = getString(R.string.mount_info);
+            mntDir = prefs.getString("txt_mntpoint", defaultMntDir());
+            File mntDirF = new File(mntDir);
+            if (!mntDirF.exists()) {
+                mntDirF.mkdirs();
             }
-        });
-        
-        mTabHost.setCurrentTabByTag(mApp.getCurrentTabTag());
+        }
+
+        hasFuse = ShellUtils.supportsFuse();
 
         /* Running from Instrumentation? */
         if (getIntent() != null) {
@@ -194,275 +188,6 @@ public class Cryptonite extends FragmentActivity
         } else {
             mInstrumentation = false;
         }
-        
-        encfsVersion = "EncFS " + jniEncFSVersion();
-        opensslVersion = jniOpenSSLVersion();
-        Log.v(TAG, encfsVersion + " " + opensslVersion);
-        tvDb = (TextView)findViewById(R.id.tvVersionDb);
-        tvDb.setText(encfsVersion + "\n" + opensslVersion);
-        tvLocal = (TextView)findViewById(R.id.tvVersionLocal);
-        tvLocal.setText(encfsVersion + "\n" + opensslVersion);
-        tvExpert = (TextView)findViewById(R.id.tvVersionExpert);
-        tvExpert.setText(encfsVersion + "\n" + opensslVersion);
-
-        SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
-        mApp.setupReadDirs(prefs.getBoolean("cb_extcache", false));
- 
-        tvMountInfo = (TextView)findViewById(R.id.tvMountInfo);
-        if (!externalStorageIsWritable() || !ShellUtils.supportsFuse()) {
-            tvMountInfo.setText(this.getString(R.string.mount_info_unsupported));
-        } else {
-            mntDir = prefs.getString("txt_mntpoint", defaultMntDir());
-            File mntDirF = new File(mntDir);
-            if (!mntDirF.exists()) {
-                mntDirF.mkdirs();
-            }
-        }
-        
-        boolean volumeLoaded = (jniVolumeLoaded() == jniSuccess());
-        
-        /* Link with Dropbox */
-        buttonAuthDb = (Button)findViewById(R.id.btnAuthDb);
-        buttonAuthDb.setOnClickListener(new OnClickListener() {
-                public void onClick(View v) {
-                    // If necessary, we create a new AuthSession 
-                    // so that we can use the Dropbox API.
-                    // Not done on program startup so that the user can
-                    // decide between app folder and full access.
-                    if (mApp.getDBApi() == null) {
-                        buildSession();
-                    } else {
-                        if (mLoggedIn) {
-                            logOut();
-                        } else {
-                            triedLogin = true;
-                            // Start the remote authentication
-                            mApp.getDBApi()
-                                .getSession().startAuthentication(Cryptonite.this);
-                        }
-                    }
-                }});
-
-        buttonAuthDb.setEnabled(true);
-        
-        /* Decrypt EncFS volume on Dropbox */
-        buttonDecryptDb = (Button)findViewById(R.id.btnDecryptDb);
-        buttonDecryptDb.setOnClickListener(new OnClickListener() {
-                public void onClick(View v) {
-                    opMode = SELECTDBENCFS_MODE;
-                    currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
-                    currentDialogButtonLabel = Cryptonite.this.getString(
-                            R.string.select_enc_short);
-                    currentDialogMode = SelectionMode.MODE_OPEN_DB;
-                    currentDialogStartPath = getPrivateDir(CryptoniteApp.BROWSEPNT).getPath();
-                    currentDialogRoot = currentDialogStartPath;
-                    currentDialogRootName = getString(R.string.dropbox_root_name);
-                    mApp.setCurrentDBEncFS("");
-                    if (mLoggedIn) {
-                        launchBuiltinFileBrowser();
-                    }
-                }});
-
-        buttonDecryptDb.setEnabled(mLoggedIn && !volumeLoaded);
-        
-        /* Decrypt local encFS volume */
-        buttonDecryptLocal = (Button)findViewById(R.id.btnDecryptLocal);
-        buttonDecryptLocal.setOnClickListener(new OnClickListener() {
-                public void onClick(View v) {
-                    opMode = SELECTLOCALENCFS_MODE;
-                    currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
-                    currentDialogButtonLabel = Cryptonite.this.getString(R.string.select_enc_short);
-                    currentDialogMode = SelectionMode.MODE_OPEN;
-                    if (externalStorageIsWritable()) {
-                        currentDialogStartPath = Environment.getExternalStorageDirectory().getPath();
-                    } else {
-                        currentDialogStartPath = "/";
-                    }
-                    currentDialogRoot = "/";
-                    currentDialogRootName = currentDialogRoot;
-                    if (!externalStorageIsWritable()) {
-                        showAlert(R.string.error, R.string.sdcard_not_writable);
-                    } else {
-                        launchBuiltinFileBrowser(); //DIRPICK_MODE);
-                    }
-                }});
-
-        buttonDecryptLocal.setEnabled(!volumeLoaded);
-
-        /* Browse decrypted volume */
-        buttonBrowseDecryptedDb = (Button)findViewById(R.id.btnBrowseDecryptedDb);
-        buttonBrowseDecryptedDb.setOnClickListener(new OnClickListener() {
-                public void onClick(View v) {
-                    browseEncFS(mApp.getCurrentBrowsePath(), mApp.getCurrentBrowseStartPath());
-                }});
-
-        buttonBrowseDecryptedDb.setEnabled(volumeLoaded && mApp.isDropbox());
-        
-        /* Browse decrypted volume */
-        buttonBrowseDecryptedLocal = (Button)findViewById(R.id.btnBrowseDecryptedLocal);
-        buttonBrowseDecryptedLocal.setOnClickListener(new OnClickListener() {
-                public void onClick(View v) {
-                    browseEncFS(mApp.getCurrentBrowsePath(), mApp.getCurrentBrowseStartPath());
-                }});
-
-        buttonBrowseDecryptedLocal.setEnabled(volumeLoaded && mApp.isLocal());
-        
-        /* Clear decryption information */
-        buttonForgetDecryptionDb = (Button)findViewById(R.id.btnForgetDecryptionDb);
-        buttonForgetDecryptionDb.setOnClickListener(new OnClickListener() {
-                public void onClick(View v) {
-                    mApp.cleanUpDecrypted();
-                    updateDecryptButtons();
-                }});
-
-        buttonForgetDecryptionDb.setEnabled(volumeLoaded);
-        
-        /* Clear decryption information */
-        buttonForgetDecryptionLocal = (Button)findViewById(R.id.btnForgetDecryptionLocal);
-        buttonForgetDecryptionLocal.setOnClickListener(new OnClickListener() {
-                public void onClick(View v) {
-                    mApp.cleanUpDecrypted();
-                    updateDecryptButtons();
-                }});
-
-        buttonForgetDecryptionLocal.setEnabled(volumeLoaded);
-        
-        /* Create EncFS volume on Dropbox */
-        buttonCreateDb = (Button)findViewById(R.id.btnCreateDb);
-        buttonCreateDb.setOnClickListener(new OnClickListener() {
-                public void onClick(View v) {
-                    createEncFS(true);
-                }});
-
-        buttonCreateDb.setEnabled(mLoggedIn && !volumeLoaded);
-
-        /* Create local EncFS volume */
-        buttonCreateLocal = (Button)findViewById(R.id.btnCreateLocal);
-        buttonCreateLocal.setOnClickListener(new OnClickListener() {
-                public void onClick(View v) {
-                    createEncFS(false);
-                }});
-
-        buttonCreateLocal.setEnabled(!volumeLoaded);
-        
-        /* Mount local EncFS volume */
-        buttonMount = (Button)findViewById(R.id.btnMount);
-        buttonMount.setOnClickListener(new OnClickListener() {
-            public void onClick(View v) {
-                if (!ShellUtils.isMounted("fuse.encfs")) {
-                    prevMode = opMode;
-                    opMode = MOUNT_MODE;
-                    currentDialogLabel = Cryptonite.this.getString(R.string.select_enc);
-                    currentDialogButtonLabel = Cryptonite.this.getString(R.string.select_enc_short);
-                    currentDialogMode = SelectionMode.MODE_OPEN;
-                    if (externalStorageIsWritable()) {
-                        currentDialogStartPath = Environment.getExternalStorageDirectory().getPath();
-                    } else {
-                        currentDialogStartPath = "/";
-                    }
-                    currentDialogRoot = "/";
-                    currentDialogRootName = currentDialogRoot;
-                    mApp.setCurrentDBEncFS("");
-                    
-                    if (!externalStorageIsWritable()) {
-                        showAlert(R.string.error, R.string.sdcard_not_writable);
-                    } else {
-                        launchBuiltinFileBrowser();//DIRPICK_MODE);
-                    }
-                    
-                } else {
-                    String[] umountlist = {"umount", mntDir};
-                    try {
-                        ShellUtils.runBinary(umountlist, mApp.getBinDirPath(), null, true);
-                    } catch (IOException e) {
-                        Toast.makeText(Cryptonite.this, 
-                                getString(R.string.umount_fail) + ": " + e.getMessage(), 
-                                Toast.LENGTH_LONG).show();
-                    } catch (InterruptedException e) {
-                        Toast.makeText(Cryptonite.this, 
-                                getString(R.string.umount_fail) + ": " + e.getMessage(), 
-                                Toast.LENGTH_LONG).show();
-                    }
-                    
-                    /* Still mounted? Offer to kill encfs */
-                    if (ShellUtils.isMounted("fuse.encfs")) {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
-                        builder.setIcon(R.drawable.ic_launcher_cryptonite)
-                        .setTitle(R.string.warning)
-                        .setMessage(R.string.umount_still_mounted)
-                        .setPositiveButton(R.string.umount_all,
-                                new DialogInterface.OnClickListener()
-                        {
-                            public void onClick(DialogInterface dialog,
-                                    int which) {
-                                String[] killlist = {"killall", "encfs"};
-                                try {
-                                    ShellUtils.runBinary(killlist, mApp.getBinDirPath(), null, true);
-                                } catch (IOException e) {
-                                    Toast.makeText(Cryptonite.this, 
-                                            getString(R.string.umount_fail) + ": " + e.getMessage(), 
-                                            Toast.LENGTH_LONG).show();
-                                } catch (InterruptedException e) {
-                                    Toast.makeText(Cryptonite.this, 
-                                            getString(R.string.umount_fail) + ": " + e.getMessage(), 
-                                            Toast.LENGTH_LONG).show();
-                                }
-                                updateMountButtons();
-                            }
-                        })
-                        .setNegativeButton(R.string.cancel,
-                                new DialogInterface.OnClickListener()
-                        {
-                            public void onClick(DialogInterface dialog,
-                                    int which) {
-                                
-                            }
-                        });
-                        AlertDialog dialog = builder.create();
-                        dialog.show();
-                    }
-                    updateMountButtons();
-                }
-            }});
-
-        /* View mounted EncFS volume */
-        buttonViewMount = (Button)findViewById(R.id.btnViewMount);
-        buttonViewMount.setOnClickListener(new OnClickListener() {
-                public void onClick(View v) {
-                    prevMode = opMode;
-                    opMode = VIEWMOUNT_MODE;
-                    currentDialogStartPath = mntDir;
-                    currentDialogRoot = "/";
-                    currentDialogRootName = currentDialogRoot;
-                    mApp.setCurrentDBEncFS("");
-                    currentDialogLabel = Cryptonite.this.getString(R.string.fb_name);
-                    currentDialogButtonLabel = Cryptonite.this.getString(R.string.back);
-                    currentDialogMode = SelectionMode.MODE_OPEN;
-                    if (!externalStorageIsWritable()) {
-                        showAlert(R.string.error, R.string.sdcard_not_writable);
-                    } else {
-                        launchFileBrowser(FILEPICK_MODE);
-                    }
-                    opMode = prevMode;
-                }});
-
-        /* Run terminal with environment set up */
-        buttonTermPrompt = (Button)findViewById(R.id.btnTermPrompt);
-        buttonTermPrompt.setOnClickListener(new OnClickListener() {
-                public void onClick(View v) {
-                    launchTerm();
-                }});
-
-        /* Run terminal with environment set up */
-        buttonTermPromptRoot = (Button)findViewById(R.id.btnTermPromptRoot);
-        buttonTermPromptRoot.setOnClickListener(new OnClickListener() {
-                public void onClick(View v) {
-                    launchTerm(true);
-                }});
-
-        hasFuse = ShellUtils.supportsFuse();
-        updateMountButtons();
-        updateDecryptButtons();
         
         if (mApp.needsEncFSBinary()) {
             final ProgressDialog pd = ProgressDialog.show(this,
@@ -500,15 +225,41 @@ public class Cryptonite extends FragmentActivity
                 dialog.show();
             }
         }
+
+        mTabHost = (TabHost)findViewById(android.R.id.tabhost);
+        mTabHost.setup();
+
+        mViewPager = (ViewPager)findViewById(R.id.pager);
+        mTabsAdapter = new TabsAdapter(this, mTabHost, mViewPager);
+        
+        mTabsAdapter.addTab(mTabHost.newTabSpec(DBTAB_TAG)
+                .setIndicator(getString(R.string.dropbox_tabtitle)),
+                DropboxFragment.class, null);
+        mTabsAdapter.addTab(mTabHost.newTabSpec(LOCALTAB_TAG)
+                .setIndicator(getString(R.string.local_tabtitle)),
+                LocalFragment.class, null);
+        mTabsAdapter.addTab(mTabHost.newTabSpec(EXPERTTAB_TAG)
+                .setIndicator(getString(R.string.expert_tabtitle)),
+                ExpertFragment.class, null);
+        
+        if (savedInstanceState != null) {
+            mTabHost.setCurrentTabByTag(savedInstanceState.getString("tab"));
+        }
+        
+        dbFragment = (DropboxFragment)mTabsAdapter.getItem(0);
+        localFragment = (LocalFragment)mTabsAdapter.getItem(1);
+        expertFragment = (ExpertFragment)mTabsAdapter.getItem(2);
+        
     }
 
-    private static View createTabView(final Context context, final String text) {
-        View view = LayoutInflater.from(context).inflate(R.layout.tabs_bg, null);
-        TextView tv = (TextView) view.findViewById(R.id.tabsText);
-        tv.setText(text);
-        return view;
+    /** Called when the activity is first created. */
+    @Override protected void onStart() {
+        super.onStart();
+        
+        localFragment.updateMountButtons();
+        updateDecryptButtons();
     }
-
+    
     public static boolean isValidMntDir(Context context, File newMntDir) {
         return isValidMntDir(context, newMntDir, true);
     }
@@ -545,36 +296,13 @@ public class Cryptonite extends FragmentActivity
         return Environment.getExternalStorageDirectory().getPath() + MNTPNT;
     }
     
-    private void updateDecryptButtons() {
-        boolean volumeLoaded = (jniVolumeLoaded() == jniSuccess());
+    public void updateDecryptButtons() {
+        dbFragment.updateDecryptButtons();
+        localFragment.updateDecryptButtons();
 
-        buttonDecryptDb.setEnabled(!volumeLoaded && mLoggedIn);
-        buttonDecryptLocal.setEnabled(!volumeLoaded);
-        buttonBrowseDecryptedDb.setEnabled(volumeLoaded && mApp.isDropbox());
-        buttonBrowseDecryptedLocal.setEnabled(volumeLoaded && mApp.isLocal());
-        buttonForgetDecryptionDb.setEnabled(volumeLoaded);
-        buttonForgetDecryptionLocal.setEnabled(volumeLoaded);
-        buttonCreateDb.setEnabled(!volumeLoaded && mLoggedIn);
-        buttonCreateLocal.setEnabled(!volumeLoaded);
-
-        if (!volumeLoaded) {
+        if (!(jniVolumeLoaded() == jniSuccess())) {
             mApp.resetStorage();
         }
-    }
-
-    private void updateMountButtons() {
-        boolean ism = ShellUtils.isMounted("fuse.encfs");
-        
-        Log.v(TAG, "EncFS mount state: " + ism + "; FUSE support: " + hasFuse);
-        buttonMount.setEnabled(hasFuse && mApp.hasBin());
-        
-        if (ism) {
-            buttonMount.setText(R.string.unmount);
-        } else {
-            buttonMount.setText(R.string.mount);
-        }
-        
-        buttonViewMount.setEnabled(ism && hasFuse && mApp.hasBin());
     }
 
     /** Called upon exit from other activities */
@@ -614,7 +342,7 @@ public class Cryptonite extends FragmentActivity
                                         alert = true;
                                     } else {
                                         alert = !mApp.getStorage().exportEncFSFiles(currentReturnPathList, encfsBrowseRoot, 
-                                                    currentReturnPath + "/Cryptonite", mApp.getCurrentDBEncFS());
+                                                    currentReturnPath + "/Cryptonite");
                                     }
                                     runOnUiThread(new Runnable(){
                                         public void run() {
@@ -683,7 +411,7 @@ public class Cryptonite extends FragmentActivity
                 } else {
                     currentOpenPath = data.getStringExtra(FileDialog.RESULT_OPEN_PATH);
                     if (currentOpenPath != null && currentOpenPath.length() > 0) {
-                        openEncFSFile(currentOpenPath, encfsBrowseRoot, mApp.getCurrentDBEncFS());
+                        openEncFSFile(currentOpenPath, encfsBrowseRoot);
                     } else {
                         currentUploadPath = data.getStringExtra(FileDialog.RESULT_UPLOAD_PATH);
                         if (currentUploadPath != null && currentUploadPath.length() > 0) {
@@ -751,7 +479,7 @@ public class Cryptonite extends FragmentActivity
         case CreateEncFS.CREATE_DB:
         case CreateEncFS.CREATE_LOCAL:
             /* Update buttons */
-            updateMountButtons();
+            localFragment.updateMountButtons();
             updateDecryptButtons();
             break;
         default:
@@ -870,14 +598,12 @@ public class Cryptonite extends FragmentActivity
             setLoggedIn(false);
         }
 
-        mTabHost.setCurrentTabByTag(mApp.getCurrentTabTag());
-
-        updateMountButtons();
+        localFragment.updateMountButtons();
       
         updateDecryptButtons();
     }
 
-    private void showAlert(int alert_id, int msg_id) {
+    public void showAlert(int alert_id, int msg_id) {
         showAlert(getString(alert_id), getString(msg_id));
     }
     
@@ -930,8 +656,8 @@ public class Cryptonite extends FragmentActivity
     /** This will run the shipped encfs binary and spawn a daemon on rooted devices
      */
     private void mountEncFS(final String srcDir) {
-        tvExpert.setText(encfsVersion + "\n" + opensslVersion);
-        tvExpert.invalidate();
+        expertFragment.tv.setText(encfsVersion + "\n" + opensslVersion);
+        expertFragment.tv.invalidate();
 
         if (jniIsValidEncFS(srcDir) != jniSuccess()) {
             showAlert(R.string.error, R.string.invalid_encfs);
@@ -966,13 +692,13 @@ public class Cryptonite extends FragmentActivity
                                 if (pd.isShowing())
                                     pd.dismiss();
                                 if (fEncfsOutput != null && fEncfsOutput.length() > 0) {
-                                    tvExpert.setText(encfsVersion + "\n" + fEncfsOutput);
+                                    expertFragment.tv.setText(encfsVersion + "\n" + fEncfsOutput);
                                 }
                                 if (!alertMsg.equals("")) {
                                     showAlert(R.string.error, alertMsg);
                                 }
                                 nullPassword();
-                                updateMountButtons();
+                                localFragment.updateMountButtons();
                             }
                         });
                 }
@@ -988,12 +714,12 @@ public class Cryptonite extends FragmentActivity
      * @param pwd password
      */
    private void initEncFS(final String srcDir) {
-       tvLocal.setText(encfsVersion + "\n" + opensslVersion);
-       tvLocal.invalidate();
-       tvDb.setText(encfsVersion + "\n" + opensslVersion);
-       tvDb.invalidate();
-       tvExpert.setText(encfsVersion + "\n" + opensslVersion);
-       tvExpert.invalidate();
+       localFragment.tv.setText(encfsVersion + "\n" + opensslVersion);
+       localFragment.tv.invalidate();
+       dbFragment.tv.setText(encfsVersion + "\n" + opensslVersion);
+       dbFragment.tv.invalidate();
+       expertFragment.tv.setText(encfsVersion + "\n" + opensslVersion);
+       expertFragment.tv.invalidate();
        alertMsg = "";
        
        final ProgressDialog pd = ProgressDialog.show(this, 
@@ -1007,7 +733,7 @@ public class Cryptonite extends FragmentActivity
                    } else {
                        mApp.setCurrentBrowsePath(currentReturnPath);
                        mApp.setCurrentBrowseStartPath(currentDialogStartPath);
-                       mApp.setCurrentDBEncFS(currentReturnPath.substring(currentDialogStartPath.length()));
+                       mApp.setEncFSPath(currentReturnPath.substring(currentDialogStartPath.length()));
                        Log.i(TAG, "Dialog root is " + currentReturnPath);
                        if (jniInit(srcDir, currentPassword) != jniSuccess()) {
                            Log.v(TAG, getString(R.string.browse_failed));
@@ -1038,7 +764,7 @@ public class Cryptonite extends FragmentActivity
     * @param browsePath EncFS path 
     * @param browseStartPath Root path
     */
-   private void browseEncFS(final String browsePath, final String browseStartPath) {
+   public void browseEncFS(final String browsePath, final String browseStartPath) {
        final VirtualFile browseDirF = new VirtualFile(VirtualFile.VIRTUAL_TAG + "/" + mApp.getStorage().browsePnt);
        browseDirF.mkdirs();
 
@@ -1047,7 +773,7 @@ public class Cryptonite extends FragmentActivity
                this.getString(R.string.running_encfs), true);
        new Thread(new Runnable(){
                public void run(){
-                   mApp.setCurrentDBEncFS(browsePath.substring(browseStartPath.length()));
+                   mApp.setEncFSPath(browsePath.substring(browseStartPath.length()));
                    Log.i(TAG, "Dialog root is " + browsePath);
                    currentDialogStartPath = browseDirF.getPath();
                    currentDialogLabel = getString(R.string.select_file_export);
@@ -1267,7 +993,7 @@ public class Cryptonite extends FragmentActivity
         return extStorAvailable && extStorWriteable;
     }
 
-    private void launchFileBrowser(int mode) {
+    public void launchFileBrowser(int mode) {
         SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
         boolean useBuiltin = prefs.getBoolean("cb_builtin", false);
         if (!useBuiltin) {
@@ -1296,10 +1022,9 @@ public class Cryptonite extends FragmentActivity
 
     }
     
-    private void launchBuiltinFileBrowser() {
+    public void launchBuiltinFileBrowser() {
         Intent intent = new Intent(getBaseContext(), FileDialog.class);
         intent.putExtra(FileDialog.CURRENT_ROOT, currentDialogRoot);
-        intent.putExtra(FileDialog.CURRENT_DBROOT, mApp.getCurrentDBEncFS());
         intent.putExtra(FileDialog.CURRENT_ROOT_NAME, currentDialogRootName);
         intent.putExtra(FileDialog.BUTTON_LABEL, currentDialogButtonLabel);
         intent.putExtra(FileDialog.START_PATH, currentDialogStartPath);
@@ -1308,7 +1033,7 @@ public class Cryptonite extends FragmentActivity
         startActivityForResult(intent, currentDialogMode);
     }
     
-    private void createEncFS(final boolean isDB) {
+    public void createEncFS(final boolean isDB) {
         SharedPreferences prefs = getBaseContext().getSharedPreferences(Cryptonite.ACCOUNT_PREFS_NAME, 0);
         if (!prefs.getBoolean("cb_norris", false)) {
 
@@ -1350,7 +1075,7 @@ public class Cryptonite extends FragmentActivity
         
     }
     
-    private void logOut() {
+    public void logOut() {
         // Remove credentials from the session
         if (mApp.getDBApi() != null) {
             mApp.getDBApi().getSession().unlink();
@@ -1369,12 +1094,7 @@ public class Cryptonite extends FragmentActivity
      */
     private void setLoggedIn(boolean loggedIn) {
         mLoggedIn = loggedIn;
-        if (loggedIn) {
-            buttonAuthDb.setText(R.string.dropbox_unlink);
-            buttonDecryptDb.setEnabled(true);
-        } else {
-            buttonAuthDb.setText(R.string.dropbox_link);
-            buttonDecryptDb.setEnabled(false);
+        if (!loggedIn) {
             if (mApp.isDropbox()) {
                 jniResetVolume();
                 mApp.resetStorage();
@@ -1425,7 +1145,7 @@ public class Cryptonite extends FragmentActivity
         edit.commit();
     }
 
-    private void buildSession() {
+    public void buildSession() {
         // Has the user already decided whether to use an app folder?
         SharedPreferences prefs = 
                 getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
@@ -1527,7 +1247,7 @@ public class Cryptonite extends FragmentActivity
         }*/
     }
     
-    private boolean openEncFSFile(final String encFSFilePath, String fileRoot, final String dbEncFSPath) {
+    private boolean openEncFSFile(final String encFSFilePath, String fileRoot) {
 
         SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
         mApp.setupReadDirs(prefs.getBoolean("cb_extcache", false));
@@ -1555,7 +1275,7 @@ public class Cryptonite extends FragmentActivity
                 this.getString(R.string.decrypting), true);
             new Thread(new Runnable(){
                 public void run(){
-                    if (!mApp.getStorage().decryptEncFSFile(encodedPath, mApp.getOpenDir().getPath(), dbEncFSPath)) {
+                    if (!mApp.getStorage().decryptEncFSFile(encodedPath, mApp.getOpenDir().getPath())) {
                         alertMsg = getString(R.string.decrypt_failure);
                         Log.e(TAG, "Error while attempting to copy " + encodedPath);
                     }
@@ -1677,11 +1397,11 @@ public class Cryptonite extends FragmentActivity
         }
     }
 
-    private void launchTerm() {
+    public void launchTerm() {
         launchTerm(false);
     }
     
-    private void launchTerm(boolean root) {
+    public void launchTerm(boolean root) {
         /* Is a reminal emulator running? */
         
             /* If Terminal Emulator is not installed or outdated,

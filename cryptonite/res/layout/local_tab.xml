@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/local_sv"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:scrollbars="vertical" >
+
+    <TableLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:stretchColumns="*" >
+
+        <TextView
+            android:id="@+id/tvBrowseLocal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/browse_info"
+            android:textStyle="bold"
+            android:typeface="normal" >
+        </TextView>
+
+        <Button
+            android:id="@+id/btnDecryptLocal"
+            android:layout_width="0dp"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            android:text="@string/local_decrypt"
+            android:typeface="normal" >
+        </Button>
+
+        <TableRow android:layout_width="wrap_content" >
+
+            <Button
+                android:id="@+id/btnBrowseDecryptedLocal"
+                android:layout_width="0dp"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+                android:text="@string/browse_decrypted"
+                android:typeface="normal" >
+            </Button>
+
+            <Button
+                android:id="@+id/btnForgetDecryptionLocal"
+                android:layout_width="0dp"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+                android:text="@string/forget_decryption"
+                android:typeface="normal" >
+            </Button>
+        </TableRow>
+
+        <TextView
+            android:id="@+id/tvCreateLocal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/create_info"
+            android:textStyle="bold"
+            android:typeface="normal" >
+        </TextView>
+
+        <Button
+            android:id="@+id/btnCreateLocal"
+            android:layout_width="0dp"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            android:text="@string/local_create"
+            android:typeface="normal" >
+        </Button>
+
+        <TextView
+            android:id="@+id/tvMountInfo"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/mount_info"
+            android:textStyle="bold"
+            android:typeface="normal" >
+        </TextView>
+
+        <TableRow>
+
+            <Button
+                android:id="@+id/btnMount"
+                android:layout_width="0dp"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+                android:text="@string/mount"
+                android:typeface="normal" >
+            </Button>
+
+            <Button
+                android:id="@+id/btnViewMount"
+                android:layout_width="0dp"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+                android:text="@string/viewmount"
+                android:typeface="normal" >
+            </Button>
+        </TableRow>
+
+        <TextView
+            android:id="@+id/tvVersionLocal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:typeface="normal" >
+        </TextView>
+    </TableLayout>
+
+</ScrollView>

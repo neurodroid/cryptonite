@@ -58,9 +58,7 @@ public class CryptoniteApp extends Application {
 
     private String binDirPath;
     private String encfsBin;
-    private String currentTabTag;
 
-    private String currentDBEncFS;
     private String currentBrowsePath;
     private String currentBrowseStartPath;
     
@@ -68,7 +66,6 @@ public class CryptoniteApp extends Application {
         super();
         mApi = null;
         mStorage = null;
-        currentTabTag = Cryptonite.DBTAB_TAG;
         dbHashMap = new HashMap<String, Entry>();
     }
 
@@ -152,22 +149,6 @@ public class CryptoniteApp extends Application {
         mStorage = new DropboxStorage(context, this);        
     }
     
-    public String getCurrentTabTag() {
-        return currentTabTag;
-    }
-    
-    public void setCurrentTabTag(String value) {
-        currentTabTag = value;
-    }
-    
-    public String getCurrentDBEncFS() {
-        return currentDBEncFS;
-    }
-    
-    public void setCurrentDBEncFS(String value) {
-        currentDBEncFS = value;
-    }
-
     public String getCurrentBrowsePath() {
         return currentBrowsePath;
     }
@@ -347,4 +328,17 @@ public class CryptoniteApp extends Application {
         return true;
     }
 
+    public String getEncFSPath() {
+        if (mStorage != null) {
+            return mStorage.getEncFSPath();
+        } else {
+            return "";
+        }
+    }
+    
+    public void setEncFSPath(String value) {
+        if (mStorage != null) {
+            mStorage.setEncFSPath(value);
+        }
+    }
 }

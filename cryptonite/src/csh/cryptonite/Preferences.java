@@ -130,8 +130,7 @@ public class Preferences extends PreferenceActivity {
                 }
                 String dialogRoot = "/";
                 String dialogRootName = dialogRoot;
-                String dialogDBEncFS = "";
-                launchBuiltinFileBrowser(dialogRoot, dialogDBEncFS, dialogRootName,
+                launchBuiltinFileBrowser(dialogRoot, dialogRootName,
                         dialogButtonLabel, dialogStartPath, dialogLabel, dialogMode);
                 
                 return false;
@@ -171,12 +170,11 @@ public class Preferences extends PreferenceActivity {
         }
     }
     
-    private void launchBuiltinFileBrowser(String dialogRoot, String dialogDBEncFS, String dialogRootName,
+    private void launchBuiltinFileBrowser(String dialogRoot, String dialogRootName,
             String dialogButtonLabel, String dialogStartPath, String dialogLabel, int dialogMode) 
     {
         Intent intent = new Intent(getBaseContext(), FileDialog.class);
         intent.putExtra(FileDialog.CURRENT_ROOT, dialogRoot);
-        intent.putExtra(FileDialog.CURRENT_DBROOT, dialogDBEncFS);
         intent.putExtra(FileDialog.CURRENT_ROOT_NAME, dialogRootName);
         intent.putExtra(FileDialog.BUTTON_LABEL, dialogButtonLabel);
         intent.putExtra(FileDialog.START_PATH, dialogStartPath);

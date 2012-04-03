@@ -177,16 +177,16 @@ public class DropboxStorage extends Storage {
     }
 
     @Override
-    public boolean decryptEncFSFile(String encodedPath, String targetPath, String encfsPath) {
+    public boolean decryptEncFSFile(String encodedPath, String targetPath) {
         /* Remove local root directory to get Dropbox path */
         String encFSLocalRoot = Cryptonite.jniEncode("/");
         String dbLocalRoot = encFSLocalRoot.substring(0, 
-                encFSLocalRoot.length()-encfsPath.length());
+                encFSLocalRoot.length()-encFSPath.length());
         String encFSDBRoot = encFSLocalRoot.substring(dbLocalRoot.length());
         String dbPath = "/" + encodedPath.substring(dbLocalRoot.length()) ;
         
         try {
-            if (!dbDownloadDecode(dbPath.substring(encfsPath.length()),
+            if (!dbDownloadDecode(dbPath.substring(encFSPath.length()),
                                   targetPath, encFSDBRoot, encFSLocalRoot, true))
             {
                 Log.e(Cryptonite.TAG, "Error while attempting to copy " + encodedPath);
@@ -217,7 +217,7 @@ public class DropboxStorage extends Storage {
      */
     @Override
     public boolean exportEncFSFiles(String[] exportPaths, String exportRoot,
-            String destDir, String encFSPath) {
+            String destDir) {
         try {
             for (String path : exportPaths) {
                 dbRecTree(path, exportRoot, destDir, encFSPath);
@@ -336,7 +336,7 @@ public class DropboxStorage extends Storage {
     }
 
     @Override
-    public void mkVisibleDecoded(String path, String encFSRoot, String encFSPath, String rootPath) {
+    public void mkVisibleDecoded(String path, String encFSRoot, String rootPath) {
 
         String prevRoot = encFSRoot.substring(0, encFSRoot.length()-encFSPath.length());
         String encodedPath = Cryptonite.jniEncode(path).substring(prevRoot.length()-1);
@@ -369,7 +369,7 @@ public class DropboxStorage extends Storage {
     }
     
     @Override
-    public void mkVisiblePlain(String path, String encFSPath, String rootPath) {
+    public void mkVisiblePlain(String path, String rootPath) {
         try {
 
             Entry dbEntry = mApp.getDBEntry(path);

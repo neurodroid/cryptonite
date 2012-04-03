@@ -85,7 +85,6 @@ public class FileDialog extends ListActivity {
     public static final String BUTTON_LABEL = "BUTTON_LABEL";
     public static final String CURRENT_ROOT = "CURRENT_ROOT";
     public static final String CURRENT_ROOT_NAME = "CURRENT_ROOT_NAME";
-    public static final String CURRENT_DBROOT = "CURRENT_DBROOT";
 
     private static final int NEW_FOLDER_DIALOG_ID = 0;
     
@@ -105,7 +104,6 @@ public class FileDialog extends ListActivity {
     private InputMethodManager inputManager;
     private String parentPath;
     private String currentPath = currentRoot;
-    private String currentDBEncFS = "/";
     private String alertMsg = "";
     
     private int selectionMode = SelectionMode.MODE_OPEN;
@@ -151,8 +149,6 @@ public class FileDialog extends ListActivity {
             currentRootLabel = currentRoot;
         }
 
-        currentDBEncFS = getIntent().getStringExtra(CURRENT_DBROOT); 
-        
         String buttonLabel = getIntent().getStringExtra(BUTTON_LABEL);
         selectButton = (Button) findViewById(R.id.fdButtonSelect);
         selectButton.setEnabled(selectionMode != SelectionMode.MODE_OPEN_UPLOAD_SOURCE);
@@ -242,9 +238,9 @@ public class FileDialog extends ListActivity {
         
         String startPath = getIntent().getStringExtra(START_PATH);
         if (startPath != null) {
-            getDir(startPath, currentRoot, currentRootLabel, currentDBEncFS);
+            getDir(startPath, currentRoot, currentRootLabel);
         } else {
-            getDir(currentRoot, currentRoot, currentRootLabel, currentDBEncFS);
+            getDir(currentRoot, currentRoot, currentRootLabel);
         }
         String label = getIntent().getStringExtra(LABEL);
         this.setTitle(label);
@@ -256,7 +252,7 @@ public class FileDialog extends ListActivity {
         }
     }
 
-    private void getDir(String dirPath, String rootPath, String rootName, String dbRootPath) {
+    private void getDir(String dirPath, String rootPath, String rootName) {
 
         boolean useAutoSelection = dirPath.length() < currentPath.length();
 
@@ -267,7 +263,7 @@ public class FileDialog extends ListActivity {
         case SelectionMode.MODE_OPEN_DB:
         case SelectionMode.MODE_OPEN_MULTISELECT_DB:
         case SelectionMode.MODE_OPEN_MULTISELECT:
-            buildDir(dirPath, rootPath, rootName, dbRootPath);
+            buildDir(dirPath, rootPath, rootName);
             break;
         default:
             getDirImpl(dirPath, rootPath, rootName);
@@ -539,7 +535,7 @@ public class FileDialog extends ListActivity {
 
             if (file.canRead()) {
                 lastPositions.put(currentPath, position);
-                getDir(path.get(position), currentRoot, currentRootLabel, currentDBEncFS);
+                getDir(path.get(position), currentRoot, currentRootLabel);
             } else {
                 new AlertDialog.Builder(this)
                     .setIcon(R.drawable.icon)
@@ -578,7 +574,7 @@ public class FileDialog extends ListActivity {
                 layoutSelect.setVisibility(View.VISIBLE);
             } else {*/
                 if (!currentPath.equals(currentRoot)) {
-                    getDir(parentPath, currentRoot, currentRootLabel, currentDBEncFS);
+                    getDir(parentPath, currentRoot, currentRootLabel);
                 } else {
                     return super.onKeyDown(keyCode, event);
                 }
@@ -675,8 +671,7 @@ public class FileDialog extends ListActivity {
         selectButton.setEnabled(false);
     }
     
-    private void buildDir(final String dirPath, final String rootPath, final String rootName,
-            final String encFSPath)
+    private void buildDir(final String dirPath, final String rootPath, final String rootName)
     {
         final String path = "/" + dirPath.substring(rootPath.length());
         String encFSRoot = "";
@@ -702,10 +697,10 @@ public class FileDialog extends ListActivity {
                 switch (selectionMode) {
                 case SelectionMode.MODE_OPEN_MULTISELECT:
                 case SelectionMode.MODE_OPEN_MULTISELECT_DB:
-                    mStorage.mkVisibleDecoded(path, fEncFSRoot, encFSPath, rootPath);
+                    mStorage.mkVisibleDecoded(path, fEncFSRoot, rootPath);
                     break;
                 default:
-                    mStorage.mkVisiblePlain(path, encFSPath, rootPath);
+                    mStorage.mkVisiblePlain(path, rootPath);
                 }
                 runOnUiThread(new Runnable(){
                     public void run() {
@@ -787,7 +782,7 @@ public class FileDialog extends ListActivity {
                                     }
                                     
                                     /* reload current directory */
-                                    getDir(currentPath, currentRoot, currentRootLabel, currentDBEncFS);
+                                    getDir(currentPath, currentRoot, currentRootLabel);
                                 }
                             }
                         });
@@ -894,7 +889,7 @@ public class FileDialog extends ListActivity {
                     public void run() {
                         if (folderMade) {
                             /* reload current directory */
-                            getDir(currentPath, currentRoot, currentRootLabel, currentDBEncFS);
+                            getDir(currentPath, currentRoot, currentRootLabel);
                         }
                     }
                 });
@@ -923,7 +918,7 @@ public class FileDialog extends ListActivity {
                     public void run() {
                         if (madeDir) {
                             /* reload current directory */
-                            getDir(currentPath, currentRoot, currentRootLabel, currentDBEncFS);
+                            getDir(currentPath, currentRoot, currentRootLabel);
                         }
                     }
                 });
