@@ -125,7 +125,7 @@ public class CreateEncFS extends ListActivity {
             break;
         case Storage.STOR_DROPBOX:
             dialogMode = SelectionMode.MODE_OPEN_CREATE_DB;
-            dialogStartPath = getPrivateDir(Cryptonite.BROWSEPNT, Context.MODE_PRIVATE).getPath();
+            dialogStartPath = getPrivateDir(CryptoniteApp.BROWSEPNT, Context.MODE_PRIVATE).getPath();
             dialogRoot = dialogStartPath;
             dialogRootName = getString(R.string.dropbox_root_name);
             break;
@@ -206,7 +206,7 @@ public class CreateEncFS extends ListActivity {
                                      getString(R.string.creating_encfs), true);
                              new Thread(new Runnable(){
                                  public void run(){
-                                     File browseRoot = getPrivateDir(Cryptonite.BROWSEPNT, Context.MODE_PRIVATE);
+                                     File browseRoot = getPrivateDir(CryptoniteApp.BROWSEPNT, Context.MODE_PRIVATE);
                                      mStorage.createEncFS(currentReturnPath, passwordString, browseRoot, currentConfig); 
                                      runOnUiThread(new Runnable(){
                                          public void run() {

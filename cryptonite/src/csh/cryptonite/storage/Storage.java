@@ -213,8 +213,7 @@ public abstract class Storage {
                 }
                 String targetPath = paths[0];
                 String encodedFilePath = paths[1];
-                UploadEncrypted upload = new UploadEncrypted(mCallingContext, 
-                        mApp.getDBApi(),
+                UploadEncrypted upload = new UploadEncrypted(mCallingContext, mApp.getDBApi(),
                         new File(targetPath).getParent() + "/",
                         new File(encodedFilePath));
                 upload.execute();

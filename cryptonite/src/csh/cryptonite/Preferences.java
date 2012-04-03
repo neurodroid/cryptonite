@@ -83,7 +83,7 @@ public class Preferences extends PreferenceActivity {
                                 Toast.LENGTH_SHORT).show();
                         return true;
                     } else {
-                        String intDir = getBaseContext().getDir(Cryptonite.OPENPNT, 
+                        String intDir = getBaseContext().getDir(CryptoniteApp.OPENPNT, 
                                 Context.MODE_WORLD_WRITEABLE).getParent();
                         Toast.makeText(Preferences.this, getString(R.string.cb_extcache_disabled) + intDir, 
                                 Toast.LENGTH_SHORT).show();

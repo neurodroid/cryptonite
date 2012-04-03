@@ -38,7 +38,7 @@ public class LocalStorage extends Storage {
         exportMode = Cryptonite.LOCALEXPORT_MODE;
         uploadMode = Cryptonite.SELECTLOCALUPLOAD_MODE;
         waitString = mApp.getString(R.string.local_reading);
-        browsePnt = Cryptonite.BROWSEPNT;
+        browsePnt = CryptoniteApp.BROWSEPNT;
     }
 
     @Override
