@@ -104,11 +104,8 @@ public class Cryptonite extends FragmentActivity
     private String currentDialogLabel = "";
     private String currentDialogButtonLabel = "OK";
     private String currentDialogRoot = "/";
-    private String currentDialogDBEncFS = "";
     private String currentDialogRootName = currentDialogRoot;
     private String currentReturnPath = "/";
-    private String currentBrowsePath = "/";
-    private String currentBrowseStartPath = "/";
     private String currentOpenPath = "/";
     private String currentUploadPath = "/";
     private String currentPassword = "\0";
@@ -260,7 +257,7 @@ public class Cryptonite extends FragmentActivity
                     currentDialogStartPath = getPrivateDir(CryptoniteApp.BROWSEPNT).getPath();
                     currentDialogRoot = currentDialogStartPath;
                     currentDialogRootName = getString(R.string.dropbox_root_name);
-                    currentDialogDBEncFS = "";
+                    mApp.setCurrentDBEncFS("");
                     if (mLoggedIn) {
                         launchBuiltinFileBrowser();
                     }
@@ -296,7 +293,7 @@ public class Cryptonite extends FragmentActivity
         buttonBrowseDecryptedDb = (Button)findViewById(R.id.btnBrowseDecryptedDb);
         buttonBrowseDecryptedDb.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-                    browseEncFS(currentBrowsePath, currentBrowseStartPath);
+                    browseEncFS(mApp.getCurrentBrowsePath(), mApp.getCurrentBrowseStartPath());
                 }});
 
         buttonBrowseDecryptedDb.setEnabled(volumeLoaded && mApp.isDropbox());
@@ -305,7 +302,7 @@ public class Cryptonite extends FragmentActivity
         buttonBrowseDecryptedLocal = (Button)findViewById(R.id.btnBrowseDecryptedLocal);
         buttonBrowseDecryptedLocal.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-                    browseEncFS(currentBrowsePath, currentBrowseStartPath);
+                    browseEncFS(mApp.getCurrentBrowsePath(), mApp.getCurrentBrowseStartPath());
                 }});
 
         buttonBrowseDecryptedLocal.setEnabled(volumeLoaded && mApp.isLocal());
@@ -365,7 +362,7 @@ public class Cryptonite extends FragmentActivity
                     }
                     currentDialogRoot = "/";
                     currentDialogRootName = currentDialogRoot;
-                    currentDialogDBEncFS = "";
+                    mApp.setCurrentDBEncFS("");
                     
                     if (!externalStorageIsWritable()) {
                         showAlert(R.string.error, R.string.sdcard_not_writable);
@@ -437,7 +434,7 @@ public class Cryptonite extends FragmentActivity
                     currentDialogStartPath = mntDir;
                     currentDialogRoot = "/";
                     currentDialogRootName = currentDialogRoot;
-                    currentDialogDBEncFS = "";
+                    mApp.setCurrentDBEncFS("");
                     currentDialogLabel = Cryptonite.this.getString(R.string.fb_name);
                     currentDialogButtonLabel = Cryptonite.this.getString(R.string.back);
                     currentDialogMode = SelectionMode.MODE_OPEN;
@@ -617,7 +614,7 @@ public class Cryptonite extends FragmentActivity
                                         alert = true;
                                     } else {
                                         alert = !mApp.getStorage().exportEncFSFiles(currentReturnPathList, encfsBrowseRoot, 
-                                                    currentReturnPath + "/Cryptonite", currentDialogDBEncFS);
+                                                    currentReturnPath + "/Cryptonite", mApp.getCurrentDBEncFS());
                                     }
                                     runOnUiThread(new Runnable(){
                                         public void run() {
@@ -708,7 +705,7 @@ public class Cryptonite extends FragmentActivity
                     }
                     currentDialogRoot = "/";
                     currentDialogRootName = currentDialogRoot;
-                    /* currentDialogDBEncFS = ""; Leave this untouched for dbExport */
+                    /* mApp.setCurrentDBEncFS(""); Leave this untouched for dbExport */
                     if (mApp.getStorage() != null) {
                         opMode = mApp.getStorage().exportMode;
                     } else {
@@ -718,7 +715,7 @@ public class Cryptonite extends FragmentActivity
                 } else {
                     currentOpenPath = data.getStringExtra(FileDialog.RESULT_OPEN_PATH);
                     if (currentOpenPath != null && currentOpenPath.length() > 0) {
-                        openEncFSFile(currentOpenPath, encfsBrowseRoot, currentDialogDBEncFS);
+                        openEncFSFile(currentOpenPath, encfsBrowseRoot, mApp.getCurrentDBEncFS());
                     } else {
                         currentUploadPath = data.getStringExtra(FileDialog.RESULT_UPLOAD_PATH);
                         if (currentUploadPath != null && currentUploadPath.length() > 0) {
@@ -994,9 +991,9 @@ public class Cryptonite extends FragmentActivity
                        alertMsg = getString(R.string.invalid_encfs);
                        mApp.resetStorage();
                    } else {
-                       currentBrowsePath = currentReturnPath;
-                       currentBrowseStartPath = currentDialogStartPath;
-                       currentDialogDBEncFS = currentReturnPath.substring(currentDialogStartPath.length());
+                       mApp.setCurrentBrowsePath(currentReturnPath);
+                       mApp.setCurrentBrowseStartPath(currentDialogStartPath);
+                       mApp.setCurrentDBEncFS(currentReturnPath.substring(currentDialogStartPath.length()));
                        Log.i(TAG, "Dialog root is " + currentReturnPath);
                        if (jniInit(srcDir, currentPassword) != jniSuccess()) {
                            Log.v(TAG, getString(R.string.browse_failed));
@@ -1036,7 +1033,7 @@ public class Cryptonite extends FragmentActivity
                this.getString(R.string.running_encfs), true);
        new Thread(new Runnable(){
                public void run(){
-                   currentDialogDBEncFS = browsePath.substring(browseStartPath.length());
+                   mApp.setCurrentDBEncFS(browsePath.substring(browseStartPath.length()));
                    Log.i(TAG, "Dialog root is " + browsePath);
                    currentDialogStartPath = browseDirF.getPath();
                    currentDialogLabel = getString(R.string.select_file_export);
@@ -1288,7 +1285,7 @@ public class Cryptonite extends FragmentActivity
     private void launchBuiltinFileBrowser() {
         Intent intent = new Intent(getBaseContext(), FileDialog.class);
         intent.putExtra(FileDialog.CURRENT_ROOT, currentDialogRoot);
-        intent.putExtra(FileDialog.CURRENT_DBROOT, currentDialogDBEncFS);
+        intent.putExtra(FileDialog.CURRENT_DBROOT, mApp.getCurrentDBEncFS());
         intent.putExtra(FileDialog.CURRENT_ROOT_NAME, currentDialogRootName);
         intent.putExtra(FileDialog.BUTTON_LABEL, currentDialogButtonLabel);
         intent.putExtra(FileDialog.START_PATH, currentDialogStartPath);

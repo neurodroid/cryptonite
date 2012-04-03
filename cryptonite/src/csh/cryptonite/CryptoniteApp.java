@@ -60,6 +60,10 @@ public class CryptoniteApp extends Application {
     private String encfsBin;
     private String currentTabTag;
 
+    private String currentDBEncFS;
+    private String currentBrowsePath;
+    private String currentBrowseStartPath;
+    
     public CryptoniteApp() {
         super();
         mApi = null;
@@ -156,6 +160,30 @@ public class CryptoniteApp extends Application {
         currentTabTag = value;
     }
     
+    public String getCurrentDBEncFS() {
+        return currentDBEncFS;
+    }
+    
+    public void setCurrentDBEncFS(String value) {
+        currentDBEncFS = value;
+    }
+
+    public String getCurrentBrowsePath() {
+        return currentBrowsePath;
+    }
+    
+    public void setCurrentBrowsePath(String value) {
+        currentBrowsePath = value;
+    }
+
+    public String getCurrentBrowseStartPath() {
+        return currentBrowseStartPath;
+    }
+    
+    public void setCurrentBrowseStartPath(String value) {
+        currentBrowseStartPath = value;
+    }
+
     /** Copy encfs to binDirPath and make executable */
     public void cpBin(String trunk) {
         String arch = "armeabi";
