@@ -235,9 +235,9 @@ public class CryptoniteApp extends Application {
         if (readDir != null) {
             Cryptonite.deleteDir(readDir);
         }   
-        getExternalCacheDir().mkdirs();
         
         if (external && Cryptonite.externalStorageIsWritable()) {
+            getExternalCacheDir().mkdirs();
             openDir = new File(getExternalCacheDir().getPath() + "/" + OPENPNT);
             readDir = new File(getExternalCacheDir().getPath() + "/" + READPNT);
             openDir.mkdirs();
