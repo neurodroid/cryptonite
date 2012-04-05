@@ -23,6 +23,12 @@ import java.io.IOException;
 import java.net.URLConnection;
 import java.util.Arrays;
 
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.PBEParameterSpec;
+
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
@@ -46,6 +52,7 @@ import android.net.Uri;
 
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.Settings;
 
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
@@ -54,6 +61,7 @@ import android.text.SpannableString;
 import android.text.util.Linkify;
 import android.text.method.ScrollingMovementMethod;
 
+import android.util.Base64;
 import android.util.Log;
 
 import android.view.LayoutInflater;
@@ -77,6 +85,7 @@ import com.dropbox.client2.session.Session.AccessType;
 import com.dropbox.client2.session.TokenPair;
 
 import csh.cryptonite.storage.Storage;
+import csh.cryptonite.storage.StorageManager;
 import csh.cryptonite.storage.VirtualFile;
 
 public class Cryptonite extends FragmentActivity
@@ -170,6 +179,7 @@ public class Cryptonite extends FragmentActivity
 
         SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
         mApp.setupReadDirs(prefs.getBoolean("cb_extcache", false));
+        StorageManager.INSTANCE.initLocalStorage(this, mApp);
 
         if (!externalStorageIsWritable() || !ShellUtils.supportsFuse()) {
             mountInfo = getString(R.string.mount_info_unsupported);
@@ -322,7 +332,7 @@ public class Cryptonite extends FragmentActivity
                                     if (!new File(exportName).exists()) {
                                         alert = true;
                                     } else {
-                                        alert = !mApp.getStorage().exportEncFSFiles(currentReturnPathList, encfsBrowseRoot, 
+                                        alert = !StorageManager.INSTANCE.getEncFSStorage().exportEncFSFiles(currentReturnPathList, encfsBrowseRoot, 
                                                     currentReturnPath + "/Cryptonite");
                                     }
                                     runOnUiThread(new Runnable(){
@@ -383,8 +393,8 @@ public class Cryptonite extends FragmentActivity
                     currentDialogRoot = "/";
                     currentDialogRootName = currentDialogRoot;
                     /* mApp.setCurrentDBEncFS(""); Leave this untouched for dbExport */
-                    if (mApp.getStorage() != null) {
-                        opMode = mApp.getStorage().exportMode;
+                    if (StorageManager.INSTANCE.getEncFSStorage() != null) {
+                        opMode = StorageManager.INSTANCE.getEncFSStorage().exportMode;
                     } else {
                         return;
                     }
@@ -409,8 +419,8 @@ public class Cryptonite extends FragmentActivity
                             }
                             currentDialogRoot = "/";
                             currentDialogRootName = currentDialogRoot;
-                            if (mApp.getStorage() != null) {
-                                opMode = mApp.getStorage().uploadMode;
+                            if (StorageManager.INSTANCE.getEncFSStorage() != null) {
+                                opMode = StorageManager.INSTANCE.getEncFSStorage().uploadMode;
                             } else {
                                 return;
                             }
@@ -438,7 +448,7 @@ public class Cryptonite extends FragmentActivity
                 prefEdit.putBoolean("dbDecided", true);
                 prefEdit.commit();
                 /* enforce re-authentication */
-                mApp.setDBApi(null);
+                DBInterface.INSTANCE.setDBApi(null);
                 if (mLoggedIn) {
                     Toast.makeText(Cryptonite.this,
                             R.string.dropbox_forced_logout,
@@ -466,12 +476,12 @@ public class Cryptonite extends FragmentActivity
     }
 
     private void uploadEncFSFile(final String srcPath) {
-        final String stripstr = mApp.getStorage().stripStr(currentUploadPath, encfsBrowseRoot, srcPath);
+        final String stripstr = StorageManager.INSTANCE.getEncFSStorage().stripStr(currentUploadPath, encfsBrowseRoot, srcPath);
         
         /* Run in separate thread in case this involves a network operation */
         new Thread(new Runnable(){
             public void run(){
-                final String nextFilePath = mApp.getStorage().encodedExists(stripstr);
+                final String nextFilePath = StorageManager.INSTANCE.getEncFSStorage().encodedExists(stripstr);
                 runOnUiThread(new Runnable(){
                     public void run() {
                         if (!nextFilePath.equals(stripstr)) {
@@ -518,13 +528,14 @@ public class Cryptonite extends FragmentActivity
         alertMsg = "";
         new Thread(new Runnable(){
             public void run(){
-                if (!mApp.getStorage().uploadEncFSFile(targetPath, srcPath)) {
+                if (!StorageManager.INSTANCE.getEncFSStorage().uploadEncFSFile(targetPath, srcPath)) {
                     alertMsg = getString(R.string.upload_failure);
                 }        
                 runOnUiThread(new Runnable(){
                     public void run() {
                         if (pd.isShowing())
                             pd.dismiss();
+                        updateDecryptButtons();
                         if (!alertMsg.equals("")) {
                             showAlert(R.string.error, alertMsg);
                         }
@@ -540,9 +551,9 @@ public class Cryptonite extends FragmentActivity
         if (!hasJni) {
             return;
         }
-        if (mApp.getDBApi() != null && 
-                mApp.getDBApi().getSession() != null) {
-            AndroidAuthSession session = mApp.getDBApi().getSession();
+        if (DBInterface.INSTANCE.getDBApi() != null && 
+                DBInterface.INSTANCE.getDBApi().getSession() != null) {
+            AndroidAuthSession session = DBInterface.INSTANCE.getDBApi().getSession();
     
             // The next part must be inserted in the onResume() method of the
             // activity from which session.startAuthentication() was called, so
@@ -558,7 +569,7 @@ public class Cryptonite extends FragmentActivity
                     TokenPair tokens = session.getAccessTokenPair();
                     storeKeys(tokens.key, tokens.secret);
                     
-                    mApp.clearDBHashMap();
+                    DBInterface.INSTANCE.clearDBHashMap();
                     
                     setLoggedIn(true);
                 } catch (IllegalStateException e) {
@@ -693,18 +704,18 @@ public class Cryptonite extends FragmentActivity
                this.getString(R.string.running_encfs), true);
        new Thread(new Runnable(){
                public void run(){
-                   if (!mApp.getStorage().initEncFS(srcDir, currentDialogRoot)) {
+                   if (!StorageManager.INSTANCE.getEncFSStorage().initEncFS(srcDir, currentDialogRoot)) {
                        alertMsg = getString(R.string.invalid_encfs);
-                       mApp.resetStorage();
+                       StorageManager.INSTANCE.resetEncFSStorage();
                    } else {
                        mApp.setCurrentBrowsePath(currentReturnPath);
                        mApp.setCurrentBrowseStartPath(currentDialogStartPath);
-                       mApp.setEncFSPath(currentReturnPath.substring(currentDialogStartPath.length()));
+                       StorageManager.INSTANCE.setEncFSPath(currentReturnPath.substring(currentDialogStartPath.length()));
                        Log.i(TAG, "Dialog root is " + currentReturnPath);
                        if (jniInit(srcDir, currentPassword) != jniSuccess()) {
                            Log.v(TAG, getString(R.string.browse_failed));
                            alertMsg = getString(R.string.browse_failed);
-                           mApp.resetStorage();
+                           StorageManager.INSTANCE.resetEncFSStorage();
                        } else {
                            Log.v(TAG, "Decoding succeeded");
                        }
@@ -739,7 +750,7 @@ public class Cryptonite extends FragmentActivity
     * @param browseStartPath Root path
     */
    public void browseEncFS(final String browsePath, final String browseStartPath) {
-       final VirtualFile browseDirF = new VirtualFile(VirtualFile.VIRTUAL_TAG + "/" + mApp.getStorage().browsePnt);
+       final VirtualFile browseDirF = new VirtualFile(VirtualFile.VIRTUAL_TAG + "/" + StorageManager.INSTANCE.getEncFSStorage().browsePnt);
        browseDirF.mkdirs();
 
        final ProgressDialog pd = ProgressDialog.show(this,
@@ -754,12 +765,12 @@ public class Cryptonite extends FragmentActivity
                    currentDialogRoot = currentDialogStartPath;
                    encfsBrowseRoot = currentDialogRoot;
                    currentDialogRootName = getString(R.string.encfs_root);
-                   currentDialogMode = mApp.getStorage().fdSelectionMode;
+                   currentDialogMode = StorageManager.INSTANCE.getEncFSStorage().fdSelectionMode;
                    runOnUiThread(new Runnable(){
                            public void run() {
                                if (pd.isShowing())
                                    pd.dismiss();
-                               opMode = mApp.getStorage().selectExportMode;
+                               opMode = StorageManager.INSTANCE.getEncFSStorage().selectExportMode;
                                launchBuiltinFileBrowser();
                            }
                        });
@@ -1045,12 +1056,12 @@ public class Cryptonite extends FragmentActivity
     
     public void logOut() {
         // Remove credentials from the session
-        if (mApp.getDBApi() != null) {
-            mApp.getDBApi().getSession().unlink();
+        if (DBInterface.INSTANCE.getDBApi() != null) {
+            DBInterface.INSTANCE.getDBApi().getSession().unlink();
             // Clear our stored keys
             clearKeys();
         
-            mApp.clearDBHashMap();
+            DBInterface.INSTANCE.clearDBHashMap();
         }
         
         // Change UI state to display logged out version
@@ -1063,9 +1074,9 @@ public class Cryptonite extends FragmentActivity
     private void setLoggedIn(boolean loggedIn) {
         mLoggedIn = loggedIn;
         if (!loggedIn) {
-            if (mApp.isDropbox()) {
+            if (StorageManager.INSTANCE.getEncFSStorageType() == Storage.STOR_DROPBOX) {
                 jniResetVolume();
-                mApp.resetStorage();
+                StorageManager.INSTANCE.resetEncFSStorage();
             }
         }
     }
@@ -1086,8 +1097,15 @@ public class Cryptonite extends FragmentActivity
      */
     private String[] getKeys() {
         SharedPreferences prefs = getSharedPreferences(ACCOUNT_DB_PREFS_NAME, 0);
-        String key = prefs.getString(ACCESS_KEY_NAME, null);
-        String secret = prefs.getString(ACCESS_SECRET_NAME, null);
+        String key = "";
+        String secret = "";
+        try {
+            key = decrypt(prefs.getString(ACCESS_KEY_NAME, null), getBaseContext());
+            secret = decrypt(prefs.getString(ACCESS_SECRET_NAME, null), getBaseContext());
+        } catch (RuntimeException e) {
+            Log.e(Cryptonite.TAG, "Couldn't decrypt DB access keys");
+            return null;
+        }
         if (key != null && secret != null) {
             String[] ret = new String[2];
             ret[0] = key;
@@ -1107,8 +1125,12 @@ public class Cryptonite extends FragmentActivity
         // Save the access key for later
         SharedPreferences prefs = getSharedPreferences(ACCOUNT_DB_PREFS_NAME, 0);
         Editor edit = prefs.edit();
-        edit.putString(ACCESS_KEY_NAME, key);
-        edit.putString(ACCESS_SECRET_NAME, secret);
+        try {
+            edit.putString(ACCESS_KEY_NAME, encrypt(key, getBaseContext()));
+            edit.putString(ACCESS_SECRET_NAME, encrypt(secret, getBaseContext()));
+        } catch (RuntimeException e) {
+            Log.e(Cryptonite.TAG, "Couldn't encrypt DB access keys");
+        }
         edit.commit();
     }
 
@@ -1174,11 +1196,11 @@ public class Cryptonite extends FragmentActivity
         } else {
             session = new AndroidAuthSession(appKeyPair, accessType);
         }
-        mApp.setDBApi(new DropboxAPI<AndroidAuthSession>(session));
+        DBInterface.INSTANCE.setDBApi(new DropboxAPI<AndroidAuthSession>(session));
 
         triedLogin = true;
         // Start the remote authentication
-        mApp.getDBApi()
+        DBInterface.INSTANCE.getDBApi()
             .getSession().startAuthentication(Cryptonite.this);
     }
 
@@ -1242,7 +1264,7 @@ public class Cryptonite extends FragmentActivity
                 this.getString(R.string.decrypting), true);
             new Thread(new Runnable(){
                 public void run(){
-                    if (!mApp.getStorage().decryptEncFSFile(encodedPath, mApp.getOpenDir().getPath())) {
+                    if (!StorageManager.INSTANCE.getEncFSStorage().decryptEncFSFile(encodedPath, mApp.getOpenDir().getPath())) {
                         alertMsg = getString(R.string.decrypt_failure);
                         Log.e(TAG, "Error while attempting to copy " + encodedPath);
                     }
@@ -1440,6 +1462,43 @@ public class Cryptonite extends FragmentActivity
         localFragment = fragment;
     }
     
+    /* With some modifications from:
+     * http://stackoverflow.com/questions/785973
+     * Michael Burton (http://stackoverflow.com/users/82156/emmby)
+     */
+    public static String encrypt(String value, Context context) throws RuntimeException {
+
+        try {
+            final byte[] bytes = value!=null ? value.getBytes("utf-8") : new byte[0];
+            SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBEWithMD5AndDES");
+            SecretKey key = keyFactory.generateSecret(new PBEKeySpec(jniFullPw().toCharArray()));
+            Cipher pbeCipher = Cipher.getInstance("PBEWithMD5AndDES");
+            pbeCipher.init(Cipher.ENCRYPT_MODE, key,
+                    new PBEParameterSpec(Settings.Secure.getString(context.getContentResolver(),
+                            Settings.System.ANDROID_ID).getBytes("utf-8"), 20));
+            return new String(Base64.encode(pbeCipher.doFinal(bytes), Base64.NO_WRAP), "utf-8");
+
+        } catch( Exception e ) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String decrypt(String value, Context context) throws RuntimeException {
+        try {
+            final byte[] bytes = value!=null ? Base64.decode(value, Base64.DEFAULT) : new byte[0];
+            SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBEWithMD5AndDES");
+            SecretKey key = keyFactory.generateSecret(new PBEKeySpec(jniFullPw().toCharArray()));
+            Cipher pbeCipher = Cipher.getInstance("PBEWithMD5AndDES");
+            pbeCipher.init(Cipher.DECRYPT_MODE, key,
+                    new PBEParameterSpec(Settings.Secure.getString(context.getContentResolver(),
+                            Settings.System.ANDROID_ID).getBytes("utf-8"), 20));
+            return new String(pbeCipher.doFinal(bytes), "utf-8");
+
+        } catch( Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
     /* Native methods are implemented by the
      * 'cryptonite' native library, which is packaged
      * with this application.
@@ -1460,7 +1519,7 @@ public class Cryptonite extends FragmentActivity
     public native String  jniEncFSVersion();
     public native String  jniOpenSSLVersion();
     public native String  jniFullKey();
-    public native String  jniFullPw();
+    public static native String  jniFullPw();
     public native String  jniFolderKey();
     public native String  jniFolderPw();
 

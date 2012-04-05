@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 
+import csh.cryptonite.storage.Storage;
+import csh.cryptonite.storage.StorageManager;
 import csh.cryptonite.storage.VirtualFile;
 
 import android.app.Activity;
@@ -100,17 +102,16 @@ public class FileDialog extends ListActivity {
     
     private InputMethodManager inputManager;
     private String parentPath;
-    private String currentPath = currentRoot;
-    private String alertMsg = "";
-    
-    private int selectionMode = SelectionMode.MODE_OPEN;
+    private String currentPath;
+
+    private int selectionMode;
 
     private VirtualFile selectedFile;
     private HashMap<String, Integer> lastPositions = new HashMap<String, Integer>();
 
     private Set<String> selectedPaths = new HashSet<String>();
 
-    private CryptoniteApp mApp;
+    private boolean localFilePickerStorage;
 
     /** Called when the activity is first created. */
     @Override
@@ -120,22 +121,22 @@ public class FileDialog extends ListActivity {
 
         setContentView(R.layout.file_dialog_main);
         
-        mApp = (CryptoniteApp)getApplication();
-        
         myPath = (TextView) findViewById(R.id.path);
         /* mFileName = (EditText) findViewById(R.id.fdEditTextFile); */
 
         inputManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
 
         selectionMode = getIntent().getIntExtra(SELECTION_MODE, SelectionMode.MODE_OPEN);
+
         switch (selectionMode) {
         case SelectionMode.MODE_OPEN_CREATE_DB:
         case SelectionMode.MODE_OPEN_DB:
         case SelectionMode.MODE_OPEN_MULTISELECT_DB:
-            mApp.initDropboxStorage(getBaseContext());
+        case SelectionMode.MODE_OPEN_MULTISELECT:
+            localFilePickerStorage = false;
             break;
         default:
-            mApp.initLocalStorage(getBaseContext());
+            localFilePickerStorage = true;
         }
 
         currentRoot = getIntent().getStringExtra(CURRENT_ROOT);
@@ -691,25 +692,21 @@ public class FileDialog extends ListActivity {
         
         final ProgressDialog pd = ProgressDialog.show(FileDialog.this,
                 getString(R.string.wait_msg),
-                mApp.getStorage().waitString, true);
+                getStorage().waitString, true);
         new Thread(new Runnable(){
             public void run(){
                 switch (selectionMode) {
                 case SelectionMode.MODE_OPEN_MULTISELECT:
                 case SelectionMode.MODE_OPEN_MULTISELECT_DB:
-                    mApp.getStorage().mkVisibleDecoded(path, fEncFSRoot, rootPath);
+                    getStorage().mkVisibleDecoded(path, fEncFSRoot, rootPath);
                     break;
                 default:
-                    mApp.getStorage().mkVisiblePlain(path, rootPath);
+                    getStorage().mkVisiblePlain(path, rootPath);
                 }
                 runOnUiThread(new Runnable(){
                     public void run() {
                         if (pd.isShowing())
                             pd.dismiss();
-                        if (!alertMsg.equals("")) {
-                            showToast(alertMsg);
-                            alertMsg = "";
-                        }
                         getDirImpl(dirPath, rootPath, rootName);
                     }
                 });
@@ -773,7 +770,7 @@ public class FileDialog extends ListActivity {
                 /* Run in separate thread in case a network operation is involved */
                 new Thread(new Runnable(){
                     public void run(){
-                        final boolean deleted = mApp.getStorage().deleteFile(encodedPath);
+                        final boolean deleted = getStorage().deleteFile(encodedPath);
                         runOnUiThread(new Runnable(){
                             public void run() {
                                 if (deleted) {
@@ -884,7 +881,7 @@ public class FileDialog extends ListActivity {
             public void run(){
                 /* Convert current path to encoded file name */
                 String encodedPath = Cryptonite.jniEncode(fStripStr);
-                final boolean folderMade = mApp.getStorage().mkDirEncrypted(encodedPath);
+                final boolean folderMade = getStorage().mkDirEncrypted(encodedPath);
                 runOnUiThread(new Runnable(){
                     public void run() {
                         if (folderMade) {
@@ -913,7 +910,7 @@ public class FileDialog extends ListActivity {
         /* Run in separate thread in case a network operation is involved */
         new Thread(new Runnable(){
             public void run(){
-                final boolean madeDir = mApp.getStorage().mkDirPlain(fStripStr);
+                final boolean madeDir = getStorage().mkDirPlain(fStripStr);
                 runOnUiThread(new Runnable(){
                     public void run() {
                         if (madeDir) {
@@ -938,5 +935,13 @@ public class FileDialog extends ListActivity {
                 err.show();
             }
         });
+    }
+    
+    private Storage getStorage() {
+        if (localFilePickerStorage) {
+            return StorageManager.INSTANCE.getLocalStorage();
+        } else {
+            return StorageManager.INSTANCE.getEncFSStorage();
+        }
     }
 }

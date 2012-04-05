@@ -1,6 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="CryptoTheme" parent="@android:style/Theme">
-    <!-- Any customizations for your app running on pre-3.0 devices here -->
+    <style name="Theme" parent="@android:style/Theme.Light">
+        <!--
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFrame">@null</item>
+        <item name="android:windowContentOverlay">@null</item>
+        -->
     </style>
 </resources>

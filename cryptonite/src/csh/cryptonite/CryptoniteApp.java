@@ -20,17 +20,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 
-import com.dropbox.client2.DropboxAPI;
-import com.dropbox.client2.DropboxAPI.Entry;
-import com.dropbox.client2.android.AndroidAuthSession;
-import com.dropbox.client2.exception.DropboxException;
-import com.dropbox.client2.exception.DropboxServerException;
-
-import csh.cryptonite.storage.DropboxStorage;
-import csh.cryptonite.storage.LocalStorage;
-import csh.cryptonite.storage.Storage;
+import csh.cryptonite.storage.StorageManager;
 import csh.cryptonite.storage.VirtualFileSystem;
 
 import android.app.Application;
@@ -43,16 +34,12 @@ import android.util.Log;
 
 public class CryptoniteApp extends Application {
 
-    private Storage mStorage;
-
     public static final String OPENPNT = "open";
     public static final String BROWSEPNT = "browse";
     public static final String DROPBOXPNT = "dropbox";
     private static final String READPNT = "read";
 
     private File openDir, readDir;
-    private DropboxAPI<AndroidAuthSession> mApi;
-    private HashMap<String, Entry> dbHashMap;
     
     private boolean disclaimerShown;
 
@@ -64,9 +51,6 @@ public class CryptoniteApp extends Application {
     
     public CryptoniteApp() {
         super();
-        mApi = null;
-        mStorage = null;
-        dbHashMap = new HashMap<String, Entry>();
     }
 
     @Override
@@ -78,6 +62,8 @@ public class CryptoniteApp extends Application {
         encfsBin = binDirPath + "/encfs";
         
         VirtualFileSystem.INSTANCE.init();
+        StorageManager.INSTANCE.init();
+        DBInterface.INSTANCE.init();
     }
     
     public boolean needsEncFSBinary() {
@@ -124,35 +110,7 @@ public class CryptoniteApp extends Application {
     public String getEncFSBinPath() {
         return encfsBin;
     }
-    
-    public boolean isDropbox() {
-        return mStorage != null && mStorage.type == Storage.STOR_DROPBOX;
-    }
-    
-    public boolean isLocal() {
-        return mStorage != null && mStorage.type == Storage.STOR_LOCAL;
-    }
-    
-    public void resetStorage() {
-        mStorage = null;
-    }
-    
-    public Storage getStorage() {
-        return mStorage;
-    }
-    
-    public void initLocalStorage(Context context) {
-        if (mStorage == null || mStorage.type != Storage.STOR_LOCAL) {
-            mStorage = new LocalStorage(context, this);
-        }
-    }
-    
-    public void initDropboxStorage(Context context) {
-        if (mStorage == null || mStorage.type != Storage.STOR_DROPBOX) {
-            mStorage = new DropboxStorage(context, this);
-        }
-    }
-    
+
     public String getCurrentBrowsePath() {
         return currentBrowsePath;
     }
@@ -264,85 +222,4 @@ public class CryptoniteApp extends Application {
         disclaimerShown = value;
     }
     
-    public DropboxAPI<AndroidAuthSession> getDBApi() {
-        return mApi;
-    }
-    
-    public void setDBApi(DropboxAPI<AndroidAuthSession> api) {
-        mApi = api;
-    }
-    
-    public Entry getDBEntry(String dbPath) throws DropboxException {
-        if (mApi == null) {
-            /* This shouldn't happen really */
-            throw new DropboxException("mApi == null: " + getString(R.string.dropbox_null));
-        }
-        if (dbPath == null) {
-            throw new DropboxException("dbPath == null: " + getString(R.string.dropbox_null));
-        }
-        
-        String hash = null;
-        
-        if (dbHashMap.containsKey(dbPath)) {
-            Log.d(Cryptonite.TAG, "Found hash for " + dbPath);
-            hash = dbHashMap.get(dbPath).hash;
-        }
-        try {
-            Entry dbEntry = mApi.metadata(dbPath, 0, hash, true, null);
-            if (hash == null) {
-                dbHashMap.put(dbPath, dbEntry);
-            }
-            return dbEntry;
-        } catch (DropboxServerException e) {
-            if (e.error == DropboxServerException._304_NOT_MODIFIED) {
-                return dbHashMap.get(dbPath);
-            } else {
-                throw e;
-            }
-        }
-    }
-    
-    public void clearDBHashMap() {
-        dbHashMap.clear();
-    }
-    
-    public void removeDBHashMapEntry(String dbPath) {
-        dbHashMap.remove(dbPath);
-    }
-    
-    public boolean dbFileExists(String dbPath) throws DropboxException {
-        Entry dbEntry;
-        try {
-            /* We need a new metadata call here without hash
-             * to make sure we get 404 if the file
-             * doesn't exist rather than 304 if we've
-             * asked before
-             */
-            dbEntry = mApi.metadata(dbPath, 0, null, true, null);
-            if (dbEntry.isDeleted) {
-                return false;
-            }
-        } catch (DropboxServerException e) {
-            if (e.error == DropboxServerException._404_NOT_FOUND) {
-                return false;
-            }
-        } catch (DropboxException e) {
-            throw e;
-        }
-        return true;
-    }
-
-    public String getEncFSPath() {
-        if (mStorage != null) {
-            return mStorage.getEncFSPath();
-        } else {
-            return "";
-        }
-    }
-    
-    public void setEncFSPath(String value) {
-        if (mStorage != null) {
-            mStorage.setEncFSPath(value);
-        }
-    }
 }

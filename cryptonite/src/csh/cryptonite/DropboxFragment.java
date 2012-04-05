@@ -1,5 +1,7 @@
 package csh.cryptonite;
 
+import csh.cryptonite.storage.Storage;
+import csh.cryptonite.storage.StorageManager;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -39,7 +41,7 @@ public class DropboxFragment extends Fragment {
                     // so that we can use the Dropbox API.
                     // Not done on program startup so that the user can
                     // decide between app folder and full access.
-                    if (mAct.mApp.getDBApi() == null) {
+                    if (DBInterface.INSTANCE.getDBApi() == null) {
                         mAct.buildSession();
                     } else {
                         if (mAct.mLoggedIn) {
@@ -47,7 +49,7 @@ public class DropboxFragment extends Fragment {
                         } else {
                             mAct.triedLogin = true;
                             // Start the remote authentication
-                            mAct.mApp.getDBApi()
+                            DBInterface.INSTANCE.getDBApi()
                                 .getSession().startAuthentication(mAct);
                         }
                     }
@@ -59,6 +61,7 @@ public class DropboxFragment extends Fragment {
         buttonDecrypt = (Button)mView.findViewById(R.id.btnDecryptDb);
         buttonDecrypt.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
+                    StorageManager.INSTANCE.initEncFSStorage(mAct, Storage.STOR_DROPBOX, mAct.mApp);
                     mAct.opMode = Cryptonite.SELECTDBENCFS_MODE;
                     mAct.currentDialogLabel = getString(R.string.select_enc);
                     mAct.currentDialogButtonLabel = getString(
@@ -126,7 +129,8 @@ public class DropboxFragment extends Fragment {
         boolean volumeLoaded = (Cryptonite.jniVolumeLoaded() == Cryptonite.jniSuccess());
 
         buttonDecrypt.setEnabled(!volumeLoaded && mAct.mLoggedIn);
-        buttonBrowseDecrypted.setEnabled(volumeLoaded && mAct.mApp.isDropbox());
+        buttonBrowseDecrypted.setEnabled(volumeLoaded && 
+                StorageManager.INSTANCE.getEncFSStorageType() == Storage.STOR_DROPBOX);
         buttonForgetDecryption.setEnabled(volumeLoaded);
         buttonCreate.setEnabled(!volumeLoaded && mAct.mLoggedIn);
         

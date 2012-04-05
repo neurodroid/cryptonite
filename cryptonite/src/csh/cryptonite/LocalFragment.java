@@ -2,6 +2,9 @@ package csh.cryptonite;
 
 import java.io.IOException;
 
+import csh.cryptonite.storage.Storage;
+import csh.cryptonite.storage.StorageManager;
+
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
@@ -43,6 +46,7 @@ public class LocalFragment extends Fragment {
         buttonDecrypt = (Button)v.findViewById(R.id.btnDecryptLocal);
         buttonDecrypt.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
+                    StorageManager.INSTANCE.initEncFSStorage(mAct, Storage.STOR_LOCAL, mAct.mApp);
                     mAct.opMode = Cryptonite.SELECTLOCALENCFS_MODE;
                     mAct.currentDialogLabel = getString(R.string.select_enc);
                     mAct.currentDialogButtonLabel = getString(R.string.select_enc_short);
@@ -225,7 +229,8 @@ public class LocalFragment extends Fragment {
         boolean volumeLoaded = (Cryptonite.jniVolumeLoaded() == Cryptonite.jniSuccess());
 
         buttonDecrypt.setEnabled(!volumeLoaded);
-        buttonBrowseDecrypted.setEnabled(volumeLoaded && mAct.mApp.isLocal());
+        buttonBrowseDecrypted.setEnabled(volumeLoaded &&
+                StorageManager.INSTANCE.getEncFSStorageType() == Storage.STOR_LOCAL);
         buttonForgetDecryption.setEnabled(volumeLoaded);
         buttonCreate.setEnabled(!volumeLoaded);
     }

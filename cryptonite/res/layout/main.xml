@@ -20,11 +20,6 @@
             android:layout_height="wrap_content" 
             android:layout_marginLeft="0dip" android:layout_marginRight="0dip" />
 
-        <View 
-            android:layout_width="fill_parent" android:layout_height="2dip"
-            android:background="#696969" />
-        <View android:layout_width="fill_parent" android:layout_height="2dip"
-            android:background="#000" />
         <FrameLayout
             android:id="@android:id/tabcontent"
             android:layout_width="0dp"

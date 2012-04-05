@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import csh.cryptonite.Cryptonite;
 import csh.cryptonite.CryptoniteApp;
+import csh.cryptonite.DBInterface;
 import csh.cryptonite.R;
 import csh.cryptonite.SelectionMode;
 import csh.cryptonite.UploadEncrypted;
@@ -216,7 +217,7 @@ public abstract class Storage {
                 }
                 String targetPath = paths[0];
                 String encodedFilePath = paths[1];
-                UploadEncrypted upload = new UploadEncrypted(mCallingContext, mApp.getDBApi(),
+                UploadEncrypted upload = new UploadEncrypted(mCallingContext, DBInterface.INSTANCE.getDBApi(),
                         new File(targetPath).getParent() + "/",
                         new File(encodedFilePath));
                 upload.execute();
