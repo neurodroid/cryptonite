@@ -30,15 +30,14 @@ public class LocalFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState)
     {
+        super.onCreateView(inflater, container, savedInstanceState);
+        
         View v = inflater.inflate(R.layout.local_tab, container, false);
 
         mAct = (Cryptonite)getActivity();
         
         tv = (TextView)v.findViewById(R.id.tvVersionLocal);
-        tv.setText(mAct.textOut);
-
         tvMountInfo = (TextView)v.findViewById(R.id.tvMountInfo);
-        tvMountInfo.setText(mAct.mountInfo);
         
         /* Decrypt local encFS volume */
         buttonDecrypt = (Button)v.findViewById(R.id.btnDecryptLocal);
@@ -62,8 +61,6 @@ public class LocalFragment extends Fragment {
                     }
                 }});
 
-        buttonDecrypt.setEnabled(!(Cryptonite.jniVolumeLoaded() == Cryptonite.jniSuccess()));
-
         /* Browse decrypted volume */
         buttonBrowseDecrypted = (Button)v.findViewById(R.id.btnBrowseDecryptedLocal);
         buttonBrowseDecrypted.setOnClickListener(new OnClickListener() {
@@ -72,21 +69,13 @@ public class LocalFragment extends Fragment {
                             mAct.mApp.getCurrentBrowseStartPath());
                 }});
 
-        buttonBrowseDecrypted.setEnabled(
-                Cryptonite.jniVolumeLoaded() == Cryptonite.jniSuccess() && 
-                mAct.mApp.isLocal());
-
         /* Clear decryption information */
         buttonForgetDecryption = (Button)v.findViewById(R.id.btnForgetDecryptionLocal);
         buttonForgetDecryption.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     mAct.mApp.cleanUpDecrypted();
-                    mAct.updateDecryptButtons();
+                    updateDecryptButtons();
                 }});
-
-        buttonForgetDecryption.setEnabled(
-                Cryptonite.jniVolumeLoaded() == Cryptonite.jniSuccess());
-        
 
         /* Create local EncFS volume */
         buttonCreate = (Button)v.findViewById(R.id.btnCreateLocal);
@@ -95,10 +84,6 @@ public class LocalFragment extends Fragment {
                     mAct.createEncFS(false);
                 }});
 
-        buttonCreate.setEnabled(
-                !(Cryptonite.jniVolumeLoaded() == Cryptonite.jniSuccess()));
-
-        
         /* Mount local EncFS volume */
         buttonMount = (Button)v.findViewById(R.id.btnMount);
         buttonMount.setOnClickListener(new OnClickListener() {
@@ -198,12 +183,19 @@ public class LocalFragment extends Fragment {
                     mAct.opMode = mAct.prevMode;
                 }});
 
-        updateMountButtons();
-        updateDecryptButtons();
-        
         return v;
     }
 
+    @Override
+    public void onActivityCreated (Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        mAct.setLocalFragment(this);
+        tv.setText(mAct.textOut);
+        tvMountInfo.setText(mAct.mountInfo);
+        updateMountButtons();
+        updateDecryptButtons();
+    }
+    
     public void updateMountButtons() {
         if (buttonMount == null || buttonViewMount == null) {
             return;

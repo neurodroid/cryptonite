@@ -142,11 +142,15 @@ public class CryptoniteApp extends Application {
     }
     
     public void initLocalStorage(Context context) {
-        mStorage = new LocalStorage(context, this);        
+        if (mStorage == null || mStorage.type != Storage.STOR_LOCAL) {
+            mStorage = new LocalStorage(context, this);
+        }
     }
     
     public void initDropboxStorage(Context context) {
-        mStorage = new DropboxStorage(context, this);        
+        if (mStorage == null || mStorage.type != Storage.STOR_DROPBOX) {
+            mStorage = new DropboxStorage(context, this);
+        }
     }
     
     public String getCurrentBrowsePath() {

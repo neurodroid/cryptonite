@@ -21,13 +21,13 @@ public class ExpertFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState)
     {
+        super.onCreateView(inflater, container, savedInstanceState);
+        
         View v = inflater.inflate(R.layout.expert_tab, container, false);
 
         mAct = (Cryptonite)getActivity();
         
         tv = (TextView)v.findViewById(R.id.tvVersionExpert);
-        tv.setText(mAct.textOut);
-
 
         /* Run terminal with environment set up */
         buttonTermPrompt = (Button)v.findViewById(R.id.btnTermPrompt);
@@ -44,6 +44,13 @@ public class ExpertFragment extends Fragment {
                 }});
 
         return v;
+    }
+
+    @Override
+    public void onActivityCreated (Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+
+        tv.setText(mAct.textOut);
     }
 
     @Override

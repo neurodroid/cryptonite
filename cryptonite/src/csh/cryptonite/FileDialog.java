@@ -28,9 +28,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 
-import csh.cryptonite.storage.DropboxStorage;
-import csh.cryptonite.storage.LocalStorage;
-import csh.cryptonite.storage.Storage;
 import csh.cryptonite.storage.VirtualFile;
 
 import android.app.Activity;
@@ -112,9 +109,9 @@ public class FileDialog extends ListActivity {
     private HashMap<String, Integer> lastPositions = new HashMap<String, Integer>();
 
     private Set<String> selectedPaths = new HashSet<String>();
-    
-    private Storage mStorage;
-    
+
+    private CryptoniteApp mApp;
+
     /** Called when the activity is first created. */
     @Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -122,6 +119,9 @@ public class FileDialog extends ListActivity {
         setResult(RESULT_CANCELED, getIntent());
 
         setContentView(R.layout.file_dialog_main);
+        
+        mApp = (CryptoniteApp)getApplication();
+        
         myPath = (TextView) findViewById(R.id.path);
         /* mFileName = (EditText) findViewById(R.id.fdEditTextFile); */
 
@@ -132,10 +132,10 @@ public class FileDialog extends ListActivity {
         case SelectionMode.MODE_OPEN_CREATE_DB:
         case SelectionMode.MODE_OPEN_DB:
         case SelectionMode.MODE_OPEN_MULTISELECT_DB:
-            mStorage = new DropboxStorage(this, ((CryptoniteApp)getApplication()));
+            mApp.initDropboxStorage(getBaseContext());
             break;
         default:
-            mStorage = new LocalStorage(this, ((CryptoniteApp)getApplication()));
+            mApp.initLocalStorage(getBaseContext());
         }
 
         currentRoot = getIntent().getStringExtra(CURRENT_ROOT);
@@ -691,16 +691,16 @@ public class FileDialog extends ListActivity {
         
         final ProgressDialog pd = ProgressDialog.show(FileDialog.this,
                 getString(R.string.wait_msg),
-                mStorage.waitString, true);
+                mApp.getStorage().waitString, true);
         new Thread(new Runnable(){
             public void run(){
                 switch (selectionMode) {
                 case SelectionMode.MODE_OPEN_MULTISELECT:
                 case SelectionMode.MODE_OPEN_MULTISELECT_DB:
-                    mStorage.mkVisibleDecoded(path, fEncFSRoot, rootPath);
+                    mApp.getStorage().mkVisibleDecoded(path, fEncFSRoot, rootPath);
                     break;
                 default:
-                    mStorage.mkVisiblePlain(path, rootPath);
+                    mApp.getStorage().mkVisiblePlain(path, rootPath);
                 }
                 runOnUiThread(new Runnable(){
                     public void run() {
@@ -773,7 +773,7 @@ public class FileDialog extends ListActivity {
                 /* Run in separate thread in case a network operation is involved */
                 new Thread(new Runnable(){
                     public void run(){
-                        final boolean deleted = mStorage.deleteFile(encodedPath);
+                        final boolean deleted = mApp.getStorage().deleteFile(encodedPath);
                         runOnUiThread(new Runnable(){
                             public void run() {
                                 if (deleted) {
@@ -884,7 +884,7 @@ public class FileDialog extends ListActivity {
             public void run(){
                 /* Convert current path to encoded file name */
                 String encodedPath = Cryptonite.jniEncode(fStripStr);
-                final boolean folderMade = mStorage.mkDirEncrypted(encodedPath);
+                final boolean folderMade = mApp.getStorage().mkDirEncrypted(encodedPath);
                 runOnUiThread(new Runnable(){
                     public void run() {
                         if (folderMade) {
@@ -913,7 +913,7 @@ public class FileDialog extends ListActivity {
         /* Run in separate thread in case a network operation is involved */
         new Thread(new Runnable(){
             public void run(){
-                final boolean madeDir = mStorage.mkDirPlain(fStripStr);
+                final boolean madeDir = mApp.getStorage().mkDirPlain(fStripStr);
                 runOnUiThread(new Runnable(){
                     public void run() {
                         if (madeDir) {

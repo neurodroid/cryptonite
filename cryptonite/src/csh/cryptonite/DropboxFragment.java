@@ -16,20 +16,23 @@ public class DropboxFragment extends Fragment {
         buttonForgetDecryption, buttonCreate;
     
     private Cryptonite mAct;
+
+    private View mView;
     
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState)
     {
-        View v = inflater.inflate(R.layout.db_tab, container, false);
+        super.onCreateView(inflater, container, savedInstanceState);
+        
+        mView = inflater.inflate(R.layout.db_tab, container, false);
 
         mAct = (Cryptonite)getActivity();
         
-        tv = (TextView)v.findViewById(R.id.tvVersionDb);
-        tv.setText(mAct.textOut);
+        tv = (TextView)mView.findViewById(R.id.tvVersionDb);
 
         /* Link with Dropbox */
-        buttonAuth = (Button)v.findViewById(R.id.btnAuthDb);
+        buttonAuth = (Button)mView.findViewById(R.id.btnAuthDb);
         buttonAuth.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     // If necessary, we create a new AuthSession 
@@ -53,7 +56,7 @@ public class DropboxFragment extends Fragment {
         buttonAuth.setEnabled(true);
         
         /* Decrypt EncFS volume on Dropbox */
-        buttonDecrypt = (Button)v.findViewById(R.id.btnDecryptDb);
+        buttonDecrypt = (Button)mView.findViewById(R.id.btnDecryptDb);
         buttonDecrypt.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     mAct.opMode = Cryptonite.SELECTDBENCFS_MODE;
@@ -69,47 +72,48 @@ public class DropboxFragment extends Fragment {
                     }
                 }});
 
-        buttonDecrypt.setEnabled(mAct.mLoggedIn && 
-                !(Cryptonite.jniVolumeLoaded() == Cryptonite.jniSuccess()));
-
         /* Browse decrypted volume */
-        buttonBrowseDecrypted = (Button)v.findViewById(R.id.btnBrowseDecryptedDb);
+        buttonBrowseDecrypted = (Button)mView.findViewById(R.id.btnBrowseDecryptedDb);
         buttonBrowseDecrypted.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     mAct.browseEncFS(mAct.mApp.getCurrentBrowsePath(), 
                             mAct.mApp.getCurrentBrowseStartPath());
                 }});
-
-        buttonBrowseDecrypted.setEnabled(
-                Cryptonite.jniVolumeLoaded() == Cryptonite.jniSuccess() &&
-                mAct.mApp.isDropbox());
-        
         
         /* Clear decryption information */
-        buttonForgetDecryption = (Button)v.findViewById(R.id.btnForgetDecryptionDb);
+        buttonForgetDecryption = (Button)mView.findViewById(R.id.btnForgetDecryptionDb);
         buttonForgetDecryption.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     mAct.mApp.cleanUpDecrypted();
-                    mAct.updateDecryptButtons();
+                    updateDecryptButtons();
                 }});
-
-        buttonForgetDecryption.setEnabled(
-                Cryptonite.jniVolumeLoaded() == Cryptonite.jniSuccess());
-        
         
         /* Create EncFS volume on Dropbox */
-        buttonCreate = (Button)v.findViewById(R.id.btnCreateDb);
+        buttonCreate = (Button)mView.findViewById(R.id.btnCreateDb);
         buttonCreate.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     mAct.createEncFS(true);
                 }});
 
-        buttonCreate.setEnabled(mAct.mLoggedIn && 
-                !(Cryptonite.jniVolumeLoaded() == Cryptonite.jniSuccess()));
+        return mView;
+    }
 
+    @Override
+    public void onActivityCreated (Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        mAct.setDBFragment(this);
+        tv.setText(mAct.textOut);
         updateDecryptButtons();
-        
-        return v;
+    }
+    
+    @Override
+    public void onResume() {
+        super.onResume();
+        updateDecryptButtons();
+        if (tv != null) {
+            tv.setText(mAct.textOut);
+            tv.invalidate();
+        }
     }
 
     public void updateDecryptButtons() {
@@ -125,7 +129,7 @@ public class DropboxFragment extends Fragment {
         buttonBrowseDecrypted.setEnabled(volumeLoaded && mAct.mApp.isDropbox());
         buttonForgetDecryption.setEnabled(volumeLoaded);
         buttonCreate.setEnabled(!volumeLoaded && mAct.mLoggedIn);
-
+        
         updateLoginButtons();
     }
     
@@ -139,19 +143,7 @@ public class DropboxFragment extends Fragment {
         } else {
             buttonAuth.setText(R.string.dropbox_link);
         }
-        buttonDecrypt.setEnabled(mAct.mLoggedIn);
-        
     }
     
-    @Override
-    public void onResume() {
-        super.onResume();
-        updateDecryptButtons();
-        if (tv != null) {
-            tv.setText(mAct.textOut);
-            tv.invalidate();
-        }
-    }
-
 }
 

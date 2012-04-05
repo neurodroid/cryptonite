@@ -49,6 +49,7 @@ import android.os.Environment;
 
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
+
 import android.text.SpannableString;
 import android.text.util.Linkify;
 import android.text.method.ScrollingMovementMethod;
@@ -135,7 +136,6 @@ public class Cryptonite extends FragmentActivity
     
     private DropboxFragment dbFragment;
     private LocalFragment localFragment;
-    private ExpertFragment expertFragment;
     
     public CryptoniteApp mApp;
     
@@ -248,9 +248,6 @@ public class Cryptonite extends FragmentActivity
             mTabHost.setCurrentTabByTag(savedInstanceState.getString("tab"));
         }
         
-        dbFragment = (DropboxFragment)mTabsAdapter.getItem(0);
-        localFragment = (LocalFragment)mTabsAdapter.getItem(1);
-        expertFragment = (ExpertFragment)mTabsAdapter.getItem(2);
     }
 
     public static boolean isValidMntDir(Context context, File newMntDir) {
@@ -287,15 +284,6 @@ public class Cryptonite extends FragmentActivity
 
     public static String defaultMntDir() {
         return Environment.getExternalStorageDirectory().getPath() + MNTPNT;
-    }
-    
-    public void updateDecryptButtons() {
-        dbFragment.updateDecryptButtons();
-        localFragment.updateDecryptButtons();
-
-        if (!(jniVolumeLoaded() == jniSuccess())) {
-            mApp.resetStorage();
-        }
     }
 
     /** Called upon exit from other activities */
@@ -471,9 +459,6 @@ public class Cryptonite extends FragmentActivity
             break;
         case CreateEncFS.CREATE_DB:
         case CreateEncFS.CREATE_LOCAL:
-            /* Update buttons */
-            localFragment.updateMountButtons();
-            updateDecryptButtons();
             break;
         default:
             Log.e(TAG, "Unknown request code");
@@ -686,7 +671,6 @@ public class Cryptonite extends FragmentActivity
                                     showAlert(R.string.error, alertMsg);
                                 }
                                 nullPassword();
-                                localFragment.updateMountButtons();
                             }
                         });
                 }
@@ -740,6 +724,15 @@ public class Cryptonite extends FragmentActivity
            }).start();
    }
 
+   public void updateDecryptButtons() {
+       if (dbFragment != null) {
+           dbFragment.updateDecryptButtons();
+       }
+       if (localFragment != null) {
+           localFragment.updateDecryptButtons();
+       }
+   }
+
    /** Browse an EncFS volume using a virtual file system.
     * File names are queried on demand when a directory is opened.
     * @param browsePath EncFS path 
@@ -754,7 +747,6 @@ public class Cryptonite extends FragmentActivity
                this.getString(R.string.running_encfs), true);
        new Thread(new Runnable(){
                public void run(){
-                   mApp.setEncFSPath(browsePath.substring(browseStartPath.length()));
                    Log.i(TAG, "Dialog root is " + browsePath);
                    currentDialogStartPath = browseDirF.getPath();
                    currentDialogLabel = getString(R.string.select_file_export);
@@ -826,14 +818,9 @@ public class Cryptonite extends FragmentActivity
                                   opMode = prevMode;
                                   break;
                               case SELECTLOCALENCFS_MODE:
-                                  mApp.initLocalStorage(Cryptonite.this);
-                                  break;
                               case SELECTDBENCFS_MODE:
-                                  mApp.initDropboxStorage(Cryptonite.this);
+                                  initEncFS(currentReturnPath);
                                   break;
-                             }
-                             if (opMode == SELECTLOCALENCFS_MODE || opMode == SELECTDBENCFS_MODE) {
-                                 initEncFS(currentReturnPath);
                              }
                          } else {
                              showAlert(R.string.error, R.string.empty_password);
@@ -1081,7 +1068,6 @@ public class Cryptonite extends FragmentActivity
                 mApp.resetStorage();
             }
         }
-        updateDecryptButtons();
     }
 
     private void clearKeys() {
@@ -1444,6 +1430,14 @@ public class Cryptonite extends FragmentActivity
              }
         }
         return false;
+    }
+    
+    public void setDBFragment(DropboxFragment fragment) {
+        dbFragment = fragment;
+    }
+    
+    public void setLocalFragment(LocalFragment fragment) {
+        localFragment = fragment;
     }
     
     /* Native methods are implemented by the

@@ -27,6 +27,7 @@ import android.widget.TabWidget;
 public class TabsAdapter extends FragmentPagerAdapter
         implements TabHost.OnTabChangeListener, ViewPager.OnPageChangeListener {
     private final Context mContext;
+    private final Cryptonite mAct;
     private final TabHost mTabHost;
     private final ViewPager mViewPager;
     private final ArrayList<TabInfo> mTabs = new ArrayList<TabInfo>();
@@ -63,6 +64,7 @@ public class TabsAdapter extends FragmentPagerAdapter
     public TabsAdapter(FragmentActivity activity, TabHost tabHost, ViewPager pager) {
         super(activity.getSupportFragmentManager());
         mContext = activity;
+        mAct = (Cryptonite)activity;
         mTabHost = tabHost;
         mViewPager = pager;
         mTabHost.setOnTabChangedListener(this);
@@ -95,6 +97,7 @@ public class TabsAdapter extends FragmentPagerAdapter
     public void onTabChanged(String tabId) {
         int position = mTabHost.getCurrentTab();
         mViewPager.setCurrentItem(position);
+        mAct.updateDecryptButtons();
     }
 
     @Override
