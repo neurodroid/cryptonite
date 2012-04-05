@@ -1164,44 +1164,58 @@ public class Cryptonite extends FragmentActivity
         }
     }
     
-    private void setSession(boolean useAppFolder) {
-        SharedPreferences prefs = 
-                getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
-        Editor edit = prefs.edit();
-        edit.putBoolean("dbDecided", true);
-        if (!edit.commit()) {
-            Log.e(Cryptonite.TAG, "Couldn't write preferences");
-        }
-        edit.putBoolean("cb_appfolder", useAppFolder);
-        if (!edit.commit()) {
-            Log.e(Cryptonite.TAG, "Couldn't write preferences");
-        }
-        
-        AndroidAuthSession session;
-        AppKeyPair appKeyPair;
-        AccessType accessType;
-        
-        String[] stored = getKeys();
-        
-        if (useAppFolder) {
-            appKeyPair = new AppKeyPair(jniFolderKey(), jniFolderPw());
-            accessType = AccessType.APP_FOLDER;
-        } else {
-            appKeyPair = new AppKeyPair(jniFullKey(), jniFullPw());
-            accessType = AccessType.DROPBOX;
-        }
-        if (stored != null && stored.length >= 2) {
-            AccessTokenPair accessToken = new AccessTokenPair(stored[0], stored[1]);
-            session = new AndroidAuthSession(appKeyPair, accessType, accessToken);
-        } else {
-            session = new AndroidAuthSession(appKeyPair, accessType);
-        }
-        DBInterface.INSTANCE.setDBApi(new DropboxAPI<AndroidAuthSession>(session));
+    private void setSession(final boolean useAppFolder) {
+        final ProgressDialog pd = ProgressDialog.show(this,
+                this.getString(R.string.wait_msg),
+                this.getString(R.string.dropbox_connecting), true);
+        new Thread(new Runnable(){
+            public void run(){
+                SharedPreferences prefs = 
+                        getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+                Editor edit = prefs.edit();
+                edit.putBoolean("dbDecided", true);
+                if (!edit.commit()) {
+                    Log.e(Cryptonite.TAG, "Couldn't write preferences");
+                }
+                edit.putBoolean("cb_appfolder", useAppFolder);
+                if (!edit.commit()) {
+                    Log.e(Cryptonite.TAG, "Couldn't write preferences");
+                }
+                
+                AndroidAuthSession session;
+                AppKeyPair appKeyPair;
+                AccessType accessType;
+                
+                String[] stored = getKeys();
+                
+                if (useAppFolder) {
+                    appKeyPair = new AppKeyPair(jniFolderKey(), jniFolderPw());
+                    accessType = AccessType.APP_FOLDER;
+                } else {
+                    appKeyPair = new AppKeyPair(jniFullKey(), jniFullPw());
+                    accessType = AccessType.DROPBOX;
+                }
+                if (stored != null && stored.length >= 2) {
+                    AccessTokenPair accessToken = new AccessTokenPair(stored[0], stored[1]);
+                    session = new AndroidAuthSession(appKeyPair, accessType, accessToken);
+                } else {
+                    session = new AndroidAuthSession(appKeyPair, accessType);
+                }
+                DBInterface.INSTANCE.setDBApi(new DropboxAPI<AndroidAuthSession>(session));
 
-        triedLogin = true;
-        // Start the remote authentication
-        DBInterface.INSTANCE.getDBApi()
-            .getSession().startAuthentication(Cryptonite.this);
+                triedLogin = true;
+                // Start the remote authentication
+                DBInterface.INSTANCE.getDBApi()
+                    .getSession().startAuthentication(Cryptonite.this);
+                runOnUiThread(new Runnable(){
+                    public void run() {
+                        if (pd.isShowing())
+                            pd.dismiss();
+                    }
+                });
+            }
+        }).start();
+
     }
 
     public static File getExternalCacheDir(final Context context) {

@@ -46,6 +46,7 @@ public class DropboxFragment extends Fragment {
                     } else {
                         if (mAct.mLoggedIn) {
                             mAct.logOut();
+                            mAct.updateDecryptButtons();
                         } else {
                             mAct.triedLogin = true;
                             // Start the remote authentication

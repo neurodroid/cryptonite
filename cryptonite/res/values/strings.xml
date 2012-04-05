@@ -112,6 +112,7 @@
     
     <!-- Dropbox -->
     <string name="dropbox_link">Link with Dropbox</string>
+    <string name="dropbox_connecting">Connecting to Dropbox&#8230;</string>
     <string name="dropbox_unlink">Unlink from Dropbox</string>
     <string name="dropbox_reading">Reading Dropbox&#8230;</string>
     <string name="dropbox_decrypt">Decrypt Dropbox folder</string>
