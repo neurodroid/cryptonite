@@ -203,8 +203,10 @@
     <string name="send_report">Report issue&#8230;</string>
     
     <!-- Colours -->
-    <color name="gray">#ffff0000</color>
+    <color name="gray">#ff888888</color>
+    <color name="ltgray">#ff335544</color>
     <color name="white">#ffffffff</color>
-    <color name="black">#00000000</color>
+    <color name="black">#ff000000</color>
+    <color name="icsblue">#ff33b5e5</color>
 
 </resources>

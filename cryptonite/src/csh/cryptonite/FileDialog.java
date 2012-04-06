@@ -61,7 +61,6 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -70,7 +69,7 @@ public class FileDialog extends ListActivity {
     private static final String ITEM_KEY = "key";
     private static final String ITEM_IMAGE = "image";
     private static final String ITEM_CHECK = "check";
-    private static final String ITEM_ENABLED = "enables";
+    private static final String ITEM_ENABLED = "enabled";
     private static final String ITEM_FILE = "file";
     private static final String ROOT = "/";
 
@@ -341,27 +340,26 @@ public class FileDialog extends ListActivity {
                     R.drawable.ic_launcher_file);
         }
         
+        ArrayAdapter<HashMap<String, Object>> fileList = 
+                new FileDialogArrayAdapter(this, mList);            
+        fileList.notifyDataSetChanged();
+        setListAdapter(fileList);
+
         switch (selectionMode) {
         case SelectionMode.MODE_OPEN:
         case SelectionMode.MODE_OPEN_DB:
         case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
         case SelectionMode.MODE_OPEN_CREATE:
         case SelectionMode.MODE_OPEN_CREATE_DB: {
-            SimpleAdapter fileList = new SimpleAdapter(this, mList,
+            /* SimpleAdapter fileList = new SimpleAdapter(this, mList,
                     R.layout.file_dialog_row_single,
                     new String[] { ITEM_KEY, ITEM_IMAGE },
-                    new int[] {R.id.fdrowtext, R.id.fdrowimage });
-            fileList.notifyDataSetChanged();
-            setListAdapter(fileList);
+                    new int[] {R.id.fdrowtext, R.id.fdrowimage }); */
+            getListView().setChoiceMode(ListView.CHOICE_MODE_SINGLE);
             break;
         }
         default: {
-            ArrayAdapter<HashMap<String, Object>> fileList = 
-                    new FileDialogArrayAdapter(this, mList);
-            setListAdapter(fileList);
             getListView().setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
-            fileList.notifyDataSetChanged();
-            setListAdapter(fileList);
         }
         }
 
@@ -376,14 +374,14 @@ public class FileDialog extends ListActivity {
         
         item.put(ITEM_KEY, filelabel);
         item.put(ITEM_IMAGE, imageId);
+        item.put(ITEM_FILE, file);
+        item.put(ITEM_ENABLED,
+                (Boolean) (!file.getPath().equals(currentRoot) &&
+                           !file.getPath().equals(new VirtualFile(currentPath).getParent())));
         switch (selectionMode) {
         case SelectionMode.MODE_OPEN_MULTISELECT:
         case SelectionMode.MODE_OPEN_MULTISELECT_DB:
             item.put(ITEM_CHECK, getChecked(file));
-            item.put(ITEM_FILE, file);
-            item.put(ITEM_ENABLED,
-                     (Boolean) (!file.getPath().equals(currentRoot) &&
-                                !file.getPath().equals(new VirtualFile(currentPath).getParent())));
             break;
         }
         mList.add(item);
@@ -426,7 +424,6 @@ public class FileDialog extends ListActivity {
         protected ImageView image;
     }
 
-
     public class FileDialogArrayAdapter extends ArrayAdapter<HashMap<String, Object>> {
 
         private final List<HashMap<String, Object>> list;
@@ -443,49 +440,94 @@ public class FileDialog extends ListActivity {
             View view = null;
             if (convertView == null) {
                 LayoutInflater inflator = context.getLayoutInflater();
-                view = inflator.inflate(R.layout.file_dialog_row_multi, null);
+                switch (selectionMode) {
+                case SelectionMode.MODE_OPEN_MULTISELECT:
+                case SelectionMode.MODE_OPEN_MULTISELECT_DB:
+                    view = inflator.inflate(R.layout.file_dialog_row_multi, null);
+                    break;
+                default:
+                    view = inflator.inflate(R.layout.file_dialog_row_single, null);
+                }
                 final ViewHolder viewHolder = new ViewHolder();
-                viewHolder.image = (ImageView) view.findViewById(R.id.fdrowimage);
+                viewHolder.image = (ImageView) view
+                        .findViewById(R.id.fdrowimage);
                 viewHolder.text = (TextView) view.findViewById(R.id.fdrowtext);
-                viewHolder.checkbox = (CheckBox) view.findViewById(R.id.fdrowcheck);
-                viewHolder.checkbox
-                    .setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                switch (selectionMode) {
+                case SelectionMode.MODE_OPEN_MULTISELECT:
+                case SelectionMode.MODE_OPEN_MULTISELECT_DB:
+                    viewHolder.checkbox = (CheckBox) view
+                            .findViewById(R.id.fdrowcheck);
+                    viewHolder.checkbox
+                            .setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 
-                            public void onCheckedChanged(CompoundButton buttonView,
-                                                             boolean isChecked) {
-                                @SuppressWarnings("unchecked")
-                                HashMap<String, Object> element =
-                                    (HashMap<String, Object>) viewHolder.checkbox
-                                    .getTag();
-                                element.put(ITEM_CHECK, buttonView.isChecked());
-                                VirtualFile f = (VirtualFile) element.get(ITEM_FILE);
-                                /* Avoid recursion for performance reasons */
-                                if (buttonView.isChecked()) {
-                                    selectedPaths.add(f.getPath());
-                                } else {
-                                    /* Is this a bug in the SDK ?? This will get fired
-                                     * upon scrolling from disabled elements, which is why
-                                     * we have to check whether the item is enabled.
-                                     */
-                                    if ((Boolean)element.get(ITEM_ENABLED)) {
-                                        removePath(f);
+                                public void onCheckedChanged(
+                                        CompoundButton buttonView,
+                                        boolean isChecked) {
+                                    @SuppressWarnings("unchecked")
+                                    HashMap<String, Object> element = (HashMap<String, Object>) viewHolder.checkbox
+                                            .getTag();
+                                    element.put(ITEM_CHECK,
+                                            buttonView.isChecked());
+                                    VirtualFile f = (VirtualFile) element
+                                            .get(ITEM_FILE);
+                                    /* Avoid recursion for performance reasons */
+                                    if (buttonView.isChecked()) {
+                                        selectedPaths.add(f.getPath());
+                                    } else {
+                                        /*
+                                         * Is this a bug in the SDK ?? This will
+                                         * get fired upon scrolling from
+                                         * disabled elements, which is why we
+                                         * have to check whether the item is
+                                         * enabled.
+                                         */
+                                        if ((Boolean) element.get(ITEM_ENABLED)) {
+                                            removePath(f);
+                                        }
                                     }
                                 }
-                            }
-                        });
+                            });
+                    viewHolder.checkbox.setTag(list.get(position));
+                    break;
+                }
                 view.setTag(viewHolder);
-                viewHolder.checkbox.setTag(list.get(position));
             } else {
                 view = convertView;
-                ((ViewHolder) view.getTag()).checkbox.setTag(list.get(position));
+                switch (selectionMode) {
+                case SelectionMode.MODE_OPEN_MULTISELECT:
+                case SelectionMode.MODE_OPEN_MULTISELECT_DB:
+                    ((ViewHolder) view.getTag()).checkbox.setTag(list
+                            .get(position));
+                    break;
+                }
             }
             ViewHolder holder = (ViewHolder) view.getTag();
             String filelabel = (String) list.get(position).get(ITEM_KEY);
+            VirtualFile curFile = (VirtualFile) list.get(position).get(ITEM_FILE);
+            if (curFile != null && selectedFile != null) {
+                if (curFile.getPath()==selectedFile.getPath()) {
+                    holder.text.setBackgroundResource(R.drawable.list_selector_selected);
+                } else {
+                    holder.text.setBackgroundResource(R.drawable.list_selector_normal);
+                }
+            } else {
+                if (holder.text != null) {
+                    holder.text.setBackgroundResource(R.drawable.list_selector_normal);
+                }
+            }
             holder.text.setText(filelabel);
-            Boolean enabled = (Boolean) list.get(position).get(ITEM_ENABLED);
-            holder.checkbox.setEnabled(enabled);
-            holder.checkbox.setChecked((Boolean) list.get(position).get(ITEM_CHECK) && enabled);
-            holder.image.setImageResource((Integer) list.get(position).get(ITEM_IMAGE));
+            switch (selectionMode) {
+            case SelectionMode.MODE_OPEN_MULTISELECT:
+            case SelectionMode.MODE_OPEN_MULTISELECT_DB:
+                Boolean enabled = (Boolean) list.get(position)
+                        .get(ITEM_ENABLED);
+                holder.checkbox.setEnabled(enabled);
+                holder.checkbox.setChecked((Boolean) list.get(position).get(
+                        ITEM_CHECK)
+                        && enabled);
+            }
+            holder.image.setImageResource((Integer) list.get(position).get(
+                    ITEM_IMAGE));
             return view;
         }
     }
@@ -560,7 +602,7 @@ public class FileDialog extends ListActivity {
                 break;
             default:
                 selectedFile = file;
-                v.setSelected(true);
+                /* v.setSelected(true); */
             }
         }
     }

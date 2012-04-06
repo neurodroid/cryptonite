@@ -253,11 +253,11 @@ public class Cryptonite extends FragmentActivity
         mTabsAdapter.addTab(mTabHost.newTabSpec(EXPERTTAB_TAG)
                 .setIndicator(getString(R.string.expert_tabtitle)),
                 ExpertFragment.class, null);
-        
+
         if (savedInstanceState != null) {
             mTabHost.setCurrentTabByTag(savedInstanceState.getString("tab"));
         }
-        
+
     }
 
     public static boolean isValidMntDir(Context context, File newMntDir) {
@@ -675,6 +675,9 @@ public class Cryptonite extends FragmentActivity
                             public void run() {
                                 if (pd.isShowing())
                                     pd.dismiss();
+                                if (localFragment != null) {
+                                    localFragment.updateMountButtons();
+                                }
                                 if (fEncfsOutput != null && fEncfsOutput.length() > 0) {
                                     textOut = encfsVersion + "\n" + fEncfsOutput;
                                 }

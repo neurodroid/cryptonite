@@ -20,7 +20,8 @@
 			        android:layout_width="0dip"
 			        android:layout_height="fill_parent"
 			        android:layout_weight=".7"
-			        android:text="@string/select" >
+			        android:text="@string/select"
+			        android:textSize="16dp" >
 			    </Button>
 
 			    <Button
@@ -28,8 +29,9 @@
 			        android:layout_width="0dip"
 			        android:layout_height="fill_parent"
 			        android:layout_weight=".3"
-			        android:text="@string/cancel" >
-			    </Button>
+			        android:text="@string/cancel"
+                    android:textSize="16dp" >
+                </Button>
 			</LinearLayout>
 
             <LinearLayout
@@ -44,7 +46,8 @@
                     android:layout_width="0dip"
                     android:layout_height="fill_parent"
                     android:layout_weight="0.7"
-                    android:text="@string/upload" >
+                    android:text="@string/upload"
+                    android:textSize="16dp" >
                 </Button>
 
                 <Button
@@ -52,7 +55,8 @@
                     android:layout_width="0dip"
                     android:layout_height="fill_parent"
                     android:layout_weight="0.3"
-                    android:text="@string/new_folder" >
+                    android:text="@string/new_folder"
+                    android:textSize="16dp" >
                 </Button>
             </LinearLayout>
 		
@@ -68,7 +72,8 @@
                     android:layout_width="0dip"
                     android:layout_height="fill_parent"
                     android:layout_weight="1.0"
-                    android:text="@string/create" >
+                    android:text="@string/create"
+                    android:textSize="16dp" >
                 </Button>
             </LinearLayout>
 
@@ -79,14 +84,20 @@
 		android:layout_above="@+id/fdLinearLayoutList">
 		<TextView android:id="@+id/path" android:layout_width="fill_parent"
 			android:layout_height="wrap_content" />
-		<ListView android:id="@android:id/list" android:layout_width="fill_parent"
-			android:layout_height="fill_parent" />
+
+		<ListView
+		    android:id="@android:id/list"
+		    android:layout_width="fill_parent"
+		    android:layout_height="fill_parent"
+		    android:background="#00000000"
+		    android:cacheColorHint="#00000000"
+		    android:drawSelectorOnTop="false"
+		    android:listSelector="@drawable/list_selector"
+		    android:choiceMode="singleChoice"/>
+
 		<TextView android:id="@android:id/empty"
 			android:layout_width="fill_parent" android:layout_height="fill_parent"
 			android:text="@string/no_data" />
 	</LinearLayout>
-
-
-
 
 </RelativeLayout>
