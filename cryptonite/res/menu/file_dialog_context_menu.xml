@@ -6,6 +6,10 @@
         android:title="@string/context_open"
     />
     <item
+        android:id="@+id/context_preview"
+        android:title="@string/context_preview"
+    />
+    <item
         android:id="@+id/context_export"
         android:title="@string/context_export"
     />

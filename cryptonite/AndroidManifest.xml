@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest 
     xmlns:android="http://schemas.android.com/apk/res/android" package="csh.cryptonite"
-    android:versionCode="40"
-    android:versionName="0.5.0">
+    android:versionCode="41"
+    android:versionName="0.5.1">
   <uses-sdk android:minSdkVersion="8" android:targetSdkVersion="13" />
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
   <uses-permission android:name="android.permission.INTERNET" />
@@ -44,7 +44,13 @@
         android:launchMode="singleTop">
     </activity>
 
-    <activity
+   <activity 
+        android:name="TextPreview"
+        android:label="@string/preview_name"
+        android:launchMode="singleTop">
+    </activity>
+   
+   <activity
         android:name="com.dropbox.client2.android.AuthActivity"
         android:configChanges="orientation|keyboard"
         android:launchMode="singleTask" >

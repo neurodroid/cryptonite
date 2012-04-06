@@ -32,6 +32,7 @@
 
 #include <string>
 #include <set>
+#include <vector>
 #include <iostream>
 #include <sstream>
 #include <cerrno>
@@ -200,6 +201,24 @@ public:
     int operator()(const void *buf, int count)
     {
 	return (int)write(_fd, buf, count);
+    }
+};
+
+class BufferOutput
+{
+    std::vector<unsigned char>* pbuf;
+public:
+    BufferOutput(std::vector<unsigned char>* buf) { pbuf = buf; }
+    ~BufferOutput() { }
+
+    int operator()(const void *buf, int count)
+    {
+        std::size_t oldsize = (*pbuf).size();
+        (*pbuf).resize(oldsize + count);
+        std::copy(&(static_cast<const unsigned char*>(buf)[0]),
+                  &(static_cast<const unsigned char*>(buf)[count]),
+                  &(*pbuf)[oldsize]);
+        return count;
     }
 };
 
@@ -460,6 +479,10 @@ extern "C" {
                                               jstring encodedname, jstring destdir,
                                               jboolean force_readable);
     
+    JNIEXPORT jbyteArray JNICALL
+    Java_csh_cryptonite_Cryptonite_jniDecryptToBuffer(JNIEnv * env, jobject thiz,
+                                                      jstring encodedname);
+
     JNIEXPORT jint JNICALL
     Java_csh_cryptonite_Cryptonite_jniEncrypt(JNIEnv * env, jobject thiz,
                                               jstring plainpath, jstring srcpath,
@@ -945,6 +968,42 @@ Java_csh_cryptonite_Cryptonite_jniDecrypt(JNIEnv* env, jobject thiz, jstring enc
         close(outfd);
     }
     return EXIT_SUCCESS;
+}
+
+JNIEXPORT jbyteArray JNICALL
+Java_csh_cryptonite_Cryptonite_jniDecryptToBuffer(JNIEnv* env, jobject thiz,
+                                                  jstring encodedname)
+{
+    int res = checkGRoot();
+
+    if (res != EXIT_SUCCESS) {
+        std::ostringstream err;
+        err << "EncFS root hasn't been initialized yet";
+        LOGE(err.str().c_str());
+        return 0;
+    }
+
+    jniStringManager mencodedname(env, encodedname);
+    std::string plainPath = gRootInfo->root->plainPath(mencodedname.c_str());
+
+    boost::shared_ptr<FileNode> node = 
+	gRootInfo->root->lookupNode( plainPath.c_str(), "encfsctl");
+
+    if(!node) {
+        std::ostringstream err;
+        err << "unable to open " << plainPath;
+        LOGE(err.str().c_str());
+        return 0;
+    }
+
+    std::vector<unsigned char> buf;
+    BufferOutput output(&buf);
+    processContents( gRootInfo, plainPath.c_str(), output );
+    
+    jbyteArray jb = env->NewByteArray(buf.size());
+    env->SetByteArrayRegion(jb, 0, buf.size(), (jbyte *)&buf[0]);
+ 
+    return jb;
 }
 
 JNIEXPORT jint JNICALL

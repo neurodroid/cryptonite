@@ -94,6 +94,14 @@ public class LocalStorage extends Storage {
         return (Cryptonite.jniDecrypt(encodedPath, targetPath, true) == Cryptonite.jniSuccess());
     }
 
+    @Override
+    public Cryptonite.DecodedBuffer decryptEncFSFileToBuffer(String encodedPath) {
+        
+        return new Cryptonite.DecodedBuffer(
+                Cryptonite.jniDecode(encodedPath),
+                Cryptonite.jniDecryptToBuffer(encodedPath));
+    }
+
     /** Walks a local file tree, copying decrypted files to a local
      * directory.
      * 

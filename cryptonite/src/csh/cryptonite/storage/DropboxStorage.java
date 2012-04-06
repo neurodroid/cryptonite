@@ -203,6 +203,27 @@ public class DropboxStorage extends Storage {
         return true;
     }
 
+    @Override
+    public Cryptonite.DecodedBuffer decryptEncFSFileToBuffer(String encodedPath) {
+        /* Remove local root directory to get Dropbox path */
+        String encFSLocalRoot = Cryptonite.jniEncode("/");
+        String dbLocalRoot = encFSLocalRoot.substring(0, 
+                encFSLocalRoot.length()-encFSPath.length());
+        String encFSDBRoot = encFSLocalRoot.substring(dbLocalRoot.length());
+        String dbPath = "/" + encodedPath.substring(dbLocalRoot.length()) ;
+        
+        try {
+            return dbDownloadDecodeToBuffer(dbPath.substring(encFSPath.length()),
+                                  encFSDBRoot, encFSLocalRoot);
+        } catch (IOException e) {
+            Log.e(Cryptonite.TAG, "Dropbox read fail: " + e.getMessage());
+            return null;
+        } catch (DropboxException e) {
+            Log.e(Cryptonite.TAG, "Dropbox read fail: " + e.getMessage());
+            return null;
+        }
+    }
+    
     /** Walks a Dropbox file tree, copying decrypted files to a local
      * directory.
      * Recursion is only used within encrypted subfolders!
@@ -513,6 +534,36 @@ public class DropboxStorage extends Storage {
         
         return (Cryptonite.jniDecrypt(encFSLocalRoot + srcPath, targetDir, forceReadable) == Cryptonite.jniSuccess());
     }
+
+    /** Download an encrypted file from Dropbox return the decrypted content.
+     * 
+     * @param srcPath Full encoded source path
+     * @param encFSDBRoot encFS path from Dropbox root
+     * @param encFSLocalRoot encFS path from local root
+     * @return decrypted content
+     * @throws IOException
+     * @throws DropboxException
+     */
+    private Cryptonite.DecodedBuffer dbDownloadDecodeToBuffer(String srcPath, String encFSDBRoot,
+            String encFSLocalRoot) throws IOException, DropboxException
+    {
+        String cachePath = encFSLocalRoot + srcPath;
+        File cacheFile = new File(cachePath);
+        cacheFile.getParentFile().mkdirs();
+
+        /* Download encoded file to cache dir */
+        FileOutputStream fos = new FileOutputStream(cachePath);
+        DBInterface.INSTANCE.getDBApi().getFile(encFSDBRoot + srcPath, null, fos, null);
+        fos.close();
+        
+        byte[] buf = Cryptonite.jniDecryptToBuffer(encFSLocalRoot + srcPath);
+        
+        cacheFile.delete();
+        
+        return new Cryptonite.DecodedBuffer(
+                Cryptonite.jniDecode(encFSLocalRoot + srcPath),
+                buf);
+    }
     
     /** Walks a Dropbox file tree, copying decrypted files to a local
      * directory (recursive part).
@@ -595,5 +646,5 @@ public class DropboxStorage extends Storage {
             }
         }
     }
-    
+
 }

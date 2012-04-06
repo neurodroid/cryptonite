@@ -74,6 +74,8 @@ public abstract class Storage {
     abstract public boolean uploadEncFSFile(String stripstr, String srcPath);
     
     abstract public boolean decryptEncFSFile(String encodedPath, String targetPath);
+
+    abstract public Cryptonite.DecodedBuffer decryptEncFSFileToBuffer(String encodedPath);
     
     abstract public boolean exportEncFSFiles(String[] exportPaths, String exportRoot, 
             String destDir);

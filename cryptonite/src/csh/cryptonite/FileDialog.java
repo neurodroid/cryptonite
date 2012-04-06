@@ -74,10 +74,11 @@ public class FileDialog extends ListActivity {
     private static final String ROOT = "/";
 
     public static final String START_PATH = "START_PATH";
-    public static final String RESULT_EXPORT_PATHS = "RESULT_EXPORT_PATHS";
-    public static final String RESULT_OPEN_PATH = "RESULT_OPEN_PATH";
-    public static final String RESULT_UPLOAD_PATH = "RESULT_UPLOAD_PATH";
-    public static final String RESULT_SELECTED_FILE = "RESULT_SELECTED_FILE";
+    public static final String RESULT_EXPORT_PATHS = "csh.cryptonite.RESULT_EXPORT_PATHS";
+    public static final String RESULT_OPEN_PATH = "csh.cryptonite.RESULT_OPEN_PATH";
+    public static final String RESULT_PREVIEW_PATH = "csh.cryptonite.RESULT_PREVIEW_PATH";
+    public static final String RESULT_UPLOAD_PATH = "csh.cryptonite.RESULT_UPLOAD_PATH";
+    public static final String RESULT_SELECTED_FILE = "csh.cryptonite.RESULT_SELECTED_FILE";
     public static final String SELECTION_MODE = "SELECTION_MODE";
     public static final String LABEL = "LABEL";
     public static final String BUTTON_LABEL = "BUTTON_LABEL";
@@ -164,6 +165,7 @@ public class FileDialog extends ListActivity {
                     case SelectionMode.MODE_OPEN_CREATE_DB:
                         if (currentPath != null) {
                             getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
+                            getIntent().putExtra(RESULT_PREVIEW_PATH, (String)null);
                             getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
                             getIntent().putExtra(RESULT_EXPORT_PATHS, currentPath);
                             if (selectedFile != null) {
@@ -651,9 +653,18 @@ public class FileDialog extends ListActivity {
         getIntent().putExtra(RESULT_EXPORT_PATHS, (String[])null);
         getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
         getIntent().putExtra(RESULT_OPEN_PATH, pathName);
+        getIntent().putExtra(RESULT_PREVIEW_PATH, (String)null);
         setResult(RESULT_OK, getIntent());
         finish();
         return true;
+      case R.id.context_preview:
+          getIntent().putExtra(RESULT_EXPORT_PATHS, (String[])null);
+          getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
+          getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
+          getIntent().putExtra(RESULT_PREVIEW_PATH, pathName);
+          setResult(RESULT_OK, getIntent());
+          finish();
+          return true;
       case R.id.context_export:
           showExportWarning(new String[]{pathName});
           return true;
@@ -768,6 +779,7 @@ public class FileDialog extends ListActivity {
                 public void onClick(DialogInterface dialog,
                         int which) {
                     getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
+                    getIntent().putExtra(RESULT_PREVIEW_PATH, (String)null);
                     getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
                     getIntent().putExtra(RESULT_EXPORT_PATHS, exportPaths);
                     setResult(RESULT_OK, getIntent());
@@ -784,6 +796,7 @@ public class FileDialog extends ListActivity {
             dialog.show();
         } else {
             getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
+            getIntent().putExtra(RESULT_PREVIEW_PATH, (String)null);
             getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
             getIntent().putExtra(RESULT_EXPORT_PATHS, exportPaths);
             setResult(RESULT_OK, getIntent());
@@ -853,6 +866,7 @@ public class FileDialog extends ListActivity {
                 public void onClick(DialogInterface dialog,
                         int which) {
                     getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
+                    getIntent().putExtra(RESULT_PREVIEW_PATH, (String)null);
                     getIntent().putExtra(RESULT_EXPORT_PATHS, (String[])null);
                     getIntent().putExtra(RESULT_UPLOAD_PATH, uploadPath);
                     setResult(RESULT_OK, getIntent());
@@ -869,6 +883,7 @@ public class FileDialog extends ListActivity {
             dialog.show();
         } else {
             getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
+            getIntent().putExtra(RESULT_PREVIEW_PATH, (String)null);
             getIntent().putExtra(RESULT_EXPORT_PATHS, (String[])null);
             getIntent().putExtra(RESULT_UPLOAD_PATH, uploadPath);
             setResult(RESULT_OK, getIntent());

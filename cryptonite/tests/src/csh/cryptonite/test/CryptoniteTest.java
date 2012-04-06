@@ -23,6 +23,7 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -43,7 +44,7 @@ public class CryptoniteTest extends ActivityInstrumentationTestCase2<Cryptonite>
 
     private Cryptonite mActivity;
     private int[] encfs_config_types;
-    private static final String TEST_STRING = "6*8";
+    private static final String TEST_STRING = "6*8 und sieben Füchse außerdem";
     private static final String TEST_DIR="csh.cryptonite.test";
     private static final String DECRYPTED_DIR_NAME = "/arthur/dent"; 
     private static final String DECRYPTED_FILE_NAME = "42";
@@ -236,6 +237,9 @@ public class CryptoniteTest extends ActivityInstrumentationTestCase2<Cryptonite>
             assertEquals(Cryptonite.jniSuccess(), 
                     Cryptonite.jniDecrypt(encodedName, decryptedCacheDir.getPath(), true));
             assertTrue((new File(targetPath)).exists());
+            
+            /* Decrypt to buffer */
+            byte[] buf = Cryptonite.jniDecryptToBuffer(encodedName);
         
             /* Read decrypted file */
             String output = "";
@@ -252,6 +256,16 @@ public class CryptoniteTest extends ActivityInstrumentationTestCase2<Cryptonite>
                 fail();
             }
             assertEquals(TEST_STRING, output);
+            
+            /* Check decrypted buffer */
+            String outputFromBuffer = "";
+            try {
+                outputFromBuffer = new String(buf, "utf-8");
+            } catch (UnsupportedEncodingException e) {
+                fail();
+            }
+            Log.v(Cryptonite.TAG, outputFromBuffer);
+            assertEquals(TEST_STRING, outputFromBuffer);
             
             /* Check md5 sum of large file */
             encodedName = Cryptonite.jniEncode(DECRYPTED_DIR_NAME + "/" + LARGE_FILE_NAME);
@@ -279,4 +293,5 @@ public class CryptoniteTest extends ActivityInstrumentationTestCase2<Cryptonite>
             Cryptonite.deleteDir(targetDir);
         }
     }
+    
 }

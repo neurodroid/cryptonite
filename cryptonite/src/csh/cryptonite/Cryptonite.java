@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URLConnection;
 import java.util.Arrays;
 
@@ -121,6 +122,7 @@ public class Cryptonite extends FragmentActivity
     public String currentDialogRootName = currentDialogRoot;
     private String currentReturnPath = "/";
     private String currentOpenPath = "/";
+    private String currentPreviewPath = "/";
     private String currentUploadPath = "/";
     private String currentPassword = "\0";
     private String encfsBrowseRoot = "/";
@@ -404,27 +406,32 @@ public class Cryptonite extends FragmentActivity
                     if (currentOpenPath != null && currentOpenPath.length() > 0) {
                         openEncFSFile(currentOpenPath, encfsBrowseRoot);
                     } else {
-                        currentUploadPath = data.getStringExtra(FileDialog.RESULT_UPLOAD_PATH);
-                        if (currentUploadPath != null && currentUploadPath.length() > 0) {
-                            /* select file to upload */
-                            currentDialogLabel = Cryptonite.this.getString(R.string.select_upload);
-                            currentDialogButtonLabel = Cryptonite.this.getString(R.string.select_upload_short);
-                            currentDialogMode = SelectionMode.MODE_OPEN_UPLOAD_SOURCE;
-                            if (externalStorageIsWritable()) {
-                                currentDialogStartPath = Environment
-                                        .getExternalStorageDirectory()
-                                        .getPath();
-                            } else {
-                                currentDialogStartPath = "/";
+                        currentPreviewPath = data.getStringExtra(FileDialog.RESULT_PREVIEW_PATH);
+                        if (currentPreviewPath != null && currentPreviewPath.length() > 0) {
+                            previewEncFSFile(currentPreviewPath, encfsBrowseRoot);
+                        } else {
+                            currentUploadPath = data.getStringExtra(FileDialog.RESULT_UPLOAD_PATH);
+                            if (currentUploadPath != null && currentUploadPath.length() > 0) {
+                                /* select file to upload */
+                                currentDialogLabel = Cryptonite.this.getString(R.string.select_upload);
+                                currentDialogButtonLabel = Cryptonite.this.getString(R.string.select_upload_short);
+                                currentDialogMode = SelectionMode.MODE_OPEN_UPLOAD_SOURCE;
+                                if (externalStorageIsWritable()) {
+                                    currentDialogStartPath = Environment
+                                            .getExternalStorageDirectory()
+                                            .getPath();
+                                } else {
+                                    currentDialogStartPath = "/";
+                                }
+                                currentDialogRoot = "/";
+                                currentDialogRootName = currentDialogRoot;
+                                if (StorageManager.INSTANCE.getEncFSStorage() != null) {
+                                    opMode = StorageManager.INSTANCE.getEncFSStorage().uploadMode;
+                                } else {
+                                    return;
+                                }
+                                launchBuiltinFileBrowser();
                             }
-                            currentDialogRoot = "/";
-                            currentDialogRootName = currentDialogRoot;
-                            if (StorageManager.INSTANCE.getEncFSStorage() != null) {
-                                opMode = StorageManager.INSTANCE.getEncFSStorage().uploadMode;
-                            } else {
-                                return;
-                            }
-                            launchBuiltinFileBrowser();
                         }
                     }
                 }
@@ -1340,10 +1347,8 @@ public class Cryptonite extends FragmentActivity
         return true;        
     }
     
-    private boolean fileOpen(String filePath) {
+    private String getMimeTypeFromExtension(String filePath) {
         /* Guess MIME type */
-        Uri data = Uri.fromFile(new File(filePath));
-
         MimeTypeMap myMime = MimeTypeMap.getSingleton();
         String extension = Storage.fileExt(filePath);
         String contentType;
@@ -1353,6 +1358,14 @@ public class Cryptonite extends FragmentActivity
             contentType = myMime.getMimeTypeFromExtension(extension.substring(1));
         }
         
+        return contentType;
+    }
+    
+    private boolean fileOpen(String filePath) {
+        String contentType = getMimeTypeFromExtension(filePath);
+        
+        Uri data = Uri.fromFile(new File(filePath));
+
         /* Attempt to guess file type from content; seemingly very unreliable */
         if (contentType == null) {
             try {
@@ -1387,6 +1400,101 @@ public class Cryptonite extends FragmentActivity
         return true;
     }
 
+    private boolean previewEncFSFile(final String encFSFilePath, String fileRoot) {
+
+        SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+        mApp.setupReadDirs(prefs.getBoolean("cb_extcache", false));
+
+        /* normalise path names */
+        String bRoot = new File(fileRoot).getPath();
+        String bPath = new File(encFSFilePath).getPath();
+        String stripstrtmp = bPath.substring(bRoot.length());
+        if (!stripstrtmp.startsWith("/")) {
+            stripstrtmp = "/" + stripstrtmp;
+        }
+
+        final String stripstr = stripstrtmp;
+        
+        /* Convert current path to encoded file name */
+        final String encodedPath = jniEncode(stripstr);
+
+        final ProgressDialog pd = ProgressDialog.show(this,
+                this.getString(R.string.wait_msg),
+                this.getString(R.string.decrypting), true);
+            new Thread(new Runnable(){
+                public void run() {
+                    final DecodedBuffer buf = StorageManager.INSTANCE.getEncFSStorage().decryptEncFSFileToBuffer(encodedPath);
+                    if (buf == null) {
+                        alertMsg = getString(R.string.decrypt_failure);
+                        Log.e(TAG, "Error while attempting to decrypt" + encodedPath);
+                    }
+                    runOnUiThread(new Runnable(){
+                        public void run() {
+                            if (pd.isShowing())
+                                pd.dismiss();
+                            if (!alertMsg.equals("")) {
+                                showAlert(R.string.error, alertMsg);
+                                return;
+                            }
+                            bufferPreview(buf);
+                        }
+                    });
+                }
+            }).start();
+        return true;        
+    }
+ 
+    public static class DecodedBuffer {
+        public final String fileName;
+        public final byte[] contents;
+        
+        public DecodedBuffer(String fn, byte[] buf) {
+            fileName = fn;
+            contents = buf;
+        }
+    }
+    
+    private void bufferPreview(final DecodedBuffer buf) {
+        /* Attempt to guess file type from extension */
+        String contentType = getMimeTypeFromExtension(buf.fileName);
+        
+        if (contentType != "text/plain" && Storage.fileExt(buf.fileName).length() > 0) {
+            new AlertDialog.Builder(Cryptonite.this)
+            .setIcon(android.R.drawable.ic_dialog_alert)
+            .setTitle(R.string.warning)
+            .setMessage(R.string.not_plain_text)
+            .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+                    textPreview(buf);
+                }
+            })
+            .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+                    return;
+                }
+            })
+            .create().show();
+        } else {
+            textPreview(buf);
+        }
+    }
+    
+    private void textPreview(DecodedBuffer buf) {
+        String str = "";
+        try {
+            str = new String(buf.contents, "utf-8");
+            Log.v(TAG, str);
+        } catch (UnsupportedEncodingException e) {
+            showAlert(R.string.error, R.string.unsupported_encoding);
+            return;
+        }
+        
+        Intent intent = new Intent(getBaseContext(), TextPreview.class);
+        intent.putExtra(TextPreview.PREVIEW_TITLE, buf.fileName);
+        intent.putExtra(TextPreview.PREVIEW_BODY, str);
+        startActivityForResult(intent, 0);
+    }
+    
     public static int hasExtterm(Context context) {
         ComponentName termComp = new ComponentName("jackpal.androidterm", "jackpal.androidterm.Term");
         try {
@@ -1530,6 +1638,7 @@ public class Cryptonite extends FragmentActivity
     public static native int jniCreate(String srcDir, String password, int config);
     public native int     jniExport(String[] exportPaths, String exportRoot, String destDir);
     public static native int jniDecrypt(String encodedName, String destDir, boolean forceReadable);
+    public static native byte[] jniDecryptToBuffer(String encodedName);
     public static native int jniEncrypt(String decodedPath, String srcPath, boolean forceReadable);
     public static native String jniDecode(String name);
     public static native String jniEncode(String name);
