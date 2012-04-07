@@ -10,6 +10,7 @@ import android.widget.EditText;
 public class TextPreview extends Activity {
 
     public static final String PREVIEW_TITLE="pv_title", PREVIEW_BODY="pv_body";
+    public static final int REQUEST_PREVIEW=31;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

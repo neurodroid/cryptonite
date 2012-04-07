@@ -88,6 +88,7 @@ import com.dropbox.client2.session.TokenPair;
 import csh.cryptonite.storage.Storage;
 import csh.cryptonite.storage.StorageManager;
 import csh.cryptonite.storage.VirtualFile;
+import csh.cryptonite.storage.VirtualFileSystem;
 
 public class Cryptonite extends FragmentActivity
 {
@@ -476,6 +477,8 @@ public class Cryptonite extends FragmentActivity
             break;
         case CreateEncFS.CREATE_DB:
         case CreateEncFS.CREATE_LOCAL:
+            break;
+        case TextPreview.REQUEST_PREVIEW:
             break;
         default:
             Log.e(TAG, "Unknown request code");
@@ -1087,6 +1090,7 @@ public class Cryptonite extends FragmentActivity
             if (StorageManager.INSTANCE.getEncFSStorageType() == Storage.STOR_DROPBOX) {
                 jniResetVolume();
                 StorageManager.INSTANCE.resetEncFSStorage();
+                VirtualFileSystem.INSTANCE.clear();
             }
         }
     }
@@ -1414,7 +1418,7 @@ public class Cryptonite extends FragmentActivity
         }
 
         final String stripstr = stripstrtmp;
-        
+
         /* Convert current path to encoded file name */
         final String encodedPath = jniEncode(stripstr);
 
@@ -1441,7 +1445,7 @@ public class Cryptonite extends FragmentActivity
                     });
                 }
             }).start();
-        return true;        
+        return true;
     }
  
     public static class DecodedBuffer {
@@ -1483,16 +1487,22 @@ public class Cryptonite extends FragmentActivity
         String str = "";
         try {
             str = new String(buf.contents, "utf-8");
-            Log.v(TAG, str);
         } catch (UnsupportedEncodingException e) {
             showAlert(R.string.error, R.string.unsupported_encoding);
             return;
         }
-        
+        String truncated = "";
+        /* Truncate at 100KB; couldn't find any documentation
+         * what the limit really is.
+         */
+        if (str.length() > 1e5) {
+            str = str.substring(0, (int)1e5);
+            truncated = " (truncated)";
+        }
         Intent intent = new Intent(getBaseContext(), TextPreview.class);
-        intent.putExtra(TextPreview.PREVIEW_TITLE, buf.fileName);
+        intent.putExtra(TextPreview.PREVIEW_TITLE, buf.fileName + truncated);
         intent.putExtra(TextPreview.PREVIEW_BODY, str);
-        startActivityForResult(intent, 0);
+        startActivityForResult(intent, TextPreview.REQUEST_PREVIEW);
     }
     
     public static int hasExtterm(Context context) {

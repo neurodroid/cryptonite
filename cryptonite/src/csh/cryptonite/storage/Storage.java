@@ -132,7 +132,6 @@ public abstract class Storage {
         
         String decodedPath = Cryptonite.jniDecode(encodedPath);
         
-        Log.i(Cryptonite.TAG, "Creating new file" + destRoot + "/" + decodedPath);
         VirtualFile file = new VirtualFile(destRoot + "/" + decodedPath);
         if (isDir) {
             file.mkdirs();
