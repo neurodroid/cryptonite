@@ -104,8 +104,7 @@ public class Cryptonite extends FragmentActivity
     public static final int FILEPICK_MODE=1;
     protected static final int MSG_SHOW_TOAST = 0;
     public static final int MY_PASSWORD_CONFIRM_DIALOG_ID = 4;
-    private static final int DIALOG_MARKETNOTFOUND=1, DIALOG_OI_UNAVAILABLE=2, DIALOG_JNI_FAIL=3, 
-            DIALOG_TERM_UNAVAILABLE=5;
+    private static final int DIALOG_JNI_FAIL=3;
     private static final int MAX_JNI_SIZE = 512;
     public static final int TERM_UNAVAILABLE=0, TERM_OUTDATED=1, TERM_AVAILABLE=2;
     public static final String MNTPNT = "/csh.cryptonite/mnt";
@@ -840,60 +839,6 @@ public class Cryptonite extends FragmentActivity
         Arrays.fill(fill, '\0');
         currentPassword = new String(fill);
     }
-    
-    @Override protected Dialog onCreateDialog(int id) {
-        switch (id) {
-         case DIALOG_OI_UNAVAILABLE:
-             return new AlertDialog.Builder(Cryptonite.this)
-                 .setIcon(R.drawable.ic_launcher_folder)
-                 .setTitle(R.string.app_oi_missing)
-                 .setPositiveButton(R.string.app_oi_get, new DialogInterface.OnClickListener() {
-                         public void onClick(DialogInterface dialog, int whichButton) {
-                             Intent intent = new Intent(Intent.ACTION_VIEW,
-                                                        Uri.parse("market://details?id=org.openintents.filemanager"));
-                             try {
-                                 startActivity(intent);
-                             } catch (ActivityNotFoundException e) {
-                                 showDialog(DIALOG_MARKETNOTFOUND);
-                             }
-                         }
-                     })
-                 .setNegativeButton(R.string.app_oi_builtin, new DialogInterface.OnClickListener() {
-                         public void onClick(DialogInterface dialog, int whichButton) {
-                             launchBuiltinFileBrowser();
-                         }
-                     })
-                 .create();
-         case DIALOG_TERM_UNAVAILABLE:
-             return new AlertDialog.Builder(Cryptonite.this)
-                 .setIcon(R.drawable.app_terminal)
-                 .setTitle(R.string.app_terminal_missing)
-                 .setPositiveButton(R.string.app_terminal_get, new DialogInterface.OnClickListener() {
-                         public void onClick(DialogInterface dialog, int whichButton) {
-                             Intent intent = new Intent(Intent.ACTION_VIEW,
-                                                        Uri.parse("market://details?id=jackpal.androidterm"));
-                             try {
-                                 startActivity(intent);
-                             } catch (ActivityNotFoundException e) {
-                                 showDialog(DIALOG_MARKETNOTFOUND);
-                             }
-                         }
-                     })
-                 .create();             
-         case DIALOG_MARKETNOTFOUND:
-             return new AlertDialog.Builder(Cryptonite.this)
-                 .setIcon(android.R.drawable.ic_dialog_alert)
-                 .setTitle(R.string.market_missing)
-                 .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                         public void onClick(DialogInterface dialog, int whichButton) {
-                             /* Return silently */
-                         }
-                     })
-                 .create();
-        }
-
-        return null;
-    }
 
     /** Creates an options menu */
     @Override public boolean onCreateOptionsMenu(Menu menu) {
@@ -997,7 +942,8 @@ public class Cryptonite extends FragmentActivity
             try {
                 startActivityForResult(intent, REQUEST_CODE_PICK_FILE_OR_DIRECTORY);
             } catch (ActivityNotFoundException e) {
-                showDialog(DIALOG_OI_UNAVAILABLE);
+                OIUnavailableDialogFragment newFragment = OIUnavailableDialogFragment.newInstance();
+                newFragment.show(getSupportFragmentManager(), "dialog");
             }
         } else {
             launchBuiltinFileBrowser();
@@ -1523,7 +1469,8 @@ public class Cryptonite extends FragmentActivity
              * offer to download
              */
             if (hasExtterm(getBaseContext())!=TERM_AVAILABLE) {
-                showDialog(DIALOG_TERM_UNAVAILABLE);
+                TermUnavailableDialogFragment newFragment = TermUnavailableDialogFragment.newInstance();
+                newFragment.show(getSupportFragmentManager(), "dialog");
             } else {
                 ComponentName termComp = new ComponentName("jackpal.androidterm", "jackpal.androidterm.Term");
                 try {
@@ -1673,6 +1620,73 @@ public class Cryptonite extends FragmentActivity
         }
     }
     
+    public static class OIUnavailableDialogFragment extends DialogFragment {
+
+        public static OIUnavailableDialogFragment newInstance() {
+            OIUnavailableDialogFragment frag = new OIUnavailableDialogFragment();
+            return frag;
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            return new AlertDialog.Builder((Cryptonite) getActivity())
+                    .setIcon(R.drawable.ic_launcher_folder)
+                    .setTitle(R.string.app_oi_missing)
+                    .setPositiveButton(R.string.app_oi_get,
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog,
+                                        int whichButton) {
+                                    Intent intent = new Intent(
+                                            Intent.ACTION_VIEW,
+                                            Uri.parse("market://details?id=org.openintents.filemanager"));
+                                    try {
+                                        startActivity(intent);
+                                    } catch (ActivityNotFoundException e) {
+                                        ((Cryptonite) getActivity()).showAlert(R.string.warning,
+                                                R.string.market_missing);
+                                    }
+                                }
+                            })
+                    .setNegativeButton(R.string.app_oi_builtin,
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog,
+                                        int whichButton) {
+                                    ((Cryptonite) getActivity()).launchBuiltinFileBrowser();
+                                }
+                            }).create();
+        }
+    }
+
+    public static class TermUnavailableDialogFragment extends DialogFragment {
+
+        public static TermUnavailableDialogFragment newInstance() {
+            TermUnavailableDialogFragment frag = new TermUnavailableDialogFragment();
+            return frag;
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            return new AlertDialog.Builder((Cryptonite)getActivity())
+                    .setIcon(R.drawable.app_terminal)
+                    .setTitle(R.string.app_terminal_missing)
+                    .setPositiveButton(R.string.app_terminal_get,
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog,
+                                        int whichButton) {
+                                    Intent intent = new Intent(
+                                            Intent.ACTION_VIEW,
+                                            Uri.parse("market://details?id=jackpal.androidterm"));
+                                    try {
+                                        startActivity(intent);
+                                    } catch (ActivityNotFoundException e) {
+                                        ((Cryptonite)getActivity()).showAlert(R.string.warning,
+                                                R.string.market_missing);
+                                    }
+                                }
+                            }).create();
+        }
+    }
+
     /* Native methods are implemented by the
      * 'cryptonite' native library, which is packaged
      * with this application.
@@ -1707,7 +1721,6 @@ public class Cryptonite extends FragmentActivity
                 new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog,
                     int which) {
-                removeDialog(DIALOG_JNI_FAIL);
                 Intent emailIntent = new Intent(android.content.Intent.ACTION_SEND);
                 emailIntent.setType("plain/text");
                 emailIntent.putExtra(android.content.Intent.EXTRA_EMAIL,
@@ -1724,7 +1737,6 @@ public class Cryptonite extends FragmentActivity
                 new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog,
                     int which) {
-                removeDialog(DIALOG_JNI_FAIL);
                 Intent reportIntent = new Intent(android.content.Intent.ACTION_VIEW);
                 String url = "https://code.google.com/p/cryptonite/issues/detail?id=9";
                 reportIntent.setData(Uri.parse(url));
@@ -1736,7 +1748,6 @@ public class Cryptonite extends FragmentActivity
                 new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog,
                     int which) {
-                removeDialog(DIALOG_JNI_FAIL);
                 finish();
             }
         });

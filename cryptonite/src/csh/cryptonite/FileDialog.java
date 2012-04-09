@@ -35,12 +35,13 @@ import csh.cryptonite.storage.VirtualFile;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.FragmentActivity;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
@@ -56,7 +57,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
-// import android.widget.EditText;
+import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -64,7 +65,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class FileDialog extends ListActivity {
+public class FileDialog extends FragmentActivity {
 
     private static final String ITEM_KEY = "key";
     private static final String ITEM_IMAGE = "image";
@@ -91,7 +92,6 @@ public class FileDialog extends ListActivity {
     private String currentRootLabel = ROOT;
     private List<String> path = null;
     private TextView myPath;
-    /* private EditText mFileName; */
     private ArrayList<HashMap<String, Object>> mList;
 
     private Button selectButton;
@@ -113,6 +113,8 @@ public class FileDialog extends ListActivity {
 
     private boolean localFilePickerStorage;
 
+    private ListView mListView;
+
     /** Called when the activity is first created. */
     @Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -121,8 +123,9 @@ public class FileDialog extends ListActivity {
 
         setContentView(R.layout.file_dialog_main);
         
+        mListView = (ListView) findViewById(android.R.id.list);
+
         myPath = (TextView) findViewById(R.id.path);
-        /* mFileName = (EditText) findViewById(R.id.fdEditTextFile); */
 
         inputManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
 
@@ -216,7 +219,8 @@ public class FileDialog extends ListActivity {
         createButton.setOnClickListener(new OnClickListener() {
 
             public void onClick(View v) {
-                showDialog(NEW_FOLDER_DIALOG_ID);
+                DialogFragment newFragment = CreateFolderDialogFragment.newInstance();
+                newFragment.show(getSupportFragmentManager(), "dialog");
             }
 
         });
@@ -234,7 +238,8 @@ public class FileDialog extends ListActivity {
         newFolderButton.setOnClickListener(new OnClickListener() {
             
             public void onClick(View v) {
-                showDialog(NEW_FOLDER_DIALOG_ID);
+                DialogFragment newFragment = CreateFolderDialogFragment.newInstance();
+                newFragment.show(getSupportFragmentManager(), "dialog");
             }
         });
         
@@ -249,9 +254,20 @@ public class FileDialog extends ListActivity {
         switch (selectionMode) {
         case SelectionMode.MODE_OPEN_MULTISELECT:
         case SelectionMode.MODE_OPEN_MULTISELECT_DB:
-            registerForContextMenu(getListView());
+            registerForContextMenu(mListView);
             break;
         }
+        
+        mListView.setOnItemClickListener(new ListView.OnItemClickListener() {
+
+            @Override
+            public void onItemClick(AdapterView<?> l, View v, int position,
+                    long id) {
+                onListItemClick((ListView)l, v, position, id);
+            }
+            
+        });
+
     }
 
     private void getDir(String dirPath, String rootPath, String rootName) {
@@ -271,7 +287,7 @@ public class FileDialog extends ListActivity {
             getDirImpl(dirPath, rootPath, rootName);
         }
         if (position != null && useAutoSelection) {
-            getListView().setSelection(position);
+            mListView.setSelection(position);
         }
 
     }
@@ -345,7 +361,7 @@ public class FileDialog extends ListActivity {
         ArrayAdapter<HashMap<String, Object>> fileList = 
                 new FileDialogArrayAdapter(this, mList);            
         fileList.notifyDataSetChanged();
-        setListAdapter(fileList);
+        mListView.setAdapter(fileList);
 
         switch (selectionMode) {
         case SelectionMode.MODE_OPEN:
@@ -357,11 +373,11 @@ public class FileDialog extends ListActivity {
                     R.layout.file_dialog_row_single,
                     new String[] { ITEM_KEY, ITEM_IMAGE },
                     new int[] {R.id.fdrowtext, R.id.fdrowimage }); */
-            getListView().setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+            mListView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
             break;
         }
         default: {
-            getListView().setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+            mListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
         }
         }
 
@@ -562,8 +578,7 @@ public class FileDialog extends ListActivity {
         }
     }
 
-    @Override
-	protected void onListItemClick(ListView l, View v, int position, long id) {
+    private void onListItemClick(ListView l, View v, int position, long id) {
 
         VirtualFile file = new VirtualFile(path.get(position));
 
@@ -690,13 +705,13 @@ public class FileDialog extends ListActivity {
              builder.setView(layout);
              builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
                      public void onClick(DialogInterface dialog, int whichButton) {
-                         removeDialog(NEW_FOLDER_DIALOG_ID);
+
                      }
                  });
              builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                      public void onClick(DialogInterface dialog, int which) {
                          String newFolderString = newFolder.getText().toString();
-                         removeDialog(NEW_FOLDER_DIALOG_ID);
+
                          if (newFolderString.length() > 0) {
                              switch (selectionMode) {
                              case SelectionMode.MODE_OPEN_CREATE:
@@ -715,6 +730,51 @@ public class FileDialog extends ListActivity {
         }
         
         return null;
+    }
+    
+    public static class CreateFolderDialogFragment extends DialogFragment {
+
+        public static CreateFolderDialogFragment newInstance() {
+            CreateFolderDialogFragment frag = new CreateFolderDialogFragment();
+            return frag;
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            LayoutInflater inflater = (LayoutInflater) ((FileDialog)getActivity())
+                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+
+            final View layout = inflater.inflate(R.layout.new_folder_dialog,
+                    (ViewGroup) ((FileDialog)getActivity()).findViewById(R.id.new_folder_root));
+            final EditText newFolder = (EditText) layout.findViewById(R.id.EditText_NewFolder);
+
+            AlertDialog.Builder builder = new AlertDialog.Builder((FileDialog)getActivity());
+            builder.setTitle(R.string.title_new_folder);
+            builder.setView(layout);
+            builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+
+                    }
+                });
+            builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        String newFolderString = newFolder.getText().toString();
+                        if (newFolderString.length() > 0) {
+                            switch (((FileDialog)getActivity()).selectionMode) {
+                            case SelectionMode.MODE_OPEN_CREATE:
+                            case SelectionMode.MODE_OPEN_CREATE_DB:
+                                ((FileDialog)getActivity()).mkDir(newFolderString);
+                                break;
+                            default:
+                                ((FileDialog)getActivity()).showCreateEncFSFolderWarning(newFolderString);
+                            }
+                        } else {
+                            ((FileDialog)getActivity()).showToast(R.string.new_folder_fail);
+                        }
+                    }
+                });
+            return builder.create();
+        }
     }
     
     private void setSelectVisible(View v) {

@@ -33,7 +33,6 @@ import java.io.FileNotFoundException;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.DialogInterface.OnClickListener;
 import android.os.AsyncTask;
 import android.widget.Toast;
 
@@ -82,12 +81,16 @@ public class UploadEncrypted extends AsyncTask<Void, Long, Boolean> {
         mDialog.setMessage(mContext.getString(R.string.dropbox_uploading) + " " + file.getName());
         mDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         mDialog.setProgress(0);
-        mDialog.setButton(mContext.getString(R.string.cancel), new OnClickListener() {
+        mDialog.setCancelable(false);
+        mDialog.setButton(DialogInterface.BUTTON_NEGATIVE, 
+                mContext.getString(R.string.cancel), new DialogInterface.OnClickListener()
+        {
+            @Override
             public void onClick(DialogInterface dialog, int which) {
-                // This will cancel the putFile operation
                 mRequest.abort();
+                dialog.dismiss();
             }
-        }); 
+        });
         mDialog.show();
     }
 
