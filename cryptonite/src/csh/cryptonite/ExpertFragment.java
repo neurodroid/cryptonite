@@ -1,7 +1,8 @@
 package csh.cryptonite;
 
+import com.actionbarsherlock.app.SherlockFragment;
+
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,7 +10,7 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 
-public class ExpertFragment extends Fragment {
+public class ExpertFragment extends SherlockFragment {
     
     public TextView tv;
     

@@ -1,13 +1,14 @@
 package csh.cryptonite;
 
-import android.app.Activity;
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 
-public class TextPreview extends Activity {
+public class TextPreview extends SherlockFragmentActivity {
 
     public static final String PREVIEW_TITLE="pv_title", PREVIEW_BODY="pv_body";
     public static final int REQUEST_PREVIEW=31;

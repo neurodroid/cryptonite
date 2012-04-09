@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import com.actionbarsherlock.app.SherlockDialogFragment;
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+
 import csh.cryptonite.storage.DropboxStorage;
 import csh.cryptonite.storage.LocalStorage;
 import csh.cryptonite.storage.Storage;
@@ -18,8 +21,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Environment;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -30,7 +31,7 @@ import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.Toast;
 
-public class CreateEncFS extends FragmentActivity {
+public class CreateEncFS extends SherlockFragmentActivity {
 
     public static final int CREATE_LOCAL=20, CREATE_DB=21;
     public static final int CONFIG_PARANOIA=0, CONFIG_STANDARD=1, 
@@ -164,7 +165,7 @@ public class CreateEncFS extends FragmentActivity {
     }
     
     private void showPasswordDialog(boolean confirm) {
-        DialogFragment newFragment = PasswordDialogFragment.newInstance(confirm);
+        SherlockDialogFragment newFragment = PasswordDialogFragment.newInstance(confirm);
         newFragment.show(getSupportFragmentManager(), "dialog");
     }
 
@@ -191,7 +192,7 @@ public class CreateEncFS extends FragmentActivity {
         }
     }
 
-    public static class PasswordDialogFragment extends DialogFragment {
+    public static class PasswordDialogFragment extends SherlockDialogFragment {
 
         public static PasswordDialogFragment newInstance(boolean confirm) {
             PasswordDialogFragment frag = new PasswordDialogFragment();

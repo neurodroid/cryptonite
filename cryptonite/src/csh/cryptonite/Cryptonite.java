@@ -55,9 +55,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
 
-import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
 
@@ -69,9 +67,6 @@ import android.util.Base64;
 import android.util.Log;
 
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -81,6 +76,11 @@ import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.actionbarsherlock.app.SherlockDialogFragment;
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuInflater;
+import com.actionbarsherlock.view.MenuItem;
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.session.AccessTokenPair;
@@ -93,7 +93,7 @@ import csh.cryptonite.storage.StorageManager;
 import csh.cryptonite.storage.VirtualFile;
 import csh.cryptonite.storage.VirtualFileSystem;
 
-public class Cryptonite extends FragmentActivity
+public class Cryptonite extends SherlockFragmentActivity
 {
 
     private static final int REQUEST_PREFS=0, REQUEST_CODE_PICK_FILE_OR_DIRECTORY=1;
@@ -619,7 +619,7 @@ public class Cryptonite extends FragmentActivity
             ft.remove(prev);
         }
         ft.addToBackStack(null);
-        DialogFragment newFragment = PasswordDialogFragment.newInstance();
+        SherlockDialogFragment newFragment = PasswordDialogFragment.newInstance();
         newFragment.show(ft, "dialog");
     }
 
@@ -842,9 +842,9 @@ public class Cryptonite extends FragmentActivity
 
     /** Creates an options menu */
     @Override public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
+        MenuInflater inflater = getSherlock().getMenuInflater();
         inflater.inflate(R.menu.menu, menu);
-        return true;
+        return super.onCreateOptionsMenu(menu);
     }
 
     /** Opens the options menu */
@@ -868,9 +868,8 @@ public class Cryptonite extends FragmentActivity
              } catch (PackageManager.NameNotFoundException e) {
                  return false;
              }
-         default:
-             return super.onOptionsItemSelected(item);
         }
+        return super.onOptionsItemSelected(item);
     }
 
     private static class AboutDialogBuilder {
@@ -1572,7 +1571,7 @@ public class Cryptonite extends FragmentActivity
         }
     }
     
-    public static class PasswordDialogFragment extends DialogFragment {
+    public static class PasswordDialogFragment extends SherlockDialogFragment {
 
         public static PasswordDialogFragment newInstance() {
             PasswordDialogFragment frag = new PasswordDialogFragment();
@@ -1620,7 +1619,7 @@ public class Cryptonite extends FragmentActivity
         }
     }
     
-    public static class OIUnavailableDialogFragment extends DialogFragment {
+    public static class OIUnavailableDialogFragment extends SherlockDialogFragment {
 
         public static OIUnavailableDialogFragment newInstance() {
             OIUnavailableDialogFragment frag = new OIUnavailableDialogFragment();
@@ -1657,7 +1656,7 @@ public class Cryptonite extends FragmentActivity
         }
     }
 
-    public static class TermUnavailableDialogFragment extends DialogFragment {
+    public static class TermUnavailableDialogFragment extends SherlockDialogFragment {
 
         public static TermUnavailableDialogFragment newInstance() {
             TermUnavailableDialogFragment frag = new TermUnavailableDialogFragment();

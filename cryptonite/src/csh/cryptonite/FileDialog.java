@@ -28,6 +28,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 
+import com.actionbarsherlock.app.SherlockDialogFragment;
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuItem.OnMenuItemClickListener;
+
 import csh.cryptonite.storage.Storage;
 import csh.cryptonite.storage.StorageManager;
 import csh.cryptonite.storage.VirtualFile;
@@ -40,8 +45,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.app.FragmentActivity;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
@@ -65,7 +68,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class FileDialog extends FragmentActivity {
+public class FileDialog extends SherlockFragmentActivity {
 
     private static final String ITEM_KEY = "key";
     private static final String ITEM_IMAGE = "image";
@@ -205,21 +208,11 @@ public class FileDialog extends FragmentActivity {
             layoutCreate.setVisibility(View.GONE);
         }
 
-        final Button cancelButton = (Button) findViewById(R.id.fdButtonCancel);
-        cancelButton.setOnClickListener(new OnClickListener() {
-
-                public void onClick(View v) {
-                    setResult(RESULT_CANCELED, getIntent());
-                    finish();
-                }
-
-            });
-
         final Button createButton = (Button) findViewById(R.id.fdButtonCreate);
         createButton.setOnClickListener(new OnClickListener() {
 
             public void onClick(View v) {
-                DialogFragment newFragment = CreateFolderDialogFragment.newInstance();
+                SherlockDialogFragment newFragment = CreateFolderDialogFragment.newInstance();
                 newFragment.show(getSupportFragmentManager(), "dialog");
             }
 
@@ -238,7 +231,7 @@ public class FileDialog extends FragmentActivity {
         newFolderButton.setOnClickListener(new OnClickListener() {
             
             public void onClick(View v) {
-                DialogFragment newFragment = CreateFolderDialogFragment.newInstance();
+                SherlockDialogFragment newFragment = CreateFolderDialogFragment.newInstance();
                 newFragment.show(getSupportFragmentManager(), "dialog");
             }
         });
@@ -270,6 +263,26 @@ public class FileDialog extends FragmentActivity {
 
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        menu.add(getString(R.string.cancel))
+            .setIcon(android.R.drawable.ic_menu_revert).setOnMenuItemClickListener(new OnMenuItemClickListener() {
+
+                @Override
+                public boolean onMenuItemClick(
+                        com.actionbarsherlock.view.MenuItem item)
+                {
+                    setResult(RESULT_CANCELED, getIntent());
+                    finish();
+                    return true;
+                }
+                
+            })
+            .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        
+        return super.onCreateOptionsMenu(menu);
+    }
+    
     private void getDir(String dirPath, String rootPath, String rootName) {
 
         boolean useAutoSelection = dirPath.length() < currentPath.length();
@@ -732,7 +745,7 @@ public class FileDialog extends FragmentActivity {
         return null;
     }
     
-    public static class CreateFolderDialogFragment extends DialogFragment {
+    public static class CreateFolderDialogFragment extends SherlockDialogFragment {
 
         public static CreateFolderDialogFragment newInstance() {
             CreateFolderDialogFragment frag = new CreateFolderDialogFragment();
@@ -1061,4 +1074,5 @@ public class FileDialog extends FragmentActivity {
             return StorageManager.INSTANCE.getEncFSStorage();
         }
     }
+    
 }

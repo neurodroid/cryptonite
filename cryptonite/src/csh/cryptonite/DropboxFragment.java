@@ -1,9 +1,10 @@
 package csh.cryptonite;
 
+import com.actionbarsherlock.app.SherlockFragment;
+
 import csh.cryptonite.storage.Storage;
 import csh.cryptonite.storage.StorageManager;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,7 +12,7 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 
-public class DropboxFragment extends Fragment {
+public class DropboxFragment extends SherlockFragment {
     
     public TextView tv;
     public Button buttonAuth, buttonDecrypt, buttonBrowseDecrypted,

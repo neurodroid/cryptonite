@@ -2,6 +2,8 @@ package csh.cryptonite;
 
 import java.io.IOException;
 
+import com.actionbarsherlock.app.SherlockFragment;
+
 import csh.cryptonite.storage.Storage;
 import csh.cryptonite.storage.StorageManager;
 
@@ -9,7 +11,6 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.Environment;
-import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,7 +20,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class LocalFragment extends Fragment {
+public class LocalFragment extends SherlockFragment {
     
     public TextView tv;
     public TextView tvMountInfo;

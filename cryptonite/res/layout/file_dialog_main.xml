@@ -20,19 +20,11 @@
 			        android:id="@+id/fdButtonSelect"
 			        android:layout_width="0dip"
 			        android:layout_height="fill_parent"
-			        android:layout_weight=".7"
+			        android:layout_weight="1.0"
 			        android:text="@string/select"
 			        android:textSize="16dp" >
 			    </Button>
 
-			    <Button
-			        android:id="@+id/fdButtonCancel"
-			        android:layout_width="0dip"
-			        android:layout_height="fill_parent"
-			        android:layout_weight=".3"
-			        android:text="@string/cancel"
-                    android:textSize="16dp" >
-                </Button>
 			</LinearLayout>
 
             <LinearLayout

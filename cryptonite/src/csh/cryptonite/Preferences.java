@@ -18,6 +18,8 @@ package csh.cryptonite;
 
 import java.io.File;
 
+import com.actionbarsherlock.app.SherlockPreferenceActivity;
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -27,15 +29,14 @@ import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
 import android.os.Environment;
 
-import android.preference.Preference;
-import android.preference.PreferenceActivity;
 import android.preference.CheckBoxPreference;
+import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
 
 import android.util.Log;
 import android.widget.Toast;
 
-public class Preferences extends PreferenceActivity {
+public class Preferences extends SherlockPreferenceActivity {
 
     private CheckBoxPreference chkEnableBuiltin;
     private CheckBoxPreference chkNorris;
