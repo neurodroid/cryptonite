@@ -12,23 +12,27 @@ import csh.cryptonite.storage.Storage;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.Toast;
 
-public class CreateEncFS extends ListActivity {
+public class CreateEncFS extends FragmentActivity {
 
     public static final int CREATE_LOCAL=20, CREATE_DB=21;
     public static final int CONFIG_PARANOIA=0, CONFIG_STANDARD=1, 
@@ -50,6 +54,10 @@ public class CreateEncFS extends ListActivity {
     private Storage mStorage;
 
     private ArrayList<HashMap<String, String>> mList;
+    
+    private ListView mListView;
+    
+    private boolean showPassword = false;
 
     /** Called when the activity is first created. */
     @Override public void onCreate(Bundle savedInstanceState) {
@@ -59,6 +67,8 @@ public class CreateEncFS extends ListActivity {
         
         setContentView(R.layout.create);
         
+        mListView = (ListView) findViewById(android.R.id.list);
+
         if (getIntent().getIntExtra(START_MODE, CREATE_DB) == CREATE_DB) {
             mStorage = new DropboxStorage(this, ((CryptoniteApp)getApplication()));
         } else {
@@ -73,8 +83,19 @@ public class CreateEncFS extends ListActivity {
                 new String[] { ITEM_TITLE, ITEM_DESC },
                 new int[] {R.id.create_rowtext, R.id.create_rowdesc });
         methodList.notifyDataSetChanged();
-        setListAdapter(methodList);
-       // view.setOnItemClickListener(this); 
+        mListView.setAdapter(methodList);
+        
+        mListView.setOnItemClickListener(new ListView.OnItemClickListener() {
+
+            @Override
+            public void onItemClick(AdapterView<?> l, View v, int position,
+                    long id) {
+                onListItemClick((ListView)l, v, position, id);
+            }
+            
+        });
+
+        showPassword = false;
     }
     
     void setupList() {
@@ -96,8 +117,7 @@ public class CreateEncFS extends ListActivity {
         }
     }
 
-    @Override
-    protected void onListItemClick(ListView l, View v, int position, long id) {
+    private void onListItemClick(ListView l, View v, int position, long id) {
 
         currentConfig = position;
         
@@ -134,9 +154,28 @@ public class CreateEncFS extends ListActivity {
         
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        
+        if (showPassword) {
+            showPassword = false;
+            showPasswordDialog(false);
+        }
+        
+    }
+    
+    private void showPasswordDialog(boolean confirm) {
+        DialogFragment newFragment = PasswordDialogFragment.newInstance(confirm);
+        newFragment.show(getSupportFragmentManager(), "dialog");
+    }
+
+    
     /** Called upon exit from other activities */
-    public synchronized void onActivityResult(final int requestCode,
-                                              int resultCode, final Intent data) {
+    @Override
+    public synchronized void onActivityResult(final int requestCode, 
+            int resultCode, final Intent data)
+    {
 
         switch (requestCode) {
         case SelectionMode.MODE_OPEN_CREATE:
@@ -145,8 +184,7 @@ public class CreateEncFS extends ListActivity {
             if (resultCode == Activity.RESULT_OK && data != null) {
                 currentReturnPath = data.getStringExtra(FileDialog.RESULT_EXPORT_PATHS);
                 if (currentReturnPath != null ) {
-                    showDialog(Cryptonite.MY_PASSWORD_DIALOG_ID);
-
+                    showPassword = true;
                 }
             }
             break;
@@ -155,80 +193,90 @@ public class CreateEncFS extends ListActivity {
         }
     }
 
-    @Override protected Dialog onCreateDialog(int id) {
-        LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        final View layout = inflater.inflate(R.layout.password_dialog, (ViewGroup) findViewById(R.id.root));
-        final EditText password = (EditText) layout.findViewById(R.id.EditText_Pwd);
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setView(layout);
+    public static class PasswordDialogFragment extends DialogFragment {
 
-        switch (id) {
-         case Cryptonite.MY_PASSWORD_DIALOG_ID:
-             builder.setTitle(R.string.title_password);
-             builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-                     public void onClick(DialogInterface dialog, int whichButton) {
-                         removeDialog(Cryptonite.MY_PASSWORD_DIALOG_ID);
-                     }
-                 });
-             builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                     public void onClick(DialogInterface dialog, int which) {
-                         passwordAttempt = password.getText().toString();
-                         removeDialog(Cryptonite.MY_PASSWORD_DIALOG_ID);
-                         if (passwordAttempt.length() > 0) {
-                             showDialog(Cryptonite.MY_PASSWORD_CONFIRM_DIALOG_ID);
-                         } else {
-                             showToast(R.string.empty_password);
-                         }
-                     }
-                 });
-             return builder.create();
-         case Cryptonite.MY_PASSWORD_CONFIRM_DIALOG_ID:
-             builder.setTitle(R.string.title_confirm_password);
-             builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-                     public void onClick(DialogInterface dialog, int whichButton) {
-                         removeDialog(Cryptonite.MY_PASSWORD_CONFIRM_DIALOG_ID);
-                     }
-                 });
-             builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                     public void onClick(DialogInterface dialog, int which) {
-                         passwordString = password.getText().toString();
-                         removeDialog(Cryptonite.MY_PASSWORD_CONFIRM_DIALOG_ID);
-                         if (passwordString.length() > 0) {
-                             if (!passwordString.equals(passwordAttempt)) {
-                                 nullPasswords();
-                                 showToast(R.string.pw_mismatch);
-                                 return;
-                             }
-                             final ProgressDialog pd = ProgressDialog.show(CreateEncFS.this,
-                                     getString(R.string.wait_msg),
-                                     getString(R.string.creating_encfs), true);
-                             new Thread(new Runnable(){
-                                 public void run(){
-                                     File browseRoot = getPrivateDir(CryptoniteApp.BROWSEPNT, Context.MODE_PRIVATE);
-                                     mStorage.createEncFS(currentReturnPath, passwordString, browseRoot, currentConfig); 
-                                     runOnUiThread(new Runnable(){
-                                         public void run() {
-                                             if (pd.isShowing())
-                                                 pd.dismiss();
-                                             nullPasswords();
-                                             Cryptonite.jniResetVolume();
-                                             setResult(RESULT_OK, getIntent());
-                                             finish();
-                                         }
-                                     });
-                                 }
-                             }).start();
-                             
-                         } else {
-                             showToast(R.string.empty_password);
-                         }
-                     }
-                 });
-             return builder.create();
-         }
-        return null;
+        public static PasswordDialogFragment newInstance(boolean confirm) {
+            PasswordDialogFragment frag = new PasswordDialogFragment();
+            Bundle args = new Bundle();
+            args.putBoolean("confirm", confirm);
+            frag.setArguments(args);
+            return frag;
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            final boolean confirm = getArguments().getBoolean("confirm");
+            LayoutInflater inflater = (LayoutInflater) getActivity()
+                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            View layout = inflater.inflate(R.layout.password_dialog, 
+                    (ViewGroup) getActivity().findViewById(R.id.root));
+            final EditText password = (EditText) layout.findViewById(R.id.EditText_Pwd);
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            builder.setView(layout);
+            if (confirm) {
+                builder.setTitle(R.string.title_confirm_password);
+            } else {
+                builder.setTitle(R.string.title_password);
+            }
+            builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        
+                    }
+                });
+            builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        if (confirm) {
+                            ((CreateEncFS)getActivity()).passwordString = password.getText().toString();
+                            ((CreateEncFS)getActivity()).createEncFS();
+                        } else {
+                            ((CreateEncFS)getActivity()).passwordAttempt = password.getText().toString();
+                            if (((CreateEncFS)getActivity()).passwordAttempt.length() > 0) {
+                                ((CreateEncFS)getActivity()).showPasswordDialog(true);
+                            } else {
+                                ((CreateEncFS)getActivity()).showToast(R.string.empty_password);
+                            }
+                        }
+                    }
+                });
+            return builder.create();
+        }
     }
 
+    private void createEncFS() {
+        
+        if (passwordString.length() > 0) {
+            if (!passwordString.equals(passwordAttempt)) {
+                nullPasswords();
+                showToast(R.string.pw_mismatch);
+                return;
+            }
+            final ProgressDialog pd = ProgressDialog.show(this,
+                    getString(R.string.wait_msg),
+                    getString(R.string.creating_encfs), true);
+            new Thread(new Runnable(){
+                public void run(){
+                    File browseRoot = getPrivateDir(CryptoniteApp.BROWSEPNT, Context.MODE_PRIVATE);
+                    mStorage.createEncFS(
+                            currentReturnPath, 
+                            passwordString, browseRoot, currentConfig); 
+                    runOnUiThread(new Runnable(){
+                        public void run() {
+                            if (pd.isShowing())
+                                pd.dismiss();
+                            nullPasswords();
+                            Cryptonite.jniResetVolume();
+                            setResult(RESULT_OK, getIntent());
+                            finish();
+                        }
+                    });
+                }
+            }).start();
+            
+        } else {
+            showToast(R.string.empty_password);
+        }
+    }
+    
     private void launchBuiltinFileBrowser(String dialogRoot, String dialogRootName,
             String dialogButtonLabel, String dialogStartPath, String dialogLabel, int dialogMode) 
     {

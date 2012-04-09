@@ -44,6 +44,7 @@ public class Preferences extends PreferenceActivity {
     private Preference txtMntPoint;
     private String currentReturnPath = "";
     
+    @SuppressWarnings("deprecation")
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         addPreferencesFromResource(R.xml.preferences);

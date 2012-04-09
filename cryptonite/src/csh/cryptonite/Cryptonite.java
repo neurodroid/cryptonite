@@ -55,7 +55,10 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
 
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
 
 import android.text.SpannableString;
@@ -100,7 +103,7 @@ public class Cryptonite extends FragmentActivity
     private static final int DIRPICK_MODE=0;
     public static final int FILEPICK_MODE=1;
     protected static final int MSG_SHOW_TOAST = 0;
-    public static final int MY_PASSWORD_DIALOG_ID = 0, MY_PASSWORD_CONFIRM_DIALOG_ID = 4;
+    public static final int MY_PASSWORD_CONFIRM_DIALOG_ID = 4;
     private static final int DIALOG_MARKETNOTFOUND=1, DIALOG_OI_UNAVAILABLE=2, DIALOG_JNI_FAIL=3, 
             DIALOG_TERM_UNAVAILABLE=5;
     private static final int MAX_JNI_SIZE = 512;
@@ -141,6 +144,7 @@ public class Cryptonite extends FragmentActivity
     public boolean triedLogin = false;
     private boolean mInstrumentation = false;
     private boolean mUseAppFolder;
+    private boolean showPassword = false;
     
     private TabHost mTabHost;
     private ViewPager  mViewPager;
@@ -241,6 +245,8 @@ public class Cryptonite extends FragmentActivity
             }
         }
 
+        showPassword = false;
+        
         mTabHost = (TabHost)findViewById(android.R.id.tabhost);
         mTabHost.setup();
 
@@ -317,7 +323,7 @@ public class Cryptonite extends FragmentActivity
                     case MOUNT_MODE:
                     case SELECTLOCALENCFS_MODE:
                     case SELECTDBENCFS_MODE:
-                        showDialog(MY_PASSWORD_DIALOG_ID);
+                        showPassword = true; // will be shown in onResume()
                         break;
                     case LOCALEXPORT_MODE:
                     case DBEXPORT_MODE:
@@ -561,6 +567,12 @@ public class Cryptonite extends FragmentActivity
         if (!hasJni) {
             return;
         }
+        
+        if (showPassword) {
+            showPassword = false;
+            showPassword();
+        }
+        
         if (DBInterface.INSTANCE.getDBApi() != null && 
                 DBInterface.INSTANCE.getDBApi().getSession() != null) {
             AndroidAuthSession session = DBInterface.INSTANCE.getDBApi().getSession();
@@ -596,6 +608,20 @@ public class Cryptonite extends FragmentActivity
         } else {
             setLoggedIn(false);
         }
+    }
+    
+    private void showPassword() {
+        // DialogFragment.show() will take care of adding the fragment
+        // in a transaction.  We also want to remove any currently showing
+        // dialog, so make our own transaction and take care of that here.
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        Fragment prev = getSupportFragmentManager().findFragmentByTag("dialog");
+        if (prev != null) {
+            ft.remove(prev);
+        }
+        ft.addToBackStack(null);
+        DialogFragment newFragment = PasswordDialogFragment.newInstance();
+        newFragment.show(ft, "dialog");
     }
 
     public void showAlert(int alert_id, int msg_id) {
@@ -817,41 +843,6 @@ public class Cryptonite extends FragmentActivity
     
     @Override protected Dialog onCreateDialog(int id) {
         switch (id) {
-         case MY_PASSWORD_DIALOG_ID:
-             LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-
-             final View layout = inflater.inflate(R.layout.password_dialog, (ViewGroup) findViewById(R.id.root));
-             final EditText password = (EditText) layout.findViewById(R.id.EditText_Pwd);
-
-             AlertDialog.Builder builder = new AlertDialog.Builder(this);
-             builder.setTitle(R.string.title_password);
-             builder.setView(layout);
-             builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-                     public void onClick(DialogInterface dialog, int whichButton) {
-                         removeDialog(MY_PASSWORD_DIALOG_ID);
-                     }
-                 });
-             builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                     public void onClick(DialogInterface dialog, int which) {
-                         currentPassword = password.getText().toString();
-                         removeDialog(MY_PASSWORD_DIALOG_ID);
-                         if (currentPassword.length() > 0) {
-                             switch (opMode) {
-                              case MOUNT_MODE:
-                                  mountEncFS(currentReturnPath);
-                                  opMode = prevMode;
-                                  break;
-                              case SELECTLOCALENCFS_MODE:
-                              case SELECTDBENCFS_MODE:
-                                  initEncFS(currentReturnPath);
-                                  break;
-                             }
-                         } else {
-                             showAlert(R.string.error, R.string.empty_password);
-                         }
-                     }
-                 });
-             return builder.create();
          case DIALOG_OI_UNAVAILABLE:
              return new AlertDialog.Builder(Cryptonite.this)
                  .setIcon(R.drawable.ic_launcher_folder)
@@ -1610,7 +1601,7 @@ public class Cryptonite extends FragmentActivity
             Cipher pbeCipher = Cipher.getInstance("PBEWithMD5AndDES");
             pbeCipher.init(Cipher.ENCRYPT_MODE, key,
                     new PBEParameterSpec(Settings.Secure.getString(context.getContentResolver(),
-                            Settings.System.ANDROID_ID).getBytes("utf-8"), 20));
+                            Settings.Secure.ANDROID_ID).getBytes("utf-8"), 20));
             return new String(Base64.encode(pbeCipher.doFinal(bytes), Base64.NO_WRAP), "utf-8");
 
         } catch( Exception e ) {
@@ -1626,11 +1617,59 @@ public class Cryptonite extends FragmentActivity
             Cipher pbeCipher = Cipher.getInstance("PBEWithMD5AndDES");
             pbeCipher.init(Cipher.DECRYPT_MODE, key,
                     new PBEParameterSpec(Settings.Secure.getString(context.getContentResolver(),
-                            Settings.System.ANDROID_ID).getBytes("utf-8"), 20));
+                            Settings.Secure.ANDROID_ID).getBytes("utf-8"), 20));
             return new String(pbeCipher.doFinal(bytes), "utf-8");
 
         } catch( Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+    
+    public static class PasswordDialogFragment extends DialogFragment {
+
+        public static PasswordDialogFragment newInstance() {
+            PasswordDialogFragment frag = new PasswordDialogFragment();
+            return frag;
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            LayoutInflater inflater = (LayoutInflater) getActivity()
+                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            View layout = inflater.inflate(R.layout.password_dialog, 
+                    (ViewGroup) getActivity().findViewById(R.id.root));
+            final EditText password = (EditText) layout.findViewById(R.id.EditText_Pwd);
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            builder.setTitle(R.string.title_password);
+            builder.setView(layout);
+            builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        
+                    }
+                });
+            builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        ((Cryptonite)getActivity()).currentPassword = password.getText().toString();
+                        if (((Cryptonite)getActivity()).currentPassword.length() > 0) {
+                            switch (((Cryptonite)getActivity()).opMode) {
+                             case MOUNT_MODE:
+                                 ((Cryptonite)getActivity()).mountEncFS(
+                                         ((Cryptonite)getActivity()).currentReturnPath);
+                                 ((Cryptonite)getActivity()).opMode = (
+                                         (Cryptonite)getActivity()).prevMode;
+                                 break;
+                             case SELECTLOCALENCFS_MODE:
+                             case SELECTDBENCFS_MODE:
+                                 ((Cryptonite)getActivity()).initEncFS(
+                                         ((Cryptonite)getActivity()).currentReturnPath);
+                                 break;
+                            }
+                        } else {
+                            ((Cryptonite)getActivity()).showAlert(R.string.error, R.string.empty_password);
+                        }
+                    }
+                });
+            return builder.create();
         }
     }
     
