@@ -987,7 +987,9 @@ public class Cryptonite extends FragmentActivity
                this.getString(R.string.running_encfs), true);
        new Thread(new Runnable(){
                public void run(){
-                   if (!mApp.getStorage().initEncFS(srcDir, currentDialogRoot)) {
+                   if (mApp.getStorage()==null) {
+                       alertMsg = getString(R.string.internal_error);
+                   } else if (!mApp.getStorage().initEncFS(srcDir, currentDialogRoot)) {
                        alertMsg = getString(R.string.invalid_encfs);
                        mApp.resetStorage();
                    } else {

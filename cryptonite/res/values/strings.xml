@@ -33,7 +33,8 @@
     <string name="txt_mntpoint_nisdir">Mount point is not a directory</string>
     <string name="txt_mntpoint_ncanwrite">Mount point isn\'t writable</string>
     <string name="txt_mntpoint_nempty">Mount point isn\'t empty</string>
-        
+    <string name="internal_error">Internal program error; please try again</string>
+
     <string name="sdcard_not_writable">Can\'t write to SD card</string>
     <string name="title_password">EncFS password</string>
     <string name="title_confirm_password">Confirm EncFS password</string>
