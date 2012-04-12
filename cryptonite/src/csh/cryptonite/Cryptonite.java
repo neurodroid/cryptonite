@@ -742,7 +742,9 @@ public class Cryptonite extends SherlockFragmentActivity
                this.getString(R.string.running_encfs), true);
        new Thread(new Runnable(){
                public void run(){
-                   if (!StorageManager.INSTANCE.getEncFSStorage().initEncFS(srcDir, currentDialogRoot)) {
+                   if (StorageManager.INSTANCE.getEncFSStorage()==null) {
+                       alertMsg = getString(R.string.internal_error);
+                   } else if (!StorageManager.INSTANCE.getEncFSStorage().initEncFS(srcDir, currentDialogRoot)) {
                        alertMsg = getString(R.string.invalid_encfs);
                        StorageManager.INSTANCE.resetEncFSStorage();
                    } else {
