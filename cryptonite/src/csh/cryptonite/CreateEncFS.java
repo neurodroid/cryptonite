@@ -95,6 +95,20 @@ public class CreateEncFS extends SherlockFragmentActivity {
         });
 
         showPassword = false;
+
+        if (savedInstanceState != null) {
+            if (savedInstanceState.getString("wp") != null) {
+                passwordString = Cryptonite.decrypt(savedInstanceState.getString("wp"), this);
+            } else {
+                passwordString = null;
+            }
+            if (savedInstanceState.getString("ap") != null) {
+                passwordAttempt = Cryptonite.decrypt(savedInstanceState.getString("ap"), this);
+            } else {
+                passwordAttempt = null;
+            }
+            currentReturnPath = savedInstanceState.getString("currentReturnPath");
+        }
     }
     
     void setupList() {
@@ -163,7 +177,23 @@ public class CreateEncFS extends SherlockFragmentActivity {
         }
         
     }
-    
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        /* The bundle is not stored to disk at any time, but we still
+         * provide some protection against memory dumps or potential
+         * future API changes
+         */
+        if (passwordString != null && passwordString.length() > 0) {
+            outState.putString("wp", Cryptonite.encrypt(passwordString, this));
+        }
+        if (passwordAttempt != null && passwordAttempt.length() > 0) {
+            outState.putString("ap", Cryptonite.encrypt(passwordAttempt, this));
+        }
+        outState.putString("currentReturnPath", currentReturnPath);
+    }
+
     private void showPasswordDialog(boolean confirm) {
         SherlockDialogFragment newFragment = PasswordDialogFragment.newInstance(confirm);
         newFragment.show(getSupportFragmentManager(), "dialog");

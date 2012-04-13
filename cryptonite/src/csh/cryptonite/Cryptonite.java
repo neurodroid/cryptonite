@@ -144,6 +144,7 @@ public class Cryptonite extends SherlockFragmentActivity
     private boolean mInstrumentation = false;
     private boolean mUseAppFolder;
     private boolean showPassword = false;
+    private boolean disclaimerShown = false;
     
     private TabHost mTabHost;
     private ViewPager  mViewPager;
@@ -226,24 +227,6 @@ public class Cryptonite extends SherlockFragmentActivity
             }).start();
         }
         
-        if (!mInstrumentation) {
-            if (!prefs.getBoolean("cb_norris", false) && !mApp.getDisclaimerShown()) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
-                builder.setIcon(R.drawable.ic_launcher_cryptonite)
-                    .setTitle(R.string.disclaimer)
-                    .setMessage(R.string.no_warranty)
-                    .setPositiveButton(R.string.understand,
-                                       new DialogInterface.OnClickListener() {
-                                           public void onClick(DialogInterface dialog,
-                                                               int which) {
-                                               mApp.setDisclaimerShown(true);
-                                           }
-                                       });
-                AlertDialog dialog = builder.create();
-                dialog.show();
-            }
-        }
-
         showPassword = false;
         
         mTabHost = (TabHost)findViewById(android.R.id.tabhost);
@@ -264,8 +247,59 @@ public class Cryptonite extends SherlockFragmentActivity
 
         if (savedInstanceState != null) {
             mTabHost.setCurrentTabByTag(savedInstanceState.getString("tab"));
+            opMode = savedInstanceState.getInt("opMode");
+            currentReturnPath = savedInstanceState.getString("currentReturnPath");
+            currentDialogStartPath = savedInstanceState.getString("currentDialogStartPath");
+            disclaimerShown = savedInstanceState.getBoolean("disclaimerShown");
+            if (currentReturnPath != null && currentDialogStartPath != null) {
+                mApp.setCurrentBrowsePath(currentReturnPath);
+                mApp.setCurrentBrowseStartPath(currentDialogStartPath);
+            }
+            int storageType = savedInstanceState.getInt("storageType");
+            if (storageType != Storage.STOR_UNDEFINED) {
+                StorageManager.INSTANCE.initEncFSStorage(this, storageType, mApp);
+                if (currentReturnPath != null && currentDialogStartPath != null) {
+                    try {
+                        StorageManager.INSTANCE.setEncFSPath(
+                                currentReturnPath.substring(currentDialogStartPath.length()));
+                    } catch (IndexOutOfBoundsException e) {
+                        StorageManager.INSTANCE.setEncFSPath("");
+                    }
+                }
+            }
         }
 
+        if (!mInstrumentation && !prefs.getBoolean("cb_norris", false) && !disclaimerShown) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
+            builder.setIcon(R.drawable.ic_launcher_cryptonite)
+                .setTitle(R.string.disclaimer)
+                .setMessage(R.string.no_warranty)
+                .setPositiveButton(R.string.understand,
+                                   new DialogInterface.OnClickListener() {
+                                       public void onClick(DialogInterface dialog,
+                                                           int which) {
+                                           disclaimerShown = true;
+                                       }
+                                   });
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        }
+
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString("tab", mTabHost.getCurrentTabTag());
+        outState.putInt("opMode", opMode);
+        outState.putString("currentReturnPath", currentReturnPath);
+        outState.putString("currentDialogStartPath", currentDialogStartPath);
+        outState.putBoolean("disclaimerShown", disclaimerShown);
+        if (StorageManager.INSTANCE.getEncFSStorage() != null) {
+            outState.putInt("storageType", StorageManager.INSTANCE.getEncFSStorageType());
+        } else {
+            outState.putInt("storageType", Storage.STOR_UNDEFINED);
+        }
     }
 
     public static boolean isValidMntDir(Context context, File newMntDir) {

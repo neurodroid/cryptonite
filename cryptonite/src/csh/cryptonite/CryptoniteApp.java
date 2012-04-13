@@ -41,8 +41,6 @@ public class CryptoniteApp extends Application {
 
     private File openDir, readDir;
     
-    private boolean disclaimerShown;
-
     private String binDirPath;
     private String encfsBin;
 
@@ -55,7 +53,6 @@ public class CryptoniteApp extends Application {
 
     @Override
     public void onCreate() {
-        disclaimerShown = false;
         cleanUpDecrypted();
 
         binDirPath = getFilesDir().getParentFile().getPath();
@@ -212,14 +209,6 @@ public class CryptoniteApp extends Application {
     
     public File getReadDir() {
         return readDir;
-    }
-    
-    public boolean getDisclaimerShown() {
-        return disclaimerShown;
-    }
-    
-    public void setDisclaimerShown(boolean value) {
-        disclaimerShown = value;
     }
     
 }
