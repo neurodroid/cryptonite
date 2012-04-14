@@ -3,7 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android" package="csh.cryptonite"
     android:versionCode="45"
     android:versionName="0.5.3">
-  <uses-sdk android:minSdkVersion="8" android:targetSdkVersion="13" />
+  <uses-sdk android:minSdkVersion="8" android:targetSdkVersion="15" />
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
   <uses-permission android:name="android.permission.INTERNET" />
   

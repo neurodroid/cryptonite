@@ -55,7 +55,7 @@ public class CryptoniteTest extends ActivityInstrumentationTestCase2<Cryptonite>
      * Creates an {@link ActivityInstrumentationTestCase2} for the Cryptonite activity.
      */
     public CryptoniteTest() {
-        super("csh.cryptonite", Cryptonite.class);
+        super(Cryptonite.class);
         
         encfs_config_types = new int[2];
         encfs_config_types[0] = CreateEncFS.CONFIG_PARANOIA;
