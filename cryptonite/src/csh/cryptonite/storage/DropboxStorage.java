@@ -43,7 +43,7 @@ public class DropboxStorage extends Storage {
         selectExportMode = Cryptonite.SELECTDBEXPORT_MODE;
         exportMode = Cryptonite.DBEXPORT_MODE;
         uploadMode = Cryptonite.SELECTDBUPLOAD_MODE;
-        waitString = mApp.getString(R.string.dropbox_reading);
+        waitStringId = R.string.dropbox_reading;
         browsePnt = CryptoniteApp.DROPBOXPNT;
     }
     

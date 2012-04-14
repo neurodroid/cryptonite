@@ -184,6 +184,7 @@
     <string name="delete_fail_virtual">Error while generating file list; please restart app.</string>
     <string name="local_reading">Reading local folder</string>
     <string name="preview_name">Safe preview</string>
+    <string name="file_icon">File icon</string>
     
     <!-- Button labels -->
     <string name="local_decrypt">Decrypt local folder</string>

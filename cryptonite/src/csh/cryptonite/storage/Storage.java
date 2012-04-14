@@ -45,7 +45,7 @@ public abstract class Storage {
     public int selectExportMode;
     public int exportMode;
     public int uploadMode;
-    public String waitString;
+    public int waitStringId;
     public String browsePnt;
     
     protected String encFSPath;
@@ -61,7 +61,7 @@ public abstract class Storage {
         selectExportMode = Cryptonite.SELECTLOCALEXPORT_MODE;
         exportMode = Cryptonite.LOCALEXPORT_MODE;
         uploadMode = Cryptonite.SELECTLOCALUPLOAD_MODE;
-        waitString = "";
+        waitStringId = 0;
         browsePnt = "";
         encFSPath = "";
         Thread uiThread = new HandlerThread("UIHandler");

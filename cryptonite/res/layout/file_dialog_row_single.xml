@@ -11,7 +11,8 @@
         android:layout_height="35dp"
         android:layout_alignParentLeft="true"
         android:paddingLeft="3dp"
-        android:paddingRight="5dp" >
+        android:paddingRight="5dp"
+        android:contentDescription="@string/file_icon" >
     </ImageView>
 
     <TextView

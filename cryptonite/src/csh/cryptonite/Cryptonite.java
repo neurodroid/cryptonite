@@ -208,17 +208,14 @@ public class Cryptonite extends SherlockFragmentActivity
         }
         
         if (mApp.needsEncFSBinary()) {
-            final ProgressDialog pd = ProgressDialog.show(this,
-                    this.getString(R.string.wait_msg),
-                    this.getString(R.string.copying_bins), true);
+            showProgressDialog(R.string.wait_msg, R.string.copying_bins);
             new Thread(new Runnable(){
                 public void run(){
                     mApp.cpBin("encfs");
                     mApp.cpBin("truecrypt");
                     runOnUiThread(new Runnable(){
                         public void run() {
-                            if (pd.isShowing())
-                                pd.dismiss();
+                            dismissProgressDialog(Cryptonite.this);
                             mApp.setEncFSBinaryVersion();
                         }
                     });
@@ -402,9 +399,7 @@ public class Cryptonite extends SherlockFragmentActivity
                     case LOCALEXPORT_MODE:
                     case DBEXPORT_MODE:
                         if (currentReturnPathList != null) {
-                            final ProgressDialog pd = ProgressDialog.show(this,
-                                    this.getString(R.string.wait_msg),
-                                    this.getString(R.string.running_export), true);
+                            showProgressDialog(R.string.wait_msg, R.string.running_export);
                             new Thread(new Runnable(){
                                 public void run(){
                                     String exportName = currentReturnPath + "/Cryptonite";
@@ -420,8 +415,7 @@ public class Cryptonite extends SherlockFragmentActivity
                                     }
                                     runOnUiThread(new Runnable(){
                                         public void run() {
-                                            if (pd.isShowing())
-                                                pd.dismiss();
+                                            dismissProgressDialog(Cryptonite.this);
                                             if (alert) {
                                                 showAlert(R.string.error, R.string.export_failed);
                                                 alert = false;
@@ -475,7 +469,6 @@ public class Cryptonite extends SherlockFragmentActivity
                     }
                     currentDialogRoot = "/";
                     currentDialogRootName = currentDialogRoot;
-                    /* mApp.setCurrentDBEncFS(""); Leave this untouched for dbExport */
                     if (StorageManager.INSTANCE.getEncFSStorage() != null) {
                         opMode = StorageManager.INSTANCE.getEncFSStorage().exportMode;
                     } else {
@@ -612,9 +605,7 @@ public class Cryptonite extends SherlockFragmentActivity
     }
 
     private void uploadEncFSFileExec(final String targetPath, final String srcPath) {
-        final ProgressDialog pd = ProgressDialog.show(this,
-                this.getString(R.string.wait_msg),
-                this.getString(R.string.encrypting), true);
+        showProgressDialog(R.string.wait_msg, R.string.encrypting);
         alertMsg = "";
         new Thread(new Runnable(){
             public void run(){
@@ -623,8 +614,7 @@ public class Cryptonite extends SherlockFragmentActivity
                 }        
                 runOnUiThread(new Runnable(){
                     public void run() {
-                        if (pd.isShowing())
-                            pd.dismiss();
+                        dismissProgressDialog(Cryptonite.this);
                         updateDecryptButtons();
                         if (!alertMsg.equals("")) {
                             showAlert(R.string.error, alertMsg);
@@ -644,7 +634,7 @@ public class Cryptonite extends SherlockFragmentActivity
         
         if (showPassword) {
             showPassword = false;
-            showPassword();
+            showPasswordDialog();
         }
         
         if (DBInterface.INSTANCE.getDBApi() != null && 
@@ -684,18 +674,41 @@ public class Cryptonite extends SherlockFragmentActivity
         }
     }
     
-    private void showPassword() {
+    private void showPasswordDialog() {
         // DialogFragment.show() will take care of adding the fragment
         // in a transaction.  We also want to remove any currently showing
         // dialog, so make our own transaction and take care of that here.
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        Fragment prev = getSupportFragmentManager().findFragmentByTag("dialog");
+        Fragment prev = getSupportFragmentManager().findFragmentByTag("pwdialog");
         if (prev != null) {
             ft.remove(prev);
         }
         ft.addToBackStack(null);
         SherlockDialogFragment newFragment = PasswordDialogFragment.newInstance();
-        newFragment.show(ft, "dialog");
+        newFragment.show(ft, "pwdialog");
+    }
+    
+    private void showProgressDialog(int titleId, int msgId) {
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        Fragment prev = getSupportFragmentManager().findFragmentByTag("progdialog");
+        if (prev != null) {
+            ft.remove(prev);
+        }
+        ft.addToBackStack(null);
+        final SherlockDialogFragment pdFragment = 
+                ProgressDialogFragment.newInstance(titleId, msgId);
+        pdFragment.show(ft, "progdialog");
+    }
+
+    public static void dismissProgressDialog(SherlockFragmentActivity activity) {
+        FragmentTransaction ft = activity.getSupportFragmentManager().beginTransaction();
+        SherlockDialogFragment pdFragment = (SherlockDialogFragment)activity.getSupportFragmentManager().findFragmentByTag("progdialog");
+        if (pdFragment != null) {
+            pdFragment.dismiss();
+            ft.remove(pdFragment);
+            // activity.getSupportFragmentManager().popBackStack();
+        }
+        ft.commit();
     }
 
     public void showAlert(int alert_id, int msg_id) {
@@ -763,9 +776,7 @@ public class Cryptonite extends SherlockFragmentActivity
             showAlert(R.string.error, R.string.mount_point_invalid);
             return;
         }
-        final ProgressDialog pd = ProgressDialog.show(this,
-                this.getString(R.string.wait_msg),
-                this.getString(R.string.running_encfs), true);
+        showProgressDialog(R.string.wait_msg, R.string.running_encfs);
         Log.v(TAG, "Running encfs with " + srcDir + " " + mntDir);
         alertMsg = "";
         new Thread(new Runnable(){
@@ -783,8 +794,7 @@ public class Cryptonite extends SherlockFragmentActivity
                     final String fEncfsOutput = encfsoutput;
                     runOnUiThread(new Runnable(){
                             public void run() {
-                                if (pd.isShowing())
-                                    pd.dismiss();
+                                dismissProgressDialog(Cryptonite.this);
                                 if (localFragment != null) {
                                     localFragment.updateMountButtons();
                                 }
@@ -812,9 +822,7 @@ public class Cryptonite extends SherlockFragmentActivity
    private void initEncFS(final String srcDir) {
        alertMsg = "";
        
-       final ProgressDialog pd = ProgressDialog.show(this, 
-               this.getString(R.string.wait_msg), 
-               this.getString(R.string.running_encfs), true);
+       showProgressDialog(R.string.wait_msg, R.string.running_encfs);
        new Thread(new Runnable(){
                public void run(){
                    if (StorageManager.INSTANCE.getEncFSStorage()==null) {
@@ -837,8 +845,7 @@ public class Cryptonite extends SherlockFragmentActivity
                    }
                    runOnUiThread(new Runnable(){
                            public void run() {
-                               if (pd.isShowing())
-                                   pd.dismiss();
+                               dismissProgressDialog(Cryptonite.this);
                                nullPassword();
                                updateDecryptButtons();
                                if (alertMsg.length()!=0) {
@@ -868,9 +875,7 @@ public class Cryptonite extends SherlockFragmentActivity
        final VirtualFile browseDirF = new VirtualFile(VirtualFile.VIRTUAL_TAG + "/" + StorageManager.INSTANCE.getEncFSStorage().browsePnt);
        browseDirF.mkdirs();
 
-       final ProgressDialog pd = ProgressDialog.show(this,
-               this.getString(R.string.wait_msg),
-               this.getString(R.string.running_encfs), true);
+       showProgressDialog(R.string.wait_msg, R.string.running_encfs);
        new Thread(new Runnable(){
                public void run(){
                    Log.i(TAG, "Dialog root is " + browsePath);
@@ -883,8 +888,7 @@ public class Cryptonite extends SherlockFragmentActivity
                    currentDialogMode = StorageManager.INSTANCE.getEncFSStorage().fdSelectionMode;
                    runOnUiThread(new Runnable(){
                            public void run() {
-                               if (pd.isShowing())
-                                   pd.dismiss();
+                               dismissProgressDialog(Cryptonite.this);
                                opMode = StorageManager.INSTANCE.getEncFSStorage().selectExportMode;
                                launchBuiltinFileBrowser();
                            }
@@ -1192,9 +1196,7 @@ public class Cryptonite extends SherlockFragmentActivity
     }
     
     private void setSession(final boolean useAppFolder) {
-        final ProgressDialog pd = ProgressDialog.show(this,
-                this.getString(R.string.wait_msg),
-                this.getString(R.string.dropbox_connecting), true);
+        showProgressDialog(R.string.wait_msg, R.string.dropbox_connecting);
         new Thread(new Runnable(){
             public void run(){
                 SharedPreferences prefs = 
@@ -1236,15 +1238,14 @@ public class Cryptonite extends SherlockFragmentActivity
                     .getSession().startAuthentication(Cryptonite.this);
                 runOnUiThread(new Runnable(){
                     public void run() {
-                        if (pd.isShowing())
-                            pd.dismiss();
+                        dismissProgressDialog(Cryptonite.this);
                     }
                 });
             }
         }).start();
 
     }
-
+    
     public static File getExternalCacheDir(final Context context) {
         /* Api >= 8 */
         return context.getExternalCacheDir();
@@ -1300,67 +1301,75 @@ public class Cryptonite extends SherlockFragmentActivity
 
         (new File(destPath)).mkdirs();
         alertMsg = "";
-        final ProgressDialog pd = ProgressDialog.show(this,
-                this.getString(R.string.wait_msg),
-                this.getString(R.string.decrypting), true);
-            new Thread(new Runnable(){
-                public void run(){
-                    if (!StorageManager.INSTANCE.getEncFSStorage().decryptEncFSFile(encodedPath, mApp.getOpenDir().getPath())) {
-                        alertMsg = getString(R.string.decrypt_failure);
-                        Log.e(TAG, "Error while attempting to copy " + encodedPath);
-                    }
-                    runOnUiThread(new Runnable(){
-                        public void run() {
-                            if (pd.isShowing())
-                                pd.dismiss();
-                            if (!alertMsg.equals("")) {
-                                showAlert(R.string.error, alertMsg);
-                                return;
-                            }
-                            /* Copy the resulting file to a readable folder */
-                            String openFilePath = mApp.getOpenDir().getPath() + stripstr;
-                            String readableName = (new File(encFSFilePath)).getName();
-                            String readablePath = mApp.getReadDir().getPath() + "/" + readableName;
-                            File readableFile = new File(readablePath);
-                            
-                            /* Make sure the readable Path exists */
-                            readableFile.getParentFile().mkdirs();
-                            
-                            try {
-                                FileOutputStream fos = new FileOutputStream(readableFile);
-
-                                FileInputStream fis = new FileInputStream(new File(openFilePath));
-
-                                byte[] buffer = new byte[fis.available()]; 
-
-                                fis.read(buffer);
-
-                                fos.write(buffer);
-
-                                fis.close();
-                                fos.close();
-
-                                /* Make world readable */
-                                try {
-                                    ShellUtils.chmod(readablePath, "644");
-                                } catch (InterruptedException e) {
-                                    Log.e(Cryptonite.TAG, e.toString());
-                                }
-                                
-                                /* Delete tmp directory */
-                                deleteDir(mApp.getOpenDir());
-                            } catch (IOException e) {
-                                Toast.makeText(Cryptonite.this, "Error while attempting to open " + readableName
-                                        + ": " + e.toString(), Toast.LENGTH_LONG).show();
-                                return;
-                            }
-                            
-                            fileOpen(readablePath);
-                            
-                        }
-                    });
+        showProgressDialog(R.string.wait_msg, R.string.decrypting);
+        new Thread(new Runnable() {
+            public void run() {
+                if (!StorageManager.INSTANCE.getEncFSStorage()
+                        .decryptEncFSFile(encodedPath,
+                                mApp.getOpenDir().getPath())) {
+                    alertMsg = getString(R.string.decrypt_failure);
+                    Log.e(TAG, "Error while attempting to copy " + encodedPath);
                 }
-            }).start();
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        dismissProgressDialog(Cryptonite.this);
+                        if (!alertMsg.equals("")) {
+                            showAlert(R.string.error, alertMsg);
+                            return;
+                        }
+                        /* Copy the resulting file to a readable folder */
+                        String openFilePath = mApp.getOpenDir().getPath()
+                                + stripstr;
+                        String readableName = (new File(encFSFilePath))
+                                .getName();
+                        String readablePath = mApp.getReadDir().getPath() + "/"
+                                + readableName;
+                        File readableFile = new File(readablePath);
+
+                        /* Make sure the readable Path exists */
+                        readableFile.getParentFile().mkdirs();
+
+                        try {
+                            FileOutputStream fos = new FileOutputStream(
+                                    readableFile);
+
+                            FileInputStream fis = new FileInputStream(new File(
+                                    openFilePath));
+
+                            byte[] buffer = new byte[fis.available()];
+
+                            fis.read(buffer);
+
+                            fos.write(buffer);
+
+                            fis.close();
+                            fos.close();
+
+                            /* Make world readable */
+                            try {
+                                ShellUtils.chmod(readablePath, "644");
+                            } catch (InterruptedException e) {
+                                Log.e(Cryptonite.TAG, e.toString());
+                            }
+
+                            /* Delete tmp directory */
+                            deleteDir(mApp.getOpenDir());
+                        } catch (IOException e) {
+                            Toast.makeText(
+                                    Cryptonite.this,
+                                    "Error while attempting to open "
+                                            + readableName + ": "
+                                            + e.toString(), Toast.LENGTH_LONG)
+                                    .show();
+                            return;
+                        }
+
+                        fileOpen(readablePath);
+
+                    }
+                });
+            }
+        }).start();
         return true;        
     }
     
@@ -1435,29 +1444,29 @@ public class Cryptonite extends SherlockFragmentActivity
         /* Convert current path to encoded file name */
         final String encodedPath = jniEncode(stripstr);
 
-        final ProgressDialog pd = ProgressDialog.show(this,
-                this.getString(R.string.wait_msg),
-                this.getString(R.string.decrypting), true);
-            new Thread(new Runnable(){
-                public void run() {
-                    final DecodedBuffer buf = StorageManager.INSTANCE.getEncFSStorage().decryptEncFSFileToBuffer(encodedPath);
-                    if (buf == null) {
-                        alertMsg = getString(R.string.decrypt_failure);
-                        Log.e(TAG, "Error while attempting to decrypt" + encodedPath);
-                    }
-                    runOnUiThread(new Runnable(){
-                        public void run() {
-                            if (pd.isShowing())
-                                pd.dismiss();
-                            if (!alertMsg.equals("")) {
-                                showAlert(R.string.error, alertMsg);
-                                return;
-                            }
-                            bufferPreview(buf);
-                        }
-                    });
+        showProgressDialog(R.string.wait_msg, R.string.decrypting);
+        new Thread(new Runnable() {
+            public void run() {
+                final DecodedBuffer buf = StorageManager.INSTANCE
+                        .getEncFSStorage()
+                        .decryptEncFSFileToBuffer(encodedPath);
+                if (buf == null) {
+                    alertMsg = getString(R.string.decrypt_failure);
+                    Log.e(TAG, "Error while attempting to decrypt"
+                            + encodedPath);
                 }
-            }).start();
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        dismissProgressDialog(Cryptonite.this);
+                        if (!alertMsg.equals("")) {
+                            showAlert(R.string.error, alertMsg);
+                            return;
+                        }
+                        bufferPreview(buf);
+                    }
+                });
+            }
+        }).start();
         return true;
     }
  
@@ -1763,6 +1772,30 @@ public class Cryptonite extends SherlockFragmentActivity
         }
     }
 
+    public static class ProgressDialogFragment extends SherlockDialogFragment {
+
+        public static ProgressDialogFragment newInstance(int titleId, int msgId) {
+            ProgressDialogFragment frag = new ProgressDialogFragment();
+            Bundle args = new Bundle();
+            args.putInt("titleId", titleId);
+            args.putInt("msgId", msgId);
+            frag.setArguments(args);
+            return frag;
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            final int titleId = getArguments().getInt("titleId");
+            final int msgId = getArguments().getInt("msgId");
+            final ProgressDialog pd = new ProgressDialog(getActivity());
+            pd.setTitle(getString(titleId));
+            pd.setMessage(getString(msgId));
+            pd.setIndeterminate(true);
+            pd.setCancelable(false);            
+            return pd;
+        }
+    }
+    
     /* Native methods are implemented by the
      * 'cryptonite' native library, which is packaged
      * with this application.

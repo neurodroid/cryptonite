@@ -33,6 +33,7 @@ import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem.OnMenuItemClickListener;
 
+import csh.cryptonite.Cryptonite.ProgressDialogFragment;
 import csh.cryptonite.storage.Storage;
 import csh.cryptonite.storage.StorageManager;
 import csh.cryptonite.storage.VirtualFile;
@@ -45,6 +46,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
@@ -89,8 +92,6 @@ public class FileDialog extends SherlockFragmentActivity {
     public static final String CURRENT_ROOT = "CURRENT_ROOT";
     public static final String CURRENT_ROOT_NAME = "CURRENT_ROOT_NAME";
 
-    private static final int NEW_FOLDER_DIALOG_ID = 0;
-    
     private String currentRoot = ROOT;
     private String currentRootLabel = ROOT;
     private List<String> pathList = null;
@@ -732,47 +733,6 @@ public class FileDialog extends SherlockFragmentActivity {
       }
     }
 
-    @Override protected Dialog onCreateDialog(int id) {
-        switch (id) {
-         case NEW_FOLDER_DIALOG_ID:
-             LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-
-             final View layout = inflater.inflate(R.layout.new_folder_dialog,
-                     (ViewGroup) findViewById(R.id.new_folder_root));
-             final EditText newFolder = (EditText) layout.findViewById(R.id.EditText_NewFolder);
-
-             AlertDialog.Builder builder = new AlertDialog.Builder(this);
-             builder.setTitle(R.string.title_new_folder);
-             builder.setView(layout);
-             builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-                     public void onClick(DialogInterface dialog, int whichButton) {
-
-                     }
-                 });
-             builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                     public void onClick(DialogInterface dialog, int which) {
-                         String newFolderString = newFolder.getText().toString();
-
-                         if (newFolderString.length() > 0) {
-                             switch (selectionMode) {
-                             case SelectionMode.MODE_OPEN_CREATE:
-                             case SelectionMode.MODE_OPEN_CREATE_DB:
-                                 mkDir(newFolderString);
-                                 break;
-                             default:
-                                 showCreateEncFSFolderWarning(newFolderString);
-                             }
-                         } else {
-                             showToast(R.string.new_folder_fail);
-                         }
-                     }
-                 });
-             return builder.create();
-        }
-        
-        return null;
-    }
-    
     public static class CreateFolderDialogFragment extends SherlockDialogFragment {
 
         public static CreateFolderDialogFragment newInstance() {
@@ -817,7 +777,41 @@ public class FileDialog extends SherlockFragmentActivity {
             return builder.create();
         }
     }
-    
+
+    public static class ProgressDialogFragment extends SherlockDialogFragment {
+
+        public static ProgressDialogFragment newInstance(int titleId, int msgId) {
+            ProgressDialogFragment frag = new ProgressDialogFragment();
+            Bundle args = new Bundle();
+            args.putInt("titleId", titleId);
+            args.putInt("msgId", msgId);
+            frag.setArguments(args);
+            return frag;
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            final int titleId = getArguments().getInt("titleId");
+            final int msgId = getArguments().getInt("msgId");
+            final ProgressDialog pd = new ProgressDialog(getActivity());
+            pd.setTitle(getString(titleId));
+            pd.setMessage(getString(msgId));
+            return pd;
+        }
+    }
+
+    private void showProgressDialog(int titleId, int msgId) {
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        Fragment prev = getSupportFragmentManager().findFragmentByTag("progdialog");
+        if (prev != null) {
+            ft.remove(prev);
+        }
+        ft.addToBackStack(null);
+        final SherlockDialogFragment pdFragment = 
+                ProgressDialogFragment.newInstance(titleId, msgId);
+        pdFragment.show(ft, "progdialog");
+    }
+
     private void setSelectVisible(View v) {
         // layoutCreate.setVisibility(View.GONE);
         layoutSelect.setVisibility(View.VISIBLE);
@@ -844,9 +838,7 @@ public class FileDialog extends SherlockFragmentActivity {
         }
         final String fEncFSRoot = encFSRoot;
         
-        final ProgressDialog pd = ProgressDialog.show(FileDialog.this,
-                getString(R.string.wait_msg),
-                getStorage().waitString, true);
+        showProgressDialog(R.string.wait_msg, getStorage().waitStringId);
         new Thread(new Runnable(){
             public void run(){
                 switch (selectionMode) {
@@ -859,8 +851,7 @@ public class FileDialog extends SherlockFragmentActivity {
                 }
                 runOnUiThread(new Runnable(){
                     public void run() {
-                        if (pd.isShowing())
-                            pd.dismiss();
+                        Cryptonite.dismissProgressDialog(FileDialog.this);
                         getDirImpl(dirPath, rootPath, rootName);
                     }
                 });
