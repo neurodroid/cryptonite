@@ -103,7 +103,6 @@ public class Cryptonite extends SherlockFragmentActivity
     private static final int DIRPICK_MODE=0;
     public static final int FILEPICK_MODE=1;
     protected static final int MSG_SHOW_TOAST = 0;
-    public static final int MY_PASSWORD_CONFIRM_DIALOG_ID = 4;
     private static final int DIALOG_JNI_FAIL=3;
     private static final int MAX_JNI_SIZE = 512;
     public static final int TERM_UNAVAILABLE=0, TERM_OUTDATED=1, TERM_AVAILABLE=2;
@@ -248,9 +247,44 @@ public class Cryptonite extends SherlockFragmentActivity
         if (savedInstanceState != null) {
             mTabHost.setCurrentTabByTag(savedInstanceState.getString("tab"));
             opMode = savedInstanceState.getInt("opMode");
-            currentReturnPath = savedInstanceState.getString("currentReturnPath");
-            currentDialogStartPath = savedInstanceState.getString("currentDialogStartPath");
+            if (savedInstanceState.getString("currentReturnPath") != null) {
+                currentReturnPath = savedInstanceState.getString("currentReturnPath");
+            }
+            if (savedInstanceState.getString("currentDialogStartPath") != null) {
+                currentDialogStartPath = savedInstanceState.getString("currentDialogStartPath");
+            }
+            if (savedInstanceState.getString("currentDialogRoot") != null) {
+                currentDialogRoot = savedInstanceState.getString("currentDialogRoot");
+            }
+            if (savedInstanceState.getString("currentDialogLabel") != null) {
+                currentDialogLabel = savedInstanceState.getString("currentDialogLabel");
+            }
+            if (savedInstanceState.getString("currentDialogButtonLabel") != null) {
+                currentDialogButtonLabel = savedInstanceState.getString("currentDialogButtonLabel");
+            }
+            if (savedInstanceState.getString("currentDialogRootName") != null) {
+                currentDialogRootName = savedInstanceState.getString("currentDialogRootName");
+            }
+            if (savedInstanceState.getString("currentOpenPath") != null) {
+                currentOpenPath = savedInstanceState.getString("currentOpenPath");
+            }
+            if (savedInstanceState.getString("currentPreviewPath") != null) {
+                currentPreviewPath = savedInstanceState.getString("currentPreviewPath");
+            }
+            if (savedInstanceState.getString("currentUploadPath") != null) {
+                currentUploadPath = savedInstanceState.getString("currentUploadPath");
+            }
+            if (savedInstanceState.getString("encfsBrowseRoot") != null) {
+                encfsBrowseRoot = savedInstanceState.getString("encfsBrowseRoot");
+            }
+            if (savedInstanceState.getStringArray("currentReturnPathList") != null) {
+                currentReturnPathList = savedInstanceState.getStringArray("currentReturnPathList");
+            }
+            if (savedInstanceState.getInt("currentDialogMode") != 0) {
+                currentDialogMode = savedInstanceState.getInt("currentDialogMode");
+            }
             disclaimerShown = savedInstanceState.getBoolean("disclaimerShown");
+            mLoggedIn = savedInstanceState.getBoolean("loggedIn");
             if (currentReturnPath != null && currentDialogStartPath != null) {
                 mApp.setCurrentBrowsePath(currentReturnPath);
                 mApp.setCurrentBrowseStartPath(currentDialogStartPath);
@@ -258,13 +292,8 @@ public class Cryptonite extends SherlockFragmentActivity
             int storageType = savedInstanceState.getInt("storageType");
             if (storageType != Storage.STOR_UNDEFINED) {
                 StorageManager.INSTANCE.initEncFSStorage(this, storageType, mApp);
-                if (currentReturnPath != null && currentDialogStartPath != null) {
-                    try {
-                        StorageManager.INSTANCE.setEncFSPath(
-                                currentReturnPath.substring(currentDialogStartPath.length()));
-                    } catch (IndexOutOfBoundsException e) {
-                        StorageManager.INSTANCE.setEncFSPath("");
-                    }
+                if (savedInstanceState.getString("encFSPath") != null) {
+                    StorageManager.INSTANCE.setEncFSPath(savedInstanceState.getString("encFSPath"));
                 }
             }
         }
@@ -294,9 +323,21 @@ public class Cryptonite extends SherlockFragmentActivity
         outState.putInt("opMode", opMode);
         outState.putString("currentReturnPath", currentReturnPath);
         outState.putString("currentDialogStartPath", currentDialogStartPath);
+        outState.putString("currentDialogRoot", currentDialogRoot);
+        outState.putString("currentDialogLabel", currentDialogLabel);
+        outState.putString("currentDialogButtonLabel", currentDialogButtonLabel);
+        outState.putString("currentDialogRootName", currentDialogRootName);
+        outState.putString("currentOpenPath", currentOpenPath);
+        outState.putString("currentPreviewPath", currentPreviewPath);
+        outState.putString("currentUploadPath", currentUploadPath);
+        outState.putString("encfsBrowseRoot", encfsBrowseRoot);
+        outState.putStringArray("currentReturnPathList", currentReturnPathList);
+        outState.putInt("currentDialogMode", currentDialogMode);
         outState.putBoolean("disclaimerShown", disclaimerShown);
+        outState.putBoolean("loggedIn", mLoggedIn);
         if (StorageManager.INSTANCE.getEncFSStorage() != null) {
             outState.putInt("storageType", StorageManager.INSTANCE.getEncFSStorageType());
+            outState.putString("encFSPath", StorageManager.INSTANCE.getEncFSPath());
         } else {
             outState.putInt("storageType", Storage.STOR_UNDEFINED);
         }

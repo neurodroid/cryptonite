@@ -93,15 +93,13 @@ public class FileDialog extends SherlockFragmentActivity {
     
     private String currentRoot = ROOT;
     private String currentRootLabel = ROOT;
-    private List<String> path = null;
+    private List<String> pathList = null;
     private TextView myPath;
     private ArrayList<HashMap<String, Object>> mList;
 
     private Button selectButton;
 
     private LinearLayout layoutSelect;
-    private LinearLayout layoutUpload;
-    private LinearLayout layoutCreate;
     
     private InputMethodManager inputManager;
     private String parentPath;
@@ -134,17 +132,6 @@ public class FileDialog extends SherlockFragmentActivity {
 
         selectionMode = getIntent().getIntExtra(SELECTION_MODE, SelectionMode.MODE_OPEN);
 
-        switch (selectionMode) {
-        case SelectionMode.MODE_OPEN_CREATE_DB:
-        case SelectionMode.MODE_OPEN_DB:
-        case SelectionMode.MODE_OPEN_MULTISELECT_DB:
-        case SelectionMode.MODE_OPEN_MULTISELECT:
-            localFilePickerStorage = false;
-            break;
-        default:
-            localFilePickerStorage = true;
-        }
-
         currentRoot = getIntent().getStringExtra(CURRENT_ROOT);
         if (currentRoot == null) {
             currentRoot = ROOT;
@@ -154,6 +141,41 @@ public class FileDialog extends SherlockFragmentActivity {
         currentRootLabel = getIntent().getStringExtra(CURRENT_ROOT_NAME);
         if (currentRootLabel == null) {
             currentRootLabel = currentRoot;
+        }
+
+        String startPath = getIntent().getStringExtra(START_PATH);
+
+        if (savedInstanceState != null) {
+            if (savedInstanceState.getString("parentPath") != null) {
+                parentPath = savedInstanceState.getString("parentPath");
+            }
+            if (savedInstanceState.getStringArrayList("pathList") != null) {
+                pathList = savedInstanceState.getStringArrayList("pathList");
+            }
+            if (savedInstanceState.getString("currentPath") != null) {
+                currentPath = savedInstanceState.getString("currentPath");
+                startPath = currentPath;
+            }
+            if (savedInstanceState.getString("currentRoot") != null) {
+                currentRoot = savedInstanceState.getString("currentRoot");
+            }
+            if (savedInstanceState.getString("currentRootLabel") != null) {
+                currentRootLabel = savedInstanceState.getString("currentRootLabel");
+            }
+            if (savedInstanceState.getInt("selectionMode") != 0) {
+                selectionMode = savedInstanceState.getInt("selectionMode");
+            }
+        }
+        
+        switch (selectionMode) {
+        case SelectionMode.MODE_OPEN_CREATE_DB:
+        case SelectionMode.MODE_OPEN_DB:
+        case SelectionMode.MODE_OPEN_MULTISELECT_DB:
+        case SelectionMode.MODE_OPEN_MULTISELECT:
+            localFilePickerStorage = false;
+            break;
+        default:
+            localFilePickerStorage = true;
         }
 
         String buttonLabel = getIntent().getStringExtra(BUTTON_LABEL);
@@ -189,35 +211,6 @@ public class FileDialog extends SherlockFragmentActivity {
                 }
             });
 
-        layoutSelect = (LinearLayout) findViewById(R.id.fdLinearLayoutSelect);
-        layoutCreate = (LinearLayout) findViewById(R.id.fdLinearLayoutCreate);
-        layoutUpload = (LinearLayout) findViewById(R.id.fdLinearLayoutUpload);
-        
-        /* Disable upload at this time */ 
-        switch (selectionMode) {
-        case SelectionMode.MODE_OPEN:
-        case SelectionMode.MODE_OPEN_DB:
-        case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
-            layoutCreate.setVisibility(View.GONE);
-            /* no break! */
-        case SelectionMode.MODE_OPEN_CREATE:
-        case SelectionMode.MODE_OPEN_CREATE_DB:
-            layoutUpload.setVisibility(View.GONE);
-            break;
-        default:
-            layoutCreate.setVisibility(View.GONE);
-        }
-
-        final Button createButton = (Button) findViewById(R.id.fdButtonCreate);
-        createButton.setOnClickListener(new OnClickListener() {
-
-            public void onClick(View v) {
-                SherlockDialogFragment newFragment = CreateFolderDialogFragment.newInstance();
-                newFragment.show(getSupportFragmentManager(), "dialog");
-            }
-
-        });
-        
         final Button uploadButton = (Button) findViewById(R.id.fdButtonUpload);
         uploadButton.setOnClickListener(new OnClickListener() {
 
@@ -227,16 +220,20 @@ public class FileDialog extends SherlockFragmentActivity {
             
         });
 
-        final Button newFolderButton = (Button) findViewById(R.id.fdButtonNewFolder);
-        newFolderButton.setOnClickListener(new OnClickListener() {
-            
-            public void onClick(View v) {
-                SherlockDialogFragment newFragment = CreateFolderDialogFragment.newInstance();
-                newFragment.show(getSupportFragmentManager(), "dialog");
-            }
-        });
+        layoutSelect = (LinearLayout) findViewById(R.id.fdLinearLayoutSelect);
         
-        String startPath = getIntent().getStringExtra(START_PATH);
+        switch (selectionMode) {
+        case SelectionMode.MODE_OPEN:
+        case SelectionMode.MODE_OPEN_DB:
+        case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
+        case SelectionMode.MODE_OPEN_CREATE:
+        case SelectionMode.MODE_OPEN_CREATE_DB:
+            uploadButton.setVisibility(View.GONE);
+            uploadButton.setWidth(0);
+            selectButton.setWidth(selectButton.getWidth()*2);
+        default:
+        }
+
         if (startPath != null) {
             getDir(startPath, currentRoot, currentRootLabel);
         } else {
@@ -260,11 +257,35 @@ public class FileDialog extends SherlockFragmentActivity {
             }
             
         });
-
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        switch (selectionMode) {
+        case SelectionMode.MODE_CREATE:
+        case SelectionMode.MODE_OPEN_MULTISELECT:
+        case SelectionMode.MODE_OPEN_MULTISELECT_DB:
+        case SelectionMode.MODE_OPEN_CREATE:
+        case SelectionMode.MODE_OPEN_CREATE_DB:
+
+            menu.add(getString(R.string.new_folder_short))
+                    .setIcon(R.drawable.ic_menu_add_folder)
+                    .setOnMenuItemClickListener(new OnMenuItemClickListener() {
+
+                        @Override
+                        public boolean onMenuItemClick(
+                                com.actionbarsherlock.view.MenuItem item)
+                        {
+                            SherlockDialogFragment newFragment = CreateFolderDialogFragment.newInstance();
+                            newFragment.show(getSupportFragmentManager(), "dialog");
+                            return true;
+                        }
+
+                    }).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+            break;
+        default:
+            break;
+        }
         menu.add(getString(R.string.cancel))
             .setIcon(android.R.drawable.ic_menu_revert).setOnMenuItemClickListener(new OnMenuItemClickListener() {
 
@@ -282,7 +303,18 @@ public class FileDialog extends SherlockFragmentActivity {
         
         return super.onCreateOptionsMenu(menu);
     }
-    
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString("parentPath", parentPath);
+        outState.putStringArrayList("pathList", (ArrayList<String>) pathList);
+        outState.putString("currentPath", currentPath);
+        outState.putString("currentRoot", currentRoot);
+        outState.putString("currentRootLabel", currentRootLabel);
+        outState.putInt("selectionMode", selectionMode);
+    }
+
     private void getDir(String dirPath, String rootPath, String rootName) {
 
         boolean useAutoSelection = dirPath.length() < currentPath.length();
@@ -313,7 +345,7 @@ public class FileDialog extends SherlockFragmentActivity {
         String currentPathFromRoot = currentPath.substring(currentRoot.length());
         
         final List<String> item = new ArrayList<String>();
-        path = new ArrayList<String>();
+        pathList = new ArrayList<String>();
         mList = new ArrayList<HashMap<String, Object>>();
         
         VirtualFile f = new VirtualFile(currentPath);
@@ -330,11 +362,11 @@ public class FileDialog extends SherlockFragmentActivity {
 
             item.add(currentRoot);
             addItem(new VirtualFile(currentRoot), R.drawable.ic_launcher_folder, currentRootLabel);
-            path.add(currentRoot);
+            pathList.add(currentRoot);
 
             item.add("../");
             addItem(new VirtualFile(f.getParent()), R.drawable.ic_launcher_folder, "../");
-            path.add(f.getParent());
+            pathList.add(f.getParent());
             parentPath = f.getParent();
 
         }
@@ -358,8 +390,8 @@ public class FileDialog extends SherlockFragmentActivity {
 
         item.addAll(dirsMap.tailMap("").values());
         item.addAll(filesMap.tailMap("").values());
-        path.addAll(dirsPathMap.tailMap("").values());
-        path.addAll(filesPathMap.tailMap("").values());
+        pathList.addAll(dirsPathMap.tailMap("").values());
+        pathList.addAll(filesPathMap.tailMap("").values());
 
         for (String dirpath : dirsPathMap.tailMap("").keySet()) {
             addItem(new VirtualFile(dirsPathMap.tailMap("").get(dirpath)),
@@ -372,7 +404,7 @@ public class FileDialog extends SherlockFragmentActivity {
         }
         
         ArrayAdapter<HashMap<String, Object>> fileList = 
-                new FileDialogArrayAdapter(this, mList);            
+                new FileDialogArrayAdapter(this, mList);
         fileList.notifyDataSetChanged();
         mListView.setAdapter(fileList);
 
@@ -382,10 +414,6 @@ public class FileDialog extends SherlockFragmentActivity {
         case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
         case SelectionMode.MODE_OPEN_CREATE:
         case SelectionMode.MODE_OPEN_CREATE_DB: {
-            /* SimpleAdapter fileList = new SimpleAdapter(this, mList,
-                    R.layout.file_dialog_row_single,
-                    new String[] { ITEM_KEY, ITEM_IMAGE },
-                    new int[] {R.id.fdrowtext, R.id.fdrowimage }); */
             mListView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
             break;
         }
@@ -593,7 +621,7 @@ public class FileDialog extends SherlockFragmentActivity {
 
     private void onListItemClick(ListView l, View v, int position, long id) {
 
-        VirtualFile file = new VirtualFile(path.get(position));
+        VirtualFile file = new VirtualFile(pathList.get(position));
 
         setSelectVisible(v);
 
@@ -608,7 +636,7 @@ public class FileDialog extends SherlockFragmentActivity {
 
             if (file.canRead()) {
                 lastPositions.put(currentPath, position);
-                getDir(path.get(position), currentRoot, currentRootLabel);
+                getDir(pathList.get(position), currentRoot, currentRootLabel);
             } else {
                 new AlertDialog.Builder(this)
                     .setIcon(R.drawable.icon)
@@ -665,8 +693,8 @@ public class FileDialog extends SherlockFragmentActivity {
       super.onCreateContextMenu(menu, v, menuInfo);
       MenuInflater inflater = getMenuInflater();
       AdapterContextMenuInfo info = (AdapterContextMenuInfo)menuInfo;
-      if ((new VirtualFile(path.get(info.position))).isDirectory()) {
-          inflater.inflate(R.menu.file_dialog_context_menu_dir, menu);          
+      if ((new VirtualFile(pathList.get(info.position))).isDirectory()) {
+          inflater.inflate(R.menu.file_dialog_context_menu_dir, menu);
       } else {
           inflater.inflate(R.menu.file_dialog_context_menu, menu);
       }
@@ -675,7 +703,7 @@ public class FileDialog extends SherlockFragmentActivity {
     @Override
     public boolean onContextItemSelected(MenuItem item) {
       AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
-      String pathName = path.get(info.position);
+      String pathName = pathList.get(info.position);
       switch (item.getItemId()) {
       case R.id.context_open:
         getIntent().putExtra(RESULT_EXPORT_PATHS, (String[])null);

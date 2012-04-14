@@ -20,52 +20,17 @@
 			        android:id="@+id/fdButtonSelect"
 			        android:layout_width="0dip"
 			        android:layout_height="fill_parent"
-			        android:layout_weight="1.0"
+			        android:layout_weight="0.5"
 			        android:text="@string/select"
 			        android:textSize="16dp" >
 			    </Button>
-
-			</LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/fdLinearLayoutUpload"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
-                android:baselineAligned="true"
-                android:orientation="horizontal" >
 
                 <Button
                     android:id="@+id/fdButtonUpload"
                     android:layout_width="0dip"
                     android:layout_height="fill_parent"
-                    android:layout_weight="0.7"
+                    android:layout_weight="0.5"
                     android:text="@string/upload"
-                    android:textSize="16dp" >
-                </Button>
-
-                <Button
-                    android:id="@+id/fdButtonNewFolder"
-                    android:layout_width="0dip"
-                    android:layout_height="fill_parent"
-                    android:layout_weight="0.3"
-                    android:text="@string/new_folder"
-                    android:textSize="16dp" >
-                </Button>
-            </LinearLayout>
-		
-           <LinearLayout
-                android:id="@+id/fdLinearLayoutCreate"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
-                android:baselineAligned="true"
-                android:orientation="horizontal" >
-
-                <Button
-                    android:id="@+id/fdButtonCreate"
-                    android:layout_width="0dip"
-                    android:layout_height="fill_parent"
-                    android:layout_weight="1.0"
-                    android:text="@string/create"
                     android:textSize="16dp" >
                 </Button>
             </LinearLayout>
