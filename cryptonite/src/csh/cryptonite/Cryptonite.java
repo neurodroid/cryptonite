@@ -88,6 +88,7 @@ import com.dropbox.client2.session.AppKeyPair;
 import com.dropbox.client2.session.Session.AccessType;
 import com.dropbox.client2.session.TokenPair;
 
+import csh.cryptonite.CreateEncFS.PasswordDialogFragment;
 import csh.cryptonite.storage.Storage;
 import csh.cryptonite.storage.StorageManager;
 import csh.cryptonite.storage.VirtualFile;
@@ -151,6 +152,7 @@ public class Cryptonite extends SherlockFragmentActivity
     
     private DropboxFragment dbFragment;
     private LocalFragment localFragment;
+    private ProgressDialogFragment pdFragment;
     
     public CryptoniteApp mApp;
     
@@ -167,7 +169,7 @@ public class Cryptonite extends SherlockFragmentActivity
     @Override public void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-        
+
         setContentView(R.layout.main);
 
         mApp = (CryptoniteApp) getApplication();
@@ -215,7 +217,7 @@ public class Cryptonite extends SherlockFragmentActivity
                     mApp.cpBin("truecrypt");
                     runOnUiThread(new Runnable(){
                         public void run() {
-                            dismissProgressDialog(Cryptonite.this);
+                            dismissDialog();
                             mApp.setEncFSBinaryVersion();
                         }
                     });
@@ -293,6 +295,7 @@ public class Cryptonite extends SherlockFragmentActivity
                     StorageManager.INSTANCE.setEncFSPath(savedInstanceState.getString("encFSPath"));
                 }
             }
+            
         }
 
         if (!mInstrumentation && !prefs.getBoolean("cb_norris", false) && !disclaimerShown) {
@@ -310,7 +313,6 @@ public class Cryptonite extends SherlockFragmentActivity
             AlertDialog dialog = builder.create();
             dialog.show();
         }
-
     }
 
     @Override
@@ -415,7 +417,7 @@ public class Cryptonite extends SherlockFragmentActivity
                                     }
                                     runOnUiThread(new Runnable(){
                                         public void run() {
-                                            dismissProgressDialog(Cryptonite.this);
+                                            dismissDialog();
                                             if (alert) {
                                                 showAlert(R.string.error, R.string.export_failed);
                                                 alert = false;
@@ -614,7 +616,7 @@ public class Cryptonite extends SherlockFragmentActivity
                 }        
                 runOnUiThread(new Runnable(){
                     public void run() {
-                        dismissProgressDialog(Cryptonite.this);
+                        dismissDialog();
                         updateDecryptButtons();
                         if (!alertMsg.equals("")) {
                             showAlert(R.string.error, alertMsg);
@@ -630,11 +632,6 @@ public class Cryptonite extends SherlockFragmentActivity
         super.onResume();
         if (!hasJni) {
             return;
-        }
-        
-        if (showPassword) {
-            showPassword = false;
-            showPasswordDialog();
         }
         
         if (DBInterface.INSTANCE.getDBApi() != null && 
@@ -672,43 +669,35 @@ public class Cryptonite extends SherlockFragmentActivity
         } else {
             setLoggedIn(false);
         }
+
+        if (showPassword) {
+            showPassword = false;
+            showPasswordDialog();
+        }
+        
     }
     
     private void showPasswordDialog() {
-        // DialogFragment.show() will take care of adding the fragment
-        // in a transaction.  We also want to remove any currently showing
-        // dialog, so make our own transaction and take care of that here.
-        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        Fragment prev = getSupportFragmentManager().findFragmentByTag("pwdialog");
-        if (prev != null) {
-            ft.remove(prev);
-        }
-        ft.addToBackStack(null);
         SherlockDialogFragment newFragment = PasswordDialogFragment.newInstance();
-        newFragment.show(ft, "pwdialog");
-    }
-    
-    private void showProgressDialog(int titleId, int msgId) {
-        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        Fragment prev = getSupportFragmentManager().findFragmentByTag("progdialog");
-        if (prev != null) {
-            ft.remove(prev);
-        }
-        ft.addToBackStack(null);
-        final SherlockDialogFragment pdFragment = 
-                ProgressDialogFragment.newInstance(titleId, msgId);
-        pdFragment.show(ft, "progdialog");
+        newFragment.show(getSupportFragmentManager(), "pwdialog");
     }
 
-    public static void dismissProgressDialog(SherlockFragmentActivity activity) {
-        FragmentTransaction ft = activity.getSupportFragmentManager().beginTransaction();
-        SherlockDialogFragment pdFragment = (SherlockDialogFragment)activity.getSupportFragmentManager().findFragmentByTag("progdialog");
+    public void showProgressDialog(int titleId, int msgId) {
+        pdFragment = ProgressDialogFragment.newInstance(titleId, msgId);
+        pdFragment.show(getSupportFragmentManager(), "progdialog");
+    }
+
+    public void dismissDialog() {
         if (pdFragment != null) {
-            pdFragment.dismiss();
+            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
             ft.remove(pdFragment);
-            // activity.getSupportFragmentManager().popBackStack();
+            try {
+                ft.commit();
+                pdFragment = null;
+            } catch (IllegalStateException e) {
+
+            }
         }
-        ft.commit();
     }
 
     public void showAlert(int alert_id, int msg_id) {
@@ -794,7 +783,7 @@ public class Cryptonite extends SherlockFragmentActivity
                     final String fEncfsOutput = encfsoutput;
                     runOnUiThread(new Runnable(){
                             public void run() {
-                                dismissProgressDialog(Cryptonite.this);
+                                dismissDialog();
                                 if (localFragment != null) {
                                     localFragment.updateMountButtons();
                                 }
@@ -845,7 +834,7 @@ public class Cryptonite extends SherlockFragmentActivity
                    }
                    runOnUiThread(new Runnable(){
                            public void run() {
-                               dismissProgressDialog(Cryptonite.this);
+                               dismissDialog();
                                nullPassword();
                                updateDecryptButtons();
                                if (alertMsg.length()!=0) {
@@ -888,7 +877,7 @@ public class Cryptonite extends SherlockFragmentActivity
                    currentDialogMode = StorageManager.INSTANCE.getEncFSStorage().fdSelectionMode;
                    runOnUiThread(new Runnable(){
                            public void run() {
-                               dismissProgressDialog(Cryptonite.this);
+                               dismissDialog();
                                opMode = StorageManager.INSTANCE.getEncFSStorage().selectExportMode;
                                launchBuiltinFileBrowser();
                            }
@@ -1238,7 +1227,7 @@ public class Cryptonite extends SherlockFragmentActivity
                     .getSession().startAuthentication(Cryptonite.this);
                 runOnUiThread(new Runnable(){
                     public void run() {
-                        dismissProgressDialog(Cryptonite.this);
+                        dismissDialog();
                     }
                 });
             }
@@ -1312,7 +1301,7 @@ public class Cryptonite extends SherlockFragmentActivity
                 }
                 runOnUiThread(new Runnable() {
                     public void run() {
-                        dismissProgressDialog(Cryptonite.this);
+                        dismissDialog();
                         if (!alertMsg.equals("")) {
                             showAlert(R.string.error, alertMsg);
                             return;
@@ -1457,7 +1446,7 @@ public class Cryptonite extends SherlockFragmentActivity
                 }
                 runOnUiThread(new Runnable() {
                     public void run() {
-                        dismissProgressDialog(Cryptonite.this);
+                        dismissDialog();
                         if (!alertMsg.equals("")) {
                             showAlert(R.string.error, alertMsg);
                             return;
@@ -1785,13 +1774,13 @@ public class Cryptonite extends SherlockFragmentActivity
 
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
+            setCancelable(false);
             final int titleId = getArguments().getInt("titleId");
             final int msgId = getArguments().getInt("msgId");
             final ProgressDialog pd = new ProgressDialog(getActivity());
             pd.setTitle(getString(titleId));
             pd.setMessage(getString(msgId));
             pd.setIndeterminate(true);
-            pd.setCancelable(false);            
             return pd;
         }
     }

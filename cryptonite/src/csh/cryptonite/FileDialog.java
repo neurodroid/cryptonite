@@ -33,7 +33,6 @@ import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem.OnMenuItemClickListener;
 
-import csh.cryptonite.Cryptonite.ProgressDialogFragment;
 import csh.cryptonite.storage.Storage;
 import csh.cryptonite.storage.StorageManager;
 import csh.cryptonite.storage.VirtualFile;
@@ -46,7 +45,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
+
 import android.support.v4.app.FragmentTransaction;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -116,6 +115,8 @@ public class FileDialog extends SherlockFragmentActivity {
     private boolean localFilePickerStorage;
 
     private ListView mListView;
+    
+    private ProgressDialogFragment pdFragment;
 
     /** Called when the activity is first created. */
     @Override
@@ -165,6 +166,9 @@ public class FileDialog extends SherlockFragmentActivity {
             }
             if (savedInstanceState.getInt("selectionMode") != 0) {
                 selectionMode = savedInstanceState.getInt("selectionMode");
+            }
+            if (getSupportFragmentManager().getFragment(savedInstanceState, "pdFragment") != null) {
+                pdFragment = (ProgressDialogFragment)getSupportFragmentManager().getFragment(savedInstanceState, "pdFragment");
             }
         }
         
@@ -288,7 +292,7 @@ public class FileDialog extends SherlockFragmentActivity {
             break;
         }
         menu.add(getString(R.string.cancel))
-            .setIcon(android.R.drawable.ic_menu_revert).setOnMenuItemClickListener(new OnMenuItemClickListener() {
+            .setIcon(R.drawable.ic_menu_close_clear_cancel).setOnMenuItemClickListener(new OnMenuItemClickListener() {
 
                 @Override
                 public boolean onMenuItemClick(
@@ -314,6 +318,9 @@ public class FileDialog extends SherlockFragmentActivity {
         outState.putString("currentRoot", currentRoot);
         outState.putString("currentRootLabel", currentRootLabel);
         outState.putInt("selectionMode", selectionMode);
+        if (pdFragment != null) {
+            getSupportFragmentManager().putFragment(outState, "pdFragment", pdFragment);
+        }
     }
 
     private void getDir(String dirPath, String rootPath, String rootName) {
@@ -796,20 +803,27 @@ public class FileDialog extends SherlockFragmentActivity {
             final ProgressDialog pd = new ProgressDialog(getActivity());
             pd.setTitle(getString(titleId));
             pd.setMessage(getString(msgId));
+            pd.setIndeterminate(true);
+            pd.setCancelable(false);            
             return pd;
         }
     }
 
-    private void showProgressDialog(int titleId, int msgId) {
-        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        Fragment prev = getSupportFragmentManager().findFragmentByTag("progdialog");
-        if (prev != null) {
-            ft.remove(prev);
+    public void showProgressDialog(int titleId, int msgId) {
+        if (pdFragment != null) {
+            pdFragment.dismiss();
         }
-        ft.addToBackStack(null);
-        final SherlockDialogFragment pdFragment = 
-                ProgressDialogFragment.newInstance(titleId, msgId);
-        pdFragment.show(ft, "progdialog");
+        pdFragment = ProgressDialogFragment.newInstance(titleId, msgId);
+        pdFragment.show(getSupportFragmentManager(), "progdialog");
+    }
+
+    public void dismissDialog() {
+        if (pdFragment != null) {
+            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+            ft.remove(pdFragment);
+            ft.commit();
+        }
+        pdFragment = null;
     }
 
     private void setSelectVisible(View v) {
@@ -851,7 +865,7 @@ public class FileDialog extends SherlockFragmentActivity {
                 }
                 runOnUiThread(new Runnable(){
                     public void run() {
-                        Cryptonite.dismissProgressDialog(FileDialog.this);
+                        dismissDialog();
                         getDirImpl(dirPath, rootPath, rootName);
                     }
                 });
