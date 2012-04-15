@@ -47,11 +47,11 @@ public class LocalFragment extends SherlockFragment {
         buttonDecrypt = (Button)v.findViewById(R.id.btnDecryptLocal);
         buttonDecrypt.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-                    StorageManager.INSTANCE.initEncFSStorage(mAct, Storage.STOR_LOCAL, mAct.mApp);
+                    StorageManager.INSTANCE.initEncFSStorage(mAct, Storage.STOR_LOCAL);
                     mAct.opMode = Cryptonite.SELECTLOCALENCFS_MODE;
                     mAct.currentDialogLabel = getString(R.string.select_enc);
                     mAct.currentDialogButtonLabel = getString(R.string.select_enc_short);
-                    mAct.currentDialogMode = SelectionMode.MODE_OPEN;
+                    mAct.currentDialogMode = SelectionMode.MODE_OPEN_ENCFS;
                     if (Cryptonite.externalStorageIsWritable()) {
                         mAct.currentDialogStartPath = Environment.getExternalStorageDirectory().getPath();
                     } else {
@@ -70,15 +70,15 @@ public class LocalFragment extends SherlockFragment {
         buttonBrowseDecrypted = (Button)v.findViewById(R.id.btnBrowseDecryptedLocal);
         buttonBrowseDecrypted.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-                    mAct.browseEncFS(mAct.mApp.getCurrentBrowsePath(),
-                            mAct.mApp.getCurrentBrowseStartPath());
+                    mAct.browseEncFS(DirectorySettings.INSTANCE.currentBrowsePath,
+                            DirectorySettings.INSTANCE.currentBrowseStartPath);
                 }});
 
         /* Clear decryption information */
         buttonForgetDecryption = (Button)v.findViewById(R.id.btnForgetDecryptionLocal);
         buttonForgetDecryption.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-                    mAct.mApp.cleanUpDecrypted();
+                    mAct.cleanUpDecrypted();
                     updateDecryptButtons();
                 }});
 
@@ -98,7 +98,7 @@ public class LocalFragment extends SherlockFragment {
                     mAct.opMode = Cryptonite.MOUNT_MODE;
                     mAct.currentDialogLabel = getString(R.string.select_enc);
                     mAct.currentDialogButtonLabel = getString(R.string.select_enc_short);
-                    mAct.currentDialogMode = SelectionMode.MODE_OPEN;
+                    mAct.currentDialogMode = SelectionMode.MODE_OPEN_ENCFS_MOUNT;
                     if (Cryptonite.externalStorageIsWritable()) {
                         mAct.currentDialogStartPath = Environment.getExternalStorageDirectory().getPath();
                     } else {
@@ -114,9 +114,10 @@ public class LocalFragment extends SherlockFragment {
                     }
                     
                 } else {
-                    String[] umountlist = {"umount", mAct.mntDir};
+                    String[] umountlist = {"umount", DirectorySettings.INSTANCE.mntDir};
                     try {
-                        ShellUtils.runBinary(umountlist, mAct.mApp.getBinDirPath(), null, true);
+                        ShellUtils.runBinary(umountlist,
+                                DirectorySettings.INSTANCE.binDirPath, null, true);
                     } catch (IOException e) {
                         Toast.makeText(mAct, 
                                 getString(R.string.umount_fail) + ": " + e.getMessage(), 
@@ -140,7 +141,8 @@ public class LocalFragment extends SherlockFragment {
                                     int which) {
                                 String[] killlist = {"killall", "encfs"};
                                 try {
-                                    ShellUtils.runBinary(killlist, mAct.mApp.getBinDirPath(), null, true);
+                                    ShellUtils.runBinary(killlist, 
+                                            DirectorySettings.INSTANCE.binDirPath, null, true);
                                 } catch (IOException e) {
                                     Toast.makeText(mAct, 
                                             getString(R.string.umount_fail) + ": " + e.getMessage(), 
@@ -174,12 +176,12 @@ public class LocalFragment extends SherlockFragment {
                 public void onClick(View v) {
                     mAct.prevMode = mAct.opMode;
                     mAct.opMode = Cryptonite.VIEWMOUNT_MODE;
-                    mAct.currentDialogStartPath = mAct.mntDir;
+                    mAct.currentDialogStartPath = DirectorySettings.INSTANCE.mntDir;
                     mAct.currentDialogRoot = "/";
                     mAct.currentDialogRootName = mAct.currentDialogRoot;
                     mAct.currentDialogLabel = getString(R.string.fb_name);
                     mAct.currentDialogButtonLabel = getString(R.string.back);
-                    mAct.currentDialogMode = SelectionMode.MODE_OPEN;
+                    mAct.currentDialogMode = SelectionMode.MODE_OPEN_ENCFS;
                     if (!Cryptonite.externalStorageIsWritable()) {
                         mAct.showAlert(R.string.error, R.string.sdcard_not_writable);
                     } else {
@@ -209,7 +211,7 @@ public class LocalFragment extends SherlockFragment {
         boolean ism = ShellUtils.isMounted("fuse.encfs");
         
         Log.v(Cryptonite.TAG, "EncFS mount state: " + ism + "; FUSE support: " + mAct.hasFuse);
-        buttonMount.setEnabled(mAct.hasFuse && mAct.mApp.hasBin());
+        buttonMount.setEnabled(mAct.hasFuse && DirectorySettings.INSTANCE.hasBin());
         
         if (ism) {
             buttonMount.setText(R.string.unmount);
@@ -217,7 +219,7 @@ public class LocalFragment extends SherlockFragment {
             buttonMount.setText(R.string.mount);
         }
         
-        buttonViewMount.setEnabled(ism && mAct.hasFuse && mAct.mApp.hasBin());
+        buttonViewMount.setEnabled(ism && mAct.hasFuse && DirectorySettings.INSTANCE.hasBin());
     }
 
     public void updateDecryptButtons() {

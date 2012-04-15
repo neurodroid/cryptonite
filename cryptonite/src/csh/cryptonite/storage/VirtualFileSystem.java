@@ -19,7 +19,7 @@ package csh.cryptonite.storage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 
 /** Singleton Virtual File System */
@@ -116,7 +116,7 @@ public enum VirtualFileSystem {
         return existed;
     }
 
-    public Set<VirtualFile> listFiles(String filepath) {
+    public CopyOnWriteArraySet<VirtualFile> listFiles(String filepath) {
         VirtualFile fromRoot = findFile(filepath, root);
         if (fromRoot == null) {
             return null;

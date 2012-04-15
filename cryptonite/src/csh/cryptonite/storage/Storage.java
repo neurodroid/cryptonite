@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 
 import csh.cryptonite.Cryptonite;
-import csh.cryptonite.CryptoniteApp;
 import csh.cryptonite.DBInterface;
 import csh.cryptonite.R;
 import csh.cryptonite.SelectionMode;
@@ -39,7 +38,6 @@ public abstract class Storage {
 
     public Context mCallingContext;
     public Context mAppContext;
-    public CryptoniteApp mApp;
     public int type;
     public int fdSelectionMode;
     public int selectExportMode;
@@ -52,10 +50,9 @@ public abstract class Storage {
     
     private UIHandler uiHandler;
     
-    public Storage(Context context, CryptoniteApp app) {
+    public Storage(Context context) {
         mCallingContext = context;
         mAppContext = context.getApplicationContext();
-        mApp = app;
         type = STOR_UNDEFINED;
         fdSelectionMode = SelectionMode.MODE_OPEN_MULTISELECT;
         selectExportMode = Cryptonite.SELECTLOCALEXPORT_MODE;

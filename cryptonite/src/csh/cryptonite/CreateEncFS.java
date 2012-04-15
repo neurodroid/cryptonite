@@ -21,6 +21,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -58,6 +59,8 @@ public class CreateEncFS extends SherlockFragmentActivity {
     
     private boolean showPassword = false;
 
+    private ProgressDialogFragment pdFragment;
+
     /** Called when the activity is first created. */
     @Override public void onCreate(Bundle savedInstanceState) {
 
@@ -69,9 +72,9 @@ public class CreateEncFS extends SherlockFragmentActivity {
         mListView = (ListView) findViewById(android.R.id.list);
 
         if (getIntent().getIntExtra(START_MODE, CREATE_DB) == CREATE_DB) {
-            mStorage = new DropboxStorage(this, ((CryptoniteApp)getApplication()));
+            mStorage = new DropboxStorage(this);
         } else {
-            mStorage = new LocalStorage(this, ((CryptoniteApp)getApplication()));
+            mStorage = new LocalStorage(this);
         }
 
         mList = new ArrayList<HashMap<String, String>>();
@@ -156,7 +159,7 @@ public class CreateEncFS extends SherlockFragmentActivity {
             break;
         case Storage.STOR_DROPBOX:
             dialogMode = SelectionMode.MODE_OPEN_CREATE_DB;
-            dialogStartPath = getPrivateDir(CryptoniteApp.BROWSEPNT, Context.MODE_PRIVATE).getPath();
+            dialogStartPath = getPrivateDir(DirectorySettings.BROWSEPNT, Context.MODE_PRIVATE).getPath();
             dialogRoot = dialogStartPath;
             dialogRootName = getString(R.string.dropbox_root_name);
             break;
@@ -271,6 +274,48 @@ public class CreateEncFS extends SherlockFragmentActivity {
         }
     }
 
+    public static class ProgressDialogFragment extends SherlockDialogFragment {
+
+        public static ProgressDialogFragment newInstance(int titleId, int msgId) {
+            ProgressDialogFragment frag = new ProgressDialogFragment();
+            Bundle args = new Bundle();
+            args.putInt("titleId", titleId);
+            args.putInt("msgId", msgId);
+            frag.setArguments(args);
+            return frag;
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            setCancelable(false);
+            final int titleId = getArguments().getInt("titleId");
+            final int msgId = getArguments().getInt("msgId");
+            final ProgressDialog pd = new ProgressDialog(getActivity());
+            pd.setTitle(getString(titleId));
+            pd.setMessage(getString(msgId));
+            pd.setIndeterminate(true);
+            return pd;
+        }
+    }
+
+    public void showProgressDialog(int titleId, int msgId) {
+        pdFragment = ProgressDialogFragment.newInstance(titleId, msgId);
+        pdFragment.show(getSupportFragmentManager(), "progdialog");
+    }
+
+    public void dismissDialog() {
+        if (pdFragment != null) {
+            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+            ft.remove(pdFragment);
+            try {
+                ft.commit();
+                pdFragment = null;
+            } catch (IllegalStateException e) {
+                pdFragment.setCancelable(true);
+            }
+        }
+    }
+
     private void createEncFS() {
         
         if (passwordString.length() > 0) {
@@ -279,19 +324,16 @@ public class CreateEncFS extends SherlockFragmentActivity {
                 showToast(R.string.pw_mismatch);
                 return;
             }
-            final ProgressDialog pd = ProgressDialog.show(this,
-                    getString(R.string.wait_msg),
-                    getString(R.string.creating_encfs), true);
+            showProgressDialog(R.string.wait_msg, R.string.creating_encfs);
             new Thread(new Runnable(){
                 public void run(){
-                    File browseRoot = getPrivateDir(CryptoniteApp.BROWSEPNT, Context.MODE_PRIVATE);
+                    File browseRoot = getPrivateDir(DirectorySettings.BROWSEPNT, Context.MODE_PRIVATE);
                     mStorage.createEncFS(
                             currentReturnPath, 
                             passwordString, browseRoot, currentConfig); 
                     runOnUiThread(new Runnable(){
                         public void run() {
-                            if (pd.isShowing())
-                                pd.dismiss();
+                            dismissDialog();
                             nullPasswords();
                             Cryptonite.jniResetVolume();
                             setResult(RESULT_OK, getIntent());

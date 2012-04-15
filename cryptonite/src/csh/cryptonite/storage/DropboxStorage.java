@@ -27,8 +27,8 @@ import com.dropbox.client2.DropboxAPI.UploadRequest;
 import com.dropbox.client2.exception.DropboxException;
 
 import csh.cryptonite.Cryptonite;
-import csh.cryptonite.CryptoniteApp;
 import csh.cryptonite.DBInterface;
+import csh.cryptonite.DirectorySettings;
 import csh.cryptonite.R;
 import csh.cryptonite.SelectionMode;
 import android.content.Context;
@@ -36,15 +36,15 @@ import android.util.Log;
 
 public class DropboxStorage extends Storage {
 
-    public DropboxStorage(Context context, CryptoniteApp app) {
-        super(context, app);
+    public DropboxStorage(Context context) {
+        super(context);
         type = STOR_DROPBOX;
         fdSelectionMode = SelectionMode.MODE_OPEN_MULTISELECT_DB;
         selectExportMode = Cryptonite.SELECTDBEXPORT_MODE;
         exportMode = Cryptonite.DBEXPORT_MODE;
         uploadMode = Cryptonite.SELECTDBUPLOAD_MODE;
         waitStringId = R.string.dropbox_reading;
-        browsePnt = CryptoniteApp.DROPBOXPNT;
+        browsePnt = DirectorySettings.DROPBOXPNT;
     }
     
     @Override
@@ -96,7 +96,7 @@ public class DropboxStorage extends Storage {
     public String encodedExists(String stripstr) {
 
         /* Upload file to DB */
-        File browseRoot = mAppContext.getDir(CryptoniteApp.BROWSEPNT, Context.MODE_PRIVATE);
+        File browseRoot = mAppContext.getDir(DirectorySettings.BROWSEPNT, Context.MODE_PRIVATE);
 
         /* Convert current path to encoded file name */
         String encodedPath = Cryptonite.jniEncode(stripstr);
@@ -159,7 +159,7 @@ public class DropboxStorage extends Storage {
         File encodedFile = new File(encodedPath);
 
         /* Create temporary cache dirs for Dropbox upload */
-        getPrivateDir(CryptoniteApp.BROWSEPNT, Context.MODE_PRIVATE);
+        getPrivateDir(DirectorySettings.BROWSEPNT, Context.MODE_PRIVATE);
         encodedFile.getParentFile().mkdirs();
 
         /* Encrypt file to temporary cache */
@@ -169,7 +169,7 @@ public class DropboxStorage extends Storage {
         }
             
         /* Upload file to DB */
-        File browseRoot = mAppContext.getDir(CryptoniteApp.BROWSEPNT, Context.MODE_PRIVATE);
+        File browseRoot = mAppContext.getDir(DirectorySettings.BROWSEPNT, Context.MODE_PRIVATE);
         String targetPath = encodedPath.substring(browseRoot.getPath().length());
             
         /* rename _de_coded file name if the _en_crypted file exists on Dropbox */
@@ -257,7 +257,7 @@ public class DropboxStorage extends Storage {
     @Override
     public boolean deleteFile(String path) {
         /* Create dir on DB */
-        File browseRoot = mAppContext.getDir(CryptoniteApp.BROWSEPNT, Context.MODE_PRIVATE);
+        File browseRoot = mAppContext.getDir(DirectorySettings.BROWSEPNT, Context.MODE_PRIVATE);
         String targetPath = path.substring(browseRoot.getPath().length());
         
         /* Does the _en_crypted directory exist on Dropbox? */
@@ -421,7 +421,7 @@ public class DropboxStorage extends Storage {
     @Override
     public boolean mkDirEncrypted(String encodedPath) {
         /* Create dir on DB */
-        File browseRoot = mAppContext.getDir(CryptoniteApp.BROWSEPNT, Context.MODE_PRIVATE);
+        File browseRoot = mAppContext.getDir(DirectorySettings.BROWSEPNT, Context.MODE_PRIVATE);
         String targetPath = encodedPath.substring(browseRoot.getPath().length());
         
         /* Does the _en_crypted directory exist on Dropbox? */
@@ -451,7 +451,7 @@ public class DropboxStorage extends Storage {
     @Override
     public boolean mkDirPlain(String plainPath) {
         /* Create dir on DB */
-        File browseRoot = mAppContext.getDir(CryptoniteApp.BROWSEPNT, Context.MODE_PRIVATE);
+        File browseRoot = mAppContext.getDir(DirectorySettings.BROWSEPNT, Context.MODE_PRIVATE);
         String targetPath = plainPath.substring(browseRoot.getPath().length());
         boolean fileExists = true;
         try {

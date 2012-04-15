@@ -19,9 +19,8 @@ package csh.cryptonite.storage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 
 /* TODO: Implement all File functions, or throw RuntimeException
@@ -32,7 +31,7 @@ public class VirtualFile extends File {
 
     public static final String VIRTUAL_TAG = "<virtual>";
     private boolean isVirtual = false;
-    private Set<VirtualFile> children;
+    private CopyOnWriteArraySet<VirtualFile> children;
     private boolean isDir;
     
     public VirtualFile(String path) {
@@ -182,11 +181,11 @@ public class VirtualFile extends File {
     }
     
     protected void setIsDir(boolean setDir) {
-        children = new HashSet<VirtualFile>();
+        children = new CopyOnWriteArraySet<VirtualFile>();
         isDir = setDir;
     }
     
-    protected Set<VirtualFile> getChildren() {
+    protected CopyOnWriteArraySet<VirtualFile> getChildren() {
         return children;
     }
     

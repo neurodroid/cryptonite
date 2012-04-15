@@ -63,13 +63,13 @@ public class DropboxFragment extends SherlockFragment {
         buttonDecrypt = (Button)mView.findViewById(R.id.btnDecryptDb);
         buttonDecrypt.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-                    StorageManager.INSTANCE.initEncFSStorage(mAct, Storage.STOR_DROPBOX, mAct.mApp);
+                    StorageManager.INSTANCE.initEncFSStorage(mAct, Storage.STOR_DROPBOX);
                     mAct.opMode = Cryptonite.SELECTDBENCFS_MODE;
                     mAct.currentDialogLabel = getString(R.string.select_enc);
                     mAct.currentDialogButtonLabel = getString(
                             R.string.select_enc_short);
-                    mAct.currentDialogMode = SelectionMode.MODE_OPEN_DB;
-                    mAct.currentDialogStartPath = mAct.getPrivateDir(CryptoniteApp.BROWSEPNT).getPath();
+                    mAct.currentDialogMode = SelectionMode.MODE_OPEN_ENCFS_DB;
+                    mAct.currentDialogStartPath = mAct.getPrivateDir(DirectorySettings.BROWSEPNT).getPath();
                     mAct.currentDialogRoot = mAct.currentDialogStartPath;
                     mAct.currentDialogRootName = getString(R.string.dropbox_root_name);
                     if (mAct.mLoggedIn) {
@@ -81,15 +81,15 @@ public class DropboxFragment extends SherlockFragment {
         buttonBrowseDecrypted = (Button)mView.findViewById(R.id.btnBrowseDecryptedDb);
         buttonBrowseDecrypted.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-                    mAct.browseEncFS(mAct.mApp.getCurrentBrowsePath(), 
-                            mAct.mApp.getCurrentBrowseStartPath());
+                    mAct.browseEncFS(DirectorySettings.INSTANCE.currentBrowsePath, 
+                            DirectorySettings.INSTANCE.currentBrowseStartPath);
                 }});
         
         /* Clear decryption information */
         buttonForgetDecryption = (Button)mView.findViewById(R.id.btnForgetDecryptionDb);
         buttonForgetDecryption.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-                    mAct.mApp.cleanUpDecrypted();
+                    mAct.cleanUpDecrypted();
                     updateDecryptButtons();
                 }});
         

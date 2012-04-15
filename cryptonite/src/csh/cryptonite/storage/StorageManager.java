@@ -1,6 +1,5 @@
 package csh.cryptonite.storage;
 
-import csh.cryptonite.CryptoniteApp;
 import android.content.Context;
 
 public enum StorageManager {
@@ -34,20 +33,20 @@ public enum StorageManager {
         return mLocalStorage;
     }
     
-    public void initLocalStorage(Context context, CryptoniteApp app) {
+    public void initLocalStorage(Context context) {
         if (mLocalStorage == null || mLocalStorage.type != Storage.STOR_LOCAL) {
-            mLocalStorage = new LocalStorage(context, app);
+            mLocalStorage = new LocalStorage(context);
         }
     }
     
-    public void initEncFSStorage(Context context, int storType, CryptoniteApp app) {
+    public void initEncFSStorage(Context context, int storType) {
         if (mEncFSStorage == null || mEncFSStorage.type != storType) {
             switch (storType) {
             case Storage.STOR_DROPBOX:
-                mEncFSStorage = new DropboxStorage(context, app);
+                mEncFSStorage = new DropboxStorage(context);
                 break;
             case Storage.STOR_LOCAL:
-                mEncFSStorage = new LocalStorage(context, app);
+                mEncFSStorage = new LocalStorage(context);
                 break;
             }
         }

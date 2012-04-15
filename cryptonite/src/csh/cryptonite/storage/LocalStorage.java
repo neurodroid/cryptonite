@@ -22,7 +22,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import csh.cryptonite.Cryptonite;
-import csh.cryptonite.CryptoniteApp;
+import csh.cryptonite.DirectorySettings;
 import csh.cryptonite.R;
 import csh.cryptonite.SelectionMode;
 import android.content.Context;
@@ -30,15 +30,15 @@ import android.util.Log;
 
 public class LocalStorage extends Storage {
 
-    public LocalStorage(Context context, CryptoniteApp app) {
-        super(context, app);
+    public LocalStorage(Context context) {
+        super(context);
         type = STOR_LOCAL;
         fdSelectionMode = SelectionMode.MODE_OPEN_MULTISELECT;
         selectExportMode = Cryptonite.SELECTLOCALEXPORT_MODE;
         exportMode = Cryptonite.LOCALEXPORT_MODE;
         uploadMode = Cryptonite.SELECTLOCALUPLOAD_MODE;
         waitStringId = R.string.local_reading;
-        browsePnt = CryptoniteApp.BROWSEPNT;
+        browsePnt = DirectorySettings.BROWSEPNT;
     }
 
     @Override

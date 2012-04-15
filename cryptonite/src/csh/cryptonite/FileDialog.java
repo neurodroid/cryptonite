@@ -21,7 +21,13 @@
 package csh.cryptonite;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -33,6 +39,7 @@ import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem.OnMenuItemClickListener;
 
+import csh.cryptonite.Cryptonite.DecodedBuffer;
 import csh.cryptonite.storage.Storage;
 import csh.cryptonite.storage.StorageManager;
 import csh.cryptonite.storage.VirtualFile;
@@ -41,12 +48,16 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 
 import android.support.v4.app.FragmentTransaction;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
@@ -57,6 +68,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.InputMethodManager;
+import android.webkit.MimeTypeMap;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -82,7 +94,6 @@ public class FileDialog extends SherlockFragmentActivity {
     public static final String START_PATH = "START_PATH";
     public static final String RESULT_EXPORT_PATHS = "csh.cryptonite.RESULT_EXPORT_PATHS";
     public static final String RESULT_OPEN_PATH = "csh.cryptonite.RESULT_OPEN_PATH";
-    public static final String RESULT_PREVIEW_PATH = "csh.cryptonite.RESULT_PREVIEW_PATH";
     public static final String RESULT_UPLOAD_PATH = "csh.cryptonite.RESULT_UPLOAD_PATH";
     public static final String RESULT_SELECTED_FILE = "csh.cryptonite.RESULT_SELECTED_FILE";
     public static final String SELECTION_MODE = "SELECTION_MODE";
@@ -90,9 +101,14 @@ public class FileDialog extends SherlockFragmentActivity {
     public static final String BUTTON_LABEL = "BUTTON_LABEL";
     public static final String CURRENT_ROOT = "CURRENT_ROOT";
     public static final String CURRENT_ROOT_NAME = "CURRENT_ROOT_NAME";
+    public static final String CURRENT_UPLOAD_TARGET_PATH = "CURRENT_UPLOAD_TARGET_PATH";
+    public static final String ENCFS_BROWSE_ROOT = "ENCFS_BROWSE_ROOT";
+    public static final String CURRENT_EXPORT_PATH_LIST = "CURRENT_EXPORT_PATH_LIST";
 
     private String currentRoot = ROOT;
     private String currentRootLabel = ROOT;
+    private String alertMsg = "";
+    private boolean alert = false;
     private List<String> pathList = null;
     private TextView myPath;
     private ArrayList<HashMap<String, Object>> mList;
@@ -104,7 +120,12 @@ public class FileDialog extends SherlockFragmentActivity {
     private InputMethodManager inputManager;
     private String parentPath;
     private String currentPath;
-
+    private String intentStartPath;
+    private String currentPassword = "\0";
+    private String currentUploadTargetPath;
+    private String encfsBrowseRoot;
+    private String[] currentExportPathList;
+    
     private int selectionMode;
 
     private VirtualFile selectedFile;
@@ -132,7 +153,7 @@ public class FileDialog extends SherlockFragmentActivity {
 
         inputManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
 
-        selectionMode = getIntent().getIntExtra(SELECTION_MODE, SelectionMode.MODE_OPEN);
+        selectionMode = getIntent().getIntExtra(SELECTION_MODE, SelectionMode.MODE_OPEN_ENCFS);
 
         currentRoot = getIntent().getStringExtra(CURRENT_ROOT);
         if (currentRoot == null) {
@@ -145,7 +166,12 @@ public class FileDialog extends SherlockFragmentActivity {
             currentRootLabel = currentRoot;
         }
 
-        String startPath = getIntent().getStringExtra(START_PATH);
+        intentStartPath = getIntent().getStringExtra(START_PATH);
+        String startPath = intentStartPath;
+        
+        currentUploadTargetPath = getIntent().getStringExtra(CURRENT_UPLOAD_TARGET_PATH);
+        encfsBrowseRoot = getIntent().getStringExtra(ENCFS_BROWSE_ROOT);
+        currentExportPathList= getIntent().getStringArrayExtra(CURRENT_EXPORT_PATH_LIST);
 
         if (savedInstanceState != null) {
             if (savedInstanceState.getString("parentPath") != null) {
@@ -158,6 +184,15 @@ public class FileDialog extends SherlockFragmentActivity {
                 currentPath = savedInstanceState.getString("currentPath");
                 startPath = currentPath;
             }
+            if (savedInstanceState.getString("currentUploadTargetPath") != null) {
+                currentUploadTargetPath = savedInstanceState.getString("currentUploadTargetPath");
+            }
+            if (savedInstanceState.getString("encfsBrowseRoot") != null) {
+                encfsBrowseRoot = savedInstanceState.getString("encfsBrowseRoot");
+            }
+            if (savedInstanceState.getStringArray("currentExportPathList") != null) {
+                currentExportPathList = savedInstanceState.getStringArray("currentExportPathList");
+            }
             if (savedInstanceState.getString("currentRoot") != null) {
                 currentRoot = savedInstanceState.getString("currentRoot");
             }
@@ -167,14 +202,11 @@ public class FileDialog extends SherlockFragmentActivity {
             if (savedInstanceState.getInt("selectionMode") != 0) {
                 selectionMode = savedInstanceState.getInt("selectionMode");
             }
-            if (getSupportFragmentManager().getFragment(savedInstanceState, "pdFragment") != null) {
-                pdFragment = (ProgressDialogFragment)getSupportFragmentManager().getFragment(savedInstanceState, "pdFragment");
-            }
         }
         
         switch (selectionMode) {
         case SelectionMode.MODE_OPEN_CREATE_DB:
-        case SelectionMode.MODE_OPEN_DB:
+        case SelectionMode.MODE_OPEN_ENCFS_DB:
         case SelectionMode.MODE_OPEN_MULTISELECT_DB:
         case SelectionMode.MODE_OPEN_MULTISELECT:
             localFilePickerStorage = false;
@@ -191,14 +223,18 @@ public class FileDialog extends SherlockFragmentActivity {
 
                 public void onClick(View v) {
                     switch (selectionMode) {
-                    case SelectionMode.MODE_OPEN:
-                    case SelectionMode.MODE_OPEN_DB:
+                    case SelectionMode.MODE_OPEN_ENCFS:
+                    case SelectionMode.MODE_OPEN_ENCFS_DB:
+                    case SelectionMode.MODE_OPEN_ENCFS_MOUNT:
+                        showPasswordDialog();
+                        break;
                     case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
+                        uploadEncFSFile(selectedFile.getPath());
+                        break;
                     case SelectionMode.MODE_OPEN_CREATE:
                     case SelectionMode.MODE_OPEN_CREATE_DB:
                         if (currentPath != null) {
                             getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
-                            getIntent().putExtra(RESULT_PREVIEW_PATH, (String)null);
                             getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
                             getIntent().putExtra(RESULT_EXPORT_PATHS, currentPath);
                             if (selectedFile != null) {
@@ -209,6 +245,9 @@ public class FileDialog extends SherlockFragmentActivity {
                             setResult(RESULT_OK, getIntent());
                             finish();
                         }
+                        break;
+                    case SelectionMode.MODE_OPEN_EXPORT_TARGET:
+                        exportEncFSFiles(currentExportPathList);
                         break;
                     default:
                         showExportWarning(selectedPaths.toArray(new String[0]));
@@ -228,11 +267,13 @@ public class FileDialog extends SherlockFragmentActivity {
         layoutSelect = (LinearLayout) findViewById(R.id.fdLinearLayoutSelect);
         
         switch (selectionMode) {
-        case SelectionMode.MODE_OPEN:
-        case SelectionMode.MODE_OPEN_DB:
+        case SelectionMode.MODE_OPEN_ENCFS:
+        case SelectionMode.MODE_OPEN_ENCFS_DB:
+        case SelectionMode.MODE_OPEN_ENCFS_MOUNT:
         case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
         case SelectionMode.MODE_OPEN_CREATE:
         case SelectionMode.MODE_OPEN_CREATE_DB:
+        case SelectionMode.MODE_OPEN_EXPORT_TARGET:
             uploadButton.setVisibility(View.GONE);
             uploadButton.setWidth(0);
             selectButton.setWidth(selectButton.getWidth()*2);
@@ -272,6 +313,7 @@ public class FileDialog extends SherlockFragmentActivity {
         case SelectionMode.MODE_OPEN_MULTISELECT_DB:
         case SelectionMode.MODE_OPEN_CREATE:
         case SelectionMode.MODE_OPEN_CREATE_DB:
+        case SelectionMode.MODE_OPEN_EXPORT_TARGET:
 
             menu.add(getString(R.string.new_folder_short))
                     .setIcon(R.drawable.ic_menu_add_folder)
@@ -315,12 +357,12 @@ public class FileDialog extends SherlockFragmentActivity {
         outState.putString("parentPath", parentPath);
         outState.putStringArrayList("pathList", (ArrayList<String>) pathList);
         outState.putString("currentPath", currentPath);
+        outState.putString("currentUploadTargetPath", currentUploadTargetPath);
+        outState.putString("encfsBrowseRoot", encfsBrowseRoot);
+        outState.putStringArray("currentExportPathList", currentExportPathList);
         outState.putString("currentRoot", currentRoot);
         outState.putString("currentRootLabel", currentRootLabel);
         outState.putInt("selectionMode", selectionMode);
-        if (pdFragment != null) {
-            getSupportFragmentManager().putFragment(outState, "pdFragment", pdFragment);
-        }
     }
 
     private void getDir(String dirPath, String rootPath, String rootName) {
@@ -331,7 +373,7 @@ public class FileDialog extends SherlockFragmentActivity {
         
         switch (selectionMode) {
         case SelectionMode.MODE_OPEN_CREATE_DB:
-        case SelectionMode.MODE_OPEN_DB:
+        case SelectionMode.MODE_OPEN_ENCFS_DB:
         case SelectionMode.MODE_OPEN_MULTISELECT_DB:
         case SelectionMode.MODE_OPEN_MULTISELECT:
             buildDir(dirPath, rootPath, rootName);
@@ -417,11 +459,14 @@ public class FileDialog extends SherlockFragmentActivity {
         mListView.setAdapter(fileList);
 
         switch (selectionMode) {
-        case SelectionMode.MODE_OPEN:
-        case SelectionMode.MODE_OPEN_DB:
+        case SelectionMode.MODE_OPEN_ENCFS:
+        case SelectionMode.MODE_OPEN_ENCFS_DB:
+        case SelectionMode.MODE_OPEN_ENCFS_MOUNT:
         case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
         case SelectionMode.MODE_OPEN_CREATE:
-        case SelectionMode.MODE_OPEN_CREATE_DB: {
+        case SelectionMode.MODE_OPEN_CREATE_DB: 
+        case SelectionMode.MODE_OPEN_EXPORT_TARGET:
+        {
             mListView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
             break;
         }
@@ -677,18 +722,11 @@ public class FileDialog extends SherlockFragmentActivity {
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
         if ((keyCode == KeyEvent.KEYCODE_BACK)) {
             selectButton.setEnabled(true);
-
-            /* if (layoutCreate.getVisibility() == View.VISIBLE) {
-                layoutCreate.setVisibility(View.GONE);
-                layoutSelect.setVisibility(View.VISIBLE);
-            } else {*/
-                if (!currentPath.equals(currentRoot)) {
-                    getDir(parentPath, currentRoot, currentRootLabel);
-                } else {
-                    return super.onKeyDown(keyCode, event);
-                }
-            //}
-
+            if (!currentPath.equals(currentRoot)) {
+                getDir(parentPath, currentRoot, currentRootLabel);
+            } else {
+                return super.onKeyDown(keyCode, event);
+            }
             return true;
         } else {
             return super.onKeyDown(keyCode, event);
@@ -697,7 +735,8 @@ public class FileDialog extends SherlockFragmentActivity {
     
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v,
-                                    ContextMenuInfo menuInfo) {
+            ContextMenuInfo menuInfo)
+    {
       super.onCreateContextMenu(menu, v, menuInfo);
       MenuInflater inflater = getMenuInflater();
       AdapterContextMenuInfo info = (AdapterContextMenuInfo)menuInfo;
@@ -714,20 +753,10 @@ public class FileDialog extends SherlockFragmentActivity {
       String pathName = pathList.get(info.position);
       switch (item.getItemId()) {
       case R.id.context_open:
-        getIntent().putExtra(RESULT_EXPORT_PATHS, (String[])null);
-        getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
-        getIntent().putExtra(RESULT_OPEN_PATH, pathName);
-        getIntent().putExtra(RESULT_PREVIEW_PATH, (String)null);
-        setResult(RESULT_OK, getIntent());
-        finish();
-        return true;
+          openEncFSFile(pathName, encfsBrowseRoot);
+          return true;
       case R.id.context_preview:
-          getIntent().putExtra(RESULT_EXPORT_PATHS, (String[])null);
-          getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
-          getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
-          getIntent().putExtra(RESULT_PREVIEW_PATH, pathName);
-          setResult(RESULT_OK, getIntent());
-          finish();
+          previewEncFSFile(pathName, encfsBrowseRoot);
           return true;
       case R.id.context_export:
           showExportWarning(new String[]{pathName});
@@ -771,6 +800,7 @@ public class FileDialog extends SherlockFragmentActivity {
                             switch (((FileDialog)getActivity()).selectionMode) {
                             case SelectionMode.MODE_OPEN_CREATE:
                             case SelectionMode.MODE_OPEN_CREATE_DB:
+                            case SelectionMode.MODE_OPEN_EXPORT_TARGET:
                                 ((FileDialog)getActivity()).mkDir(newFolderString);
                                 break;
                             default:
@@ -798,21 +828,18 @@ public class FileDialog extends SherlockFragmentActivity {
 
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
+            setCancelable(false);
             final int titleId = getArguments().getInt("titleId");
             final int msgId = getArguments().getInt("msgId");
             final ProgressDialog pd = new ProgressDialog(getActivity());
             pd.setTitle(getString(titleId));
             pd.setMessage(getString(msgId));
             pd.setIndeterminate(true);
-            pd.setCancelable(false);            
             return pd;
         }
     }
 
     public void showProgressDialog(int titleId, int msgId) {
-        if (pdFragment != null) {
-            pdFragment.dismiss();
-        }
         pdFragment = ProgressDialogFragment.newInstance(titleId, msgId);
         pdFragment.show(getSupportFragmentManager(), "progdialog");
     }
@@ -821,9 +848,70 @@ public class FileDialog extends SherlockFragmentActivity {
         if (pdFragment != null) {
             FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
             ft.remove(pdFragment);
-            ft.commit();
+            try {
+                ft.commit();
+                pdFragment = null;
+            } catch (IllegalStateException e) {
+                pdFragment.setCancelable(true);
+            }
         }
-        pdFragment = null;
+    }
+
+    public static class PasswordDialogFragment extends SherlockDialogFragment {
+
+        public static PasswordDialogFragment newInstance() {
+            PasswordDialogFragment frag = new PasswordDialogFragment();
+            return frag;
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            LayoutInflater inflater = (LayoutInflater) getActivity()
+                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            View layout = inflater.inflate(R.layout.password_dialog, 
+                    (ViewGroup) getActivity().findViewById(R.id.root));
+            final EditText password = (EditText) layout.findViewById(R.id.EditText_Pwd);
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            builder.setTitle(R.string.title_password);
+            builder.setView(layout);
+            builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        
+                    }
+                });
+            builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        ((FileDialog)getActivity()).currentPassword = password.getText().toString();
+                        if (((FileDialog)getActivity()).currentPassword.length() > 0) {
+                            switch (((FileDialog)getActivity()).selectionMode) {
+                             case SelectionMode.MODE_OPEN_ENCFS_MOUNT:
+                                 ((FileDialog)getActivity()).mountEncFS(
+                                         ((FileDialog)getActivity()).currentPath);
+                                 break;
+                             case SelectionMode.MODE_OPEN_ENCFS:
+                             case SelectionMode.MODE_OPEN_ENCFS_DB:
+                                 ((FileDialog)getActivity()).initEncFS(
+                                         ((FileDialog)getActivity()).currentPath);
+                                 break;
+                            }
+                        } else {
+                            ((FileDialog)getActivity()).showToast(R.string.empty_password);
+                        }
+                    }
+                });
+            return builder.create();
+        }
+    }
+
+    private void showPasswordDialog() {
+        SherlockDialogFragment newFragment = PasswordDialogFragment.newInstance();
+        newFragment.show(getSupportFragmentManager(), "pwdialog");
+    }
+
+    private void nullPassword() {
+        char[] fill = new char[currentPassword.length()];
+        Arrays.fill(fill, '\0');
+        currentPassword = new String(fill);
     }
 
     private void setSelectVisible(View v) {
@@ -885,7 +973,6 @@ public class FileDialog extends SherlockFragmentActivity {
                 public void onClick(DialogInterface dialog,
                         int which) {
                     getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
-                    getIntent().putExtra(RESULT_PREVIEW_PATH, (String)null);
                     getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
                     getIntent().putExtra(RESULT_EXPORT_PATHS, exportPaths);
                     setResult(RESULT_OK, getIntent());
@@ -902,7 +989,6 @@ public class FileDialog extends SherlockFragmentActivity {
             dialog.show();
         } else {
             getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
-            getIntent().putExtra(RESULT_PREVIEW_PATH, (String)null);
             getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
             getIntent().putExtra(RESULT_EXPORT_PATHS, exportPaths);
             setResult(RESULT_OK, getIntent());
@@ -972,7 +1058,6 @@ public class FileDialog extends SherlockFragmentActivity {
                 public void onClick(DialogInterface dialog,
                         int which) {
                     getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
-                    getIntent().putExtra(RESULT_PREVIEW_PATH, (String)null);
                     getIntent().putExtra(RESULT_EXPORT_PATHS, (String[])null);
                     getIntent().putExtra(RESULT_UPLOAD_PATH, uploadPath);
                     setResult(RESULT_OK, getIntent());
@@ -989,7 +1074,6 @@ public class FileDialog extends SherlockFragmentActivity {
             dialog.show();
         } else {
             getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
-            getIntent().putExtra(RESULT_PREVIEW_PATH, (String)null);
             getIntent().putExtra(RESULT_EXPORT_PATHS, (String[])null);
             getIntent().putExtra(RESULT_UPLOAD_PATH, uploadPath);
             setResult(RESULT_OK, getIntent());
@@ -1108,4 +1192,480 @@ public class FileDialog extends SherlockFragmentActivity {
         }
     }
     
+    /** Initialize an EncFS volume. This will check
+     * whether the EncFS volume is valid an initialize the EncFS
+     * root information
+     * 
+     * @param srcDir Path to EncFS volume
+     * @param pwd password
+     */
+    private void initEncFS(final String srcDir) {
+        alertMsg = "";
+
+        showProgressDialog(R.string.wait_msg, R.string.running_encfs);
+        new Thread(new Runnable() {
+            public void run() {
+                if (StorageManager.INSTANCE.getEncFSStorage() == null) {
+                    alertMsg = getString(R.string.internal_error);
+                } else if (!StorageManager.INSTANCE.getEncFSStorage()
+                        .initEncFS(srcDir, currentRoot)) {
+                    alertMsg = getString(R.string.invalid_encfs);
+                    // StorageManager.INSTANCE.resetEncFSStorage();
+                } else {
+                    DirectorySettings.INSTANCE.currentBrowsePath = currentPath;
+                    DirectorySettings.INSTANCE.currentBrowseStartPath = intentStartPath;
+                    StorageManager.INSTANCE.setEncFSPath(currentPath
+                            .substring(intentStartPath.length()));
+                    Log.i(Cryptonite.TAG, "Dialog root is " + currentPath);
+                    if (Cryptonite.jniInit(srcDir, currentPassword) != Cryptonite.jniSuccess()) {
+                        Log.v(Cryptonite.TAG, getString(R.string.browse_failed));
+                        alertMsg = getString(R.string.browse_failed);
+                        // StorageManager.INSTANCE.resetEncFSStorage();
+                    } else {
+                        Log.v(Cryptonite.TAG, "Decoding succeeded");
+                    }
+                }
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        dismissDialog();
+                        nullPassword();
+                        if (alertMsg.length() != 0) {
+                            showToast(alertMsg);
+                        } else {
+                            showToast(R.string.encfs_success);
+                            getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
+                            getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
+                            getIntent().putExtra(RESULT_EXPORT_PATHS, currentPath);
+                            getIntent().putExtra(RESULT_SELECTED_FILE, (String)null);
+                            setResult(RESULT_OK, getIntent());
+                            finish();
+                        }
+                    }
+                });
+            }
+        }).start();
+    }
+
+    
+    /** This will run the shipped encfs binary and spawn a daemon on rooted devices
+     */
+    private void mountEncFS(final String srcDir) {
+        if (Cryptonite.jniIsValidEncFS(srcDir) != Cryptonite.jniSuccess()) {
+            showToast(R.string.invalid_encfs);
+            Log.v(Cryptonite.TAG, "Invalid EncFS");
+            return;
+        }
+        
+        if (!Cryptonite.isValidMntDir(this, new File(DirectorySettings.INSTANCE.mntDir), true)) {
+            showToast(R.string.mount_point_invalid);
+            return;
+        }
+        showProgressDialog(R.string.wait_msg, R.string.running_encfs);
+        Log.v(Cryptonite.TAG, "Running encfs with " + srcDir + " " + DirectorySettings.INSTANCE.mntDir);
+        alertMsg = "";
+        new Thread(new Runnable() {
+            public void run() {
+                String encfsoutput = "";
+                String[] cmdlist = { DirectorySettings.INSTANCE.encFSBin,
+                        "--public", "--stdinpass", "\"" + srcDir + "\"",
+                        "\"" + DirectorySettings.INSTANCE.mntDir + "\"" };
+                try {
+                    encfsoutput = ShellUtils.runBinary(cmdlist,
+                            DirectorySettings.INSTANCE.binDirPath,
+                            currentPassword, true);
+                } catch (IOException e) {
+                    alertMsg = getString(R.string.mount_fail) + ": "
+                            + e.getMessage();
+                } catch (InterruptedException e) {
+                    alertMsg = getString(R.string.mount_fail) + ": "
+                            + e.getMessage();
+                }
+                final String fEncFSOutput = encfsoutput;
+                /* Mounted? */
+                if (!ShellUtils.isMounted("fuse.encfs")) {
+                    alertMsg = getString(R.string.mount_fail);
+                }
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        dismissDialog();
+                        nullPassword();
+                        if (!alertMsg.equals("")) {
+                            showToast(alertMsg + ": " + fEncFSOutput);
+                        } else {
+                            showToast(getString(R.string.encfs_success_mount)
+                                    + " " + DirectorySettings.INSTANCE.mntDir);
+                            getIntent().putExtra(RESULT_OPEN_PATH,
+                                    (String) null);
+                            getIntent().putExtra(RESULT_UPLOAD_PATH,
+                                    (String) null);
+                            getIntent().putExtra(RESULT_EXPORT_PATHS,
+                                    currentPath);
+                            getIntent().putExtra(RESULT_SELECTED_FILE,
+                                    (String) null);
+                            setResult(RESULT_OK, getIntent());
+                            finish();
+                        }
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void uploadEncFSFile(final String srcPath) {
+        final String stripstr = StorageManager.INSTANCE.getEncFSStorage().stripStr(
+                currentUploadTargetPath, encfsBrowseRoot, srcPath);
+        
+        /* Run in separate thread in case this involves a network operation */
+        new Thread(new Runnable(){
+            public void run(){
+                final String nextFilePath = StorageManager.INSTANCE.getEncFSStorage().encodedExists(stripstr);
+                runOnUiThread(new Runnable(){
+                    public void run() {
+                        if (!nextFilePath.equals(stripstr)) {
+                            AlertDialog.Builder builder = new AlertDialog.Builder(FileDialog.this);
+                            builder.setIcon(R.drawable.ic_launcher_cryptonite)
+                            .setTitle(R.string.file_exists)
+                            .setMessage(R.string.file_exists_options)
+                            .setPositiveButton(R.string.overwrite,
+                                    new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog,
+                                        int which) {
+                                    uploadEncFSFileExec(stripstr, srcPath);
+                                }
+                            })
+                            .setNeutralButton(R.string.rename, 
+                                    new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog,
+                                        int which) {
+                                    uploadEncFSFileExec(nextFilePath, srcPath);
+                                }
+                            })
+                            .setNegativeButton(R.string.cancel,
+                                    new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog,
+                                        int which) {
+
+                                }
+                            });  
+                            AlertDialog dialog = builder.create();
+                            dialog.show();
+                        }else {
+                            uploadEncFSFileExec(stripstr, srcPath);
+                        }
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void uploadEncFSFileExec(final String targetPath, final String srcPath) {
+        showProgressDialog(R.string.wait_msg, R.string.encrypting);
+        alertMsg = "";
+        new Thread(new Runnable(){
+            public void run(){
+                if (!StorageManager.INSTANCE.getEncFSStorage().uploadEncFSFile(targetPath, srcPath)) {
+                    alertMsg = getString(R.string.upload_failure);
+                }        
+                runOnUiThread(new Runnable(){
+                    public void run() {
+                        dismissDialog();
+                        if (!alertMsg.equals("")) {
+                            showToast(alertMsg);
+                        } else {
+                            showToast(R.string.upload_success);
+                        }
+                        getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
+                        getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
+                        getIntent().putExtra(RESULT_EXPORT_PATHS, currentPath);
+                        if (selectedFile != null) {
+                            getIntent().putExtra(RESULT_SELECTED_FILE, selectedFile.getPath());
+                        } else {
+                            getIntent().putExtra(RESULT_SELECTED_FILE, (String)null);
+                        }
+                        setResult(RESULT_OK, getIntent());
+                        finish();
+                    }
+                });
+            }
+        }).start();
+    }
+    
+    private boolean openEncFSFile(final String encFSFilePath, String fileRoot) {
+
+        SharedPreferences prefs = getBaseContext().getSharedPreferences(Cryptonite.ACCOUNT_PREFS_NAME, 0);
+        Cryptonite.setupReadDirs(prefs.getBoolean("cb_extcache", false), this);
+
+        /* normalise path names */
+        String bRoot = new File(fileRoot).getPath();
+        String bPath = new File(encFSFilePath).getPath();
+        String stripstrtmp = bPath.substring(bRoot.length());
+        if (!stripstrtmp.startsWith("/")) {
+            stripstrtmp = "/" + stripstrtmp;
+        }
+
+        final String stripstr = stripstrtmp;
+        
+        /* Convert current path to encoded file name */
+        final String encodedPath = Cryptonite.jniEncode(stripstr);
+
+        /* Set up temp dir for decrypted file */
+        String destPath = DirectorySettings.INSTANCE.openDir.getPath() + 
+                (new File(bPath)).getParent().substring(bRoot.length());
+
+        (new File(destPath)).mkdirs();
+        alertMsg = "";
+        showProgressDialog(R.string.wait_msg, R.string.decrypting);
+        new Thread(new Runnable() {
+            public void run() {
+                if (!StorageManager.INSTANCE.getEncFSStorage()
+                        .decryptEncFSFile(encodedPath,
+                                DirectorySettings.INSTANCE.openDir.getPath())) {
+                    alertMsg = getString(R.string.decrypt_failure);
+                    Log.e(Cryptonite.TAG, "Error while attempting to copy " + encodedPath);
+                }
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        dismissDialog();
+                        if (!alertMsg.equals("")) {
+                            showToast(alertMsg);
+                            return;
+                        }
+                        /* Copy the resulting file to a readable folder */
+                        String openFilePath = DirectorySettings.INSTANCE.openDir.getPath()
+                                + stripstr;
+                        String readableName = (new File(encFSFilePath))
+                                .getName();
+                        String readablePath = DirectorySettings.INSTANCE.readDir.getPath() + "/"
+                                + readableName;
+                        File readableFile = new File(readablePath);
+
+                        /* Make sure the readable Path exists */
+                        readableFile.getParentFile().mkdirs();
+
+                        try {
+                            FileOutputStream fos = new FileOutputStream(
+                                    readableFile);
+
+                            FileInputStream fis = new FileInputStream(new File(
+                                    openFilePath));
+
+                            byte[] buffer = new byte[fis.available()];
+
+                            fis.read(buffer);
+
+                            fos.write(buffer);
+
+                            fis.close();
+                            fos.close();
+
+                            /* Make world readable */
+                            try {
+                                ShellUtils.chmod(readablePath, "644");
+                            } catch (InterruptedException e) {
+                                Log.e(Cryptonite.TAG, e.toString());
+                            }
+
+                            /* Delete tmp directory */
+                            Cryptonite.deleteDir(DirectorySettings.INSTANCE.openDir);
+                        } catch (IOException e) {
+                            showToast("Error while attempting to open " + readableName + ": " + e.toString());
+                            return;
+                        }
+
+                        fileOpen(readablePath);
+
+                    }
+                });
+            }
+        }).start();
+        return true;        
+    }
+    
+    private String getMimeTypeFromExtension(String filePath) {
+        /* Guess MIME type */
+        MimeTypeMap myMime = MimeTypeMap.getSingleton();
+        String extension = Storage.fileExt(filePath);
+        String contentType;
+        if (extension.length() == 0) {
+            contentType = null;
+        } else {
+            contentType = myMime.getMimeTypeFromExtension(extension.substring(1));
+        }
+        
+        return contentType;
+    }
+    
+    private boolean fileOpen(String filePath) {
+        String contentType = getMimeTypeFromExtension(filePath);
+        
+        Uri data = Uri.fromFile(new File(filePath));
+
+        /* Attempt to guess file type from content; seemingly very unreliable */
+        if (contentType == null) {
+            try {
+                FileInputStream fis = new FileInputStream(filePath);
+                contentType = URLConnection.guessContentTypeFromStream(fis);
+            } catch (IOException e) {
+                Log.e(Cryptonite.TAG, "Error while attempting to guess MIME type of " + filePath
+                        + ": " + e.toString());
+                contentType = null;
+            }
+        }
+
+        if (contentType == null) {
+            Log.e(Cryptonite.TAG, "Couldn't find content type; resorting to text/plain");
+            contentType = "text/plain";
+        }
+        
+        Intent intent = new Intent();
+        
+        intent.setAction(android.content.Intent.ACTION_VIEW);
+        intent.setDataAndType(data, contentType);
+
+        try {
+            startActivity(intent);
+        } catch (ActivityNotFoundException e) {
+            showToast(getString(R.string.activity_not_found_title) + 
+                    getString(R.string.activity_not_found_msg));
+            Log.e(Cryptonite.TAG, "Couldn't find activity: " + e.toString());
+            return false;
+        }
+        
+        return true;
+    }
+
+    private boolean previewEncFSFile(final String encFSFilePath, String fileRoot) {
+
+        SharedPreferences prefs = getBaseContext()
+                .getSharedPreferences(Cryptonite.ACCOUNT_PREFS_NAME, 0);
+        Cryptonite.setupReadDirs(prefs.getBoolean("cb_extcache", false), this);
+
+        /* normalise path names */
+        String bRoot = new File(fileRoot).getPath();
+        String bPath = new File(encFSFilePath).getPath();
+        String stripstrtmp = bPath.substring(bRoot.length());
+        if (!stripstrtmp.startsWith("/")) {
+            stripstrtmp = "/" + stripstrtmp;
+        }
+
+        final String stripstr = stripstrtmp;
+
+        /* Convert current path to encoded file name */
+        final String encodedPath = Cryptonite.jniEncode(stripstr);
+
+        showProgressDialog(R.string.wait_msg, R.string.decrypting);
+        new Thread(new Runnable() {
+            public void run() {
+                final DecodedBuffer buf = StorageManager.INSTANCE
+                        .getEncFSStorage()
+                        .decryptEncFSFileToBuffer(encodedPath);
+                if (buf == null) {
+                    alertMsg = getString(R.string.decrypt_failure);
+                    Log.e(Cryptonite.TAG, "Error while attempting to decrypt"
+                            + encodedPath);
+                }
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        dismissDialog();
+                        if (!alertMsg.equals("")) {
+                            showToast(alertMsg);
+                            return;
+                        }
+                        bufferPreview(buf);
+                    }
+                });
+            }
+        }).start();
+        return true;
+    }
+ 
+    private void bufferPreview(final DecodedBuffer buf) {
+        /* Attempt to guess file type from extension */
+        String contentType = getMimeTypeFromExtension(buf.fileName);
+        
+        if (contentType != "text/plain" && Storage.fileExt(buf.fileName).length() > 0) {
+            new AlertDialog.Builder(this)
+            .setIcon(android.R.drawable.ic_dialog_alert)
+            .setTitle(R.string.warning)
+            .setMessage(R.string.not_plain_text)
+            .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+                    textPreview(buf);
+                }
+            })
+            .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+                    return;
+                }
+            })
+            .create().show();
+        } else {
+            textPreview(buf);
+        }
+    }
+    
+    private void textPreview(DecodedBuffer buf) {
+        String str = "";
+        try {
+            str = new String(buf.contents, "utf-8");
+        } catch (UnsupportedEncodingException e) {
+            showToast(R.string.unsupported_encoding);
+            return;
+        }
+        String truncated = "";
+        /* Truncate at 100KB; couldn't find any documentation
+         * what the limit really is.
+         */
+        if (str.length() > 1e5) {
+            str = str.substring(0, (int)1e5);
+            truncated = " (truncated)";
+        }
+        Intent intent = new Intent(getBaseContext(), TextPreview.class);
+        intent.putExtra(TextPreview.PREVIEW_TITLE, buf.fileName + truncated);
+        intent.putExtra(TextPreview.PREVIEW_BODY, str);
+        startActivityForResult(intent, TextPreview.REQUEST_PREVIEW);
+    }
+    
+    private void exportEncFSFiles(final String[] pathList) {
+        if (pathList != null) {
+            showProgressDialog(R.string.wait_msg, R.string.running_export);
+            new Thread(new Runnable(){
+                public void run(){
+                    String exportName = currentPath + "/Cryptonite";
+                    Log.v(Cryptonite.TAG, "Exporting to " + exportName);
+                    if (!new File(exportName).exists()) {
+                        new File(exportName).mkdirs();
+                    }
+                    if (!new File(exportName).exists()) {
+                        alert = true;
+                    } else {
+                        alert = !StorageManager.INSTANCE.getEncFSStorage()
+                                .exportEncFSFiles(pathList, encfsBrowseRoot, 
+                                    currentPath + "/Cryptonite");
+                    }
+                    runOnUiThread(new Runnable(){
+                        public void run() {
+                            dismissDialog();
+                            if (alert) {
+                                showToast(R.string.export_failed);
+                                alert = false;
+                            } else {
+                                showToast(R.string.export_success);
+                            }
+                            getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
+                            getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
+                            getIntent().putExtra(RESULT_EXPORT_PATHS, currentPath);
+                            if (selectedFile != null) {
+                                getIntent().putExtra(RESULT_SELECTED_FILE, selectedFile.getPath());
+                            } else {
+                                getIntent().putExtra(RESULT_SELECTED_FILE, (String)null);
+                            }
+                            setResult(RESULT_OK, getIntent());
+                            finish();
+                        }
+                    });
+                }
+            }).start();
+        }
+    }
 }
