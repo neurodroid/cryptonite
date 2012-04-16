@@ -11,6 +11,7 @@ import com.actionbarsherlock.app.SherlockFragmentActivity;
 import csh.cryptonite.storage.DropboxStorage;
 import csh.cryptonite.storage.LocalStorage;
 import csh.cryptonite.storage.Storage;
+import csh.cryptonite.storage.StorageManager;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -72,9 +73,23 @@ public class CreateEncFS extends SherlockFragmentActivity {
         mListView = (ListView) findViewById(android.R.id.list);
 
         if (getIntent().getIntExtra(START_MODE, CREATE_DB) == CREATE_DB) {
+            /* Storage for this activity */
             mStorage = new DropboxStorage(this);
+            /* Reset the application-wide storage if necessary */
+            if (StorageManager.INSTANCE.getEncFSStorage() == null ||
+                    StorageManager.INSTANCE.getEncFSStorage().type != Storage.STOR_DROPBOX)
+            {
+                StorageManager.INSTANCE.initEncFSStorage(this, Storage.STOR_DROPBOX);
+            }
         } else {
+            /* Storage for this activity */
             mStorage = new LocalStorage(this);
+            /* Reset the application-wide storage if necessary */
+            if (StorageManager.INSTANCE.getEncFSStorage() == null ||
+                    StorageManager.INSTANCE.getEncFSStorage().type != Storage.STOR_LOCAL)
+            {
+                StorageManager.INSTANCE.initEncFSStorage(this, Storage.STOR_LOCAL);
+            }
         }
 
         mList = new ArrayList<HashMap<String, String>>();
