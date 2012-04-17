@@ -378,18 +378,22 @@ public class Cryptonite extends SherlockFragmentActivity
                         break;
                     case SELECTLOCALENCFS_MODE:
                     case SELECTDBENCFS_MODE:
+                        StorageManager.INSTANCE.setEncFSPath(currentReturnPath
+                                .substring(currentDialogStartPath.length()));
                         updateDecryptButtons();
                         break;
                     case LOCALEXPORT_MODE:
                     case DBEXPORT_MODE:
-                        break;
                     case SELECTDBUPLOAD_MODE:
                     case SELECTLOCALUPLOAD_MODE:
                         break;
                     }
                 }
             } else if (resultCode == Activity.RESULT_CANCELED) {
-                /* Log.d(TAG, "file not selected"); */
+                if (data != null) {
+                    /* Restart file dialog */
+                    launchBuiltinFileBrowser();
+                }
             }
             break;
         case SelectionMode.MODE_OPEN_MULTISELECT:
@@ -555,7 +559,6 @@ public class Cryptonite extends SherlockFragmentActivity
         }
 
     }
-    
 
     public void showAlert(int alert_id, int msg_id) {
         showAlert(getString(alert_id), getString(msg_id));

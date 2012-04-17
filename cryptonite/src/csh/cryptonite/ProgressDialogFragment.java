@@ -31,8 +31,8 @@ public class ProgressDialogFragment extends SherlockDialogFragment {
     }
     
     public static void showDialog(SherlockFragmentActivity activity, int msgId, String tag) {
-        Fragment prev = activity.getSupportFragmentManager().findFragmentByTag(tag);
         FragmentTransaction ft = activity.getSupportFragmentManager().beginTransaction();
+        Fragment prev = activity.getSupportFragmentManager().findFragmentByTag(tag);
         if (prev != null) {
             ft.remove(prev);
         }

@@ -206,6 +206,7 @@ public class FileDialog extends SherlockFragmentActivity {
                     StorageManager.INSTANCE.setEncFSPath(savedInstanceState.getString("encFSPath"));
                 }
             }
+            
         }
         
         switch (selectionMode) {
@@ -1209,6 +1210,12 @@ public class FileDialog extends SherlockFragmentActivity {
                         nullPassword();
                         if (alertMsg.length() != 0) {
                             showToast(alertMsg);
+                            getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
+                            getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
+                            getIntent().putExtra(RESULT_EXPORT_PATHS, currentPath);
+                            getIntent().putExtra(RESULT_SELECTED_FILE, (String)null);
+                            setResult(android.app.Activity.RESULT_CANCELED, getIntent());
+                            finish();
                         } else {
                             showToast(R.string.encfs_success);
                             getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
