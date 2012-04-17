@@ -47,7 +47,6 @@ import csh.cryptonite.storage.VirtualFile;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -56,7 +55,6 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 
-import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -136,8 +134,6 @@ public class FileDialog extends SherlockFragmentActivity {
     private boolean localFilePickerStorage;
 
     private ListView mListView;
-    
-    private ProgressDialogFragment pdFragment;
 
     /** Called when the activity is first created. */
     @Override
@@ -201,6 +197,14 @@ public class FileDialog extends SherlockFragmentActivity {
             }
             if (savedInstanceState.getInt("selectionMode") != 0) {
                 selectionMode = savedInstanceState.getInt("selectionMode");
+            }
+
+            int storageType = savedInstanceState.getInt("storageType");
+            if (storageType != Storage.STOR_UNDEFINED) {
+                StorageManager.INSTANCE.initEncFSStorage(this, storageType);
+                if (savedInstanceState.getString("encFSPath") != null) {
+                    StorageManager.INSTANCE.setEncFSPath(savedInstanceState.getString("encFSPath"));
+                }
             }
         }
         
@@ -363,6 +367,22 @@ public class FileDialog extends SherlockFragmentActivity {
         outState.putString("currentRoot", currentRoot);
         outState.putString("currentRootLabel", currentRootLabel);
         outState.putInt("selectionMode", selectionMode);
+        if (StorageManager.INSTANCE.getEncFSStorage() != null) {
+            outState.putInt("storageType", StorageManager.INSTANCE.getEncFSStorageType());
+            outState.putString("encFSPath", StorageManager.INSTANCE.getEncFSPath());
+        } else {
+            outState.putInt("storageType", Storage.STOR_UNDEFINED);
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
     }
 
     private void getDir(String dirPath, String rootPath, String rootName) {
@@ -815,48 +835,6 @@ public class FileDialog extends SherlockFragmentActivity {
         }
     }
 
-    public static class ProgressDialogFragment extends SherlockDialogFragment {
-
-        public static ProgressDialogFragment newInstance(int titleId, int msgId) {
-            ProgressDialogFragment frag = new ProgressDialogFragment();
-            Bundle args = new Bundle();
-            args.putInt("titleId", titleId);
-            args.putInt("msgId", msgId);
-            frag.setArguments(args);
-            return frag;
-        }
-
-        @Override
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            setCancelable(false);
-            final int titleId = getArguments().getInt("titleId");
-            final int msgId = getArguments().getInt("msgId");
-            final ProgressDialog pd = new ProgressDialog(getActivity());
-            pd.setTitle(getString(titleId));
-            pd.setMessage(getString(msgId));
-            pd.setIndeterminate(true);
-            return pd;
-        }
-    }
-
-    public void showProgressDialog(int titleId, int msgId) {
-        pdFragment = ProgressDialogFragment.newInstance(titleId, msgId);
-        pdFragment.show(getSupportFragmentManager(), "progdialog");
-    }
-
-    public void dismissDialog() {
-        if (pdFragment != null) {
-            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-            ft.remove(pdFragment);
-            try {
-                ft.commit();
-                pdFragment = null;
-            } catch (IllegalStateException e) {
-                pdFragment.setCancelable(true);
-            }
-        }
-    }
-
     public static class PasswordDialogFragment extends SherlockDialogFragment {
 
         public static PasswordDialogFragment newInstance() {
@@ -940,7 +918,7 @@ public class FileDialog extends SherlockFragmentActivity {
         }
         final String fEncFSRoot = encFSRoot;
         
-        showProgressDialog(R.string.wait_msg, getStorage().waitStringId);
+        ProgressDialogFragment.showDialog(this, getStorage().waitStringId, "buildDir");
         new Thread(new Runnable(){
             public void run(){
                 switch (selectionMode) {
@@ -953,7 +931,7 @@ public class FileDialog extends SherlockFragmentActivity {
                 }
                 runOnUiThread(new Runnable(){
                     public void run() {
-                        dismissDialog();
+                        ProgressDialogFragment.dismissDialog(FileDialog.this, "buildDir");
                         getDirImpl(dirPath, rootPath, rootName);
                     }
                 });
@@ -1202,7 +1180,7 @@ public class FileDialog extends SherlockFragmentActivity {
     private void initEncFS(final String srcDir) {
         alertMsg = "";
 
-        showProgressDialog(R.string.wait_msg, R.string.running_encfs);
+        ProgressDialogFragment.showDialog(this, R.string.running_encfs, "initEncFS");
         new Thread(new Runnable() {
             public void run() {
                 if (StorageManager.INSTANCE.getEncFSStorage() == null) {
@@ -1227,7 +1205,7 @@ public class FileDialog extends SherlockFragmentActivity {
                 }
                 runOnUiThread(new Runnable() {
                     public void run() {
-                        dismissDialog();
+                        ProgressDialogFragment.dismissDialog(FileDialog.this, "initEncFS");
                         nullPassword();
                         if (alertMsg.length() != 0) {
                             showToast(alertMsg);
@@ -1260,7 +1238,7 @@ public class FileDialog extends SherlockFragmentActivity {
             showToast(R.string.mount_point_invalid);
             return;
         }
-        showProgressDialog(R.string.wait_msg, R.string.running_encfs);
+        ProgressDialogFragment.showDialog(this, R.string.running_encfs, "mountEncFS");
         Log.v(Cryptonite.TAG, "Running encfs with " + srcDir + " " + DirectorySettings.INSTANCE.mntDir);
         alertMsg = "";
         new Thread(new Runnable() {
@@ -1287,7 +1265,7 @@ public class FileDialog extends SherlockFragmentActivity {
                 }
                 runOnUiThread(new Runnable() {
                     public void run() {
-                        dismissDialog();
+                        ProgressDialogFragment.dismissDialog(FileDialog.this, "mountEncFS");
                         nullPassword();
                         if (!alertMsg.equals("")) {
                             showToast(alertMsg + ": " + fEncFSOutput);
@@ -1359,7 +1337,7 @@ public class FileDialog extends SherlockFragmentActivity {
     }
 
     private void uploadEncFSFileExec(final String targetPath, final String srcPath) {
-        showProgressDialog(R.string.wait_msg, R.string.encrypting);
+        ProgressDialogFragment.showDialog(this, R.string.encrypting, "uploadEncFS");
         alertMsg = "";
         new Thread(new Runnable(){
             public void run(){
@@ -1368,7 +1346,7 @@ public class FileDialog extends SherlockFragmentActivity {
                 }        
                 runOnUiThread(new Runnable(){
                     public void run() {
-                        dismissDialog();
+                        ProgressDialogFragment.dismissDialog(FileDialog.this, "uploadEncFS");
                         if (!alertMsg.equals("")) {
                             showToast(alertMsg);
                         } else {
@@ -1414,7 +1392,7 @@ public class FileDialog extends SherlockFragmentActivity {
 
         (new File(destPath)).mkdirs();
         alertMsg = "";
-        showProgressDialog(R.string.wait_msg, R.string.decrypting);
+        ProgressDialogFragment.showDialog(this, R.string.decrypting, "openEncFS");
         new Thread(new Runnable() {
             public void run() {
                 if (!StorageManager.INSTANCE.getEncFSStorage()
@@ -1425,7 +1403,7 @@ public class FileDialog extends SherlockFragmentActivity {
                 }
                 runOnUiThread(new Runnable() {
                     public void run() {
-                        dismissDialog();
+                        ProgressDialogFragment.dismissDialog(FileDialog.this, "openEncFS");
                         if (!alertMsg.equals("")) {
                             showToast(alertMsg);
                             return;
@@ -1553,7 +1531,7 @@ public class FileDialog extends SherlockFragmentActivity {
         /* Convert current path to encoded file name */
         final String encodedPath = Cryptonite.jniEncode(stripstr);
 
-        showProgressDialog(R.string.wait_msg, R.string.decrypting);
+        ProgressDialogFragment.showDialog(this, R.string.decrypting, "previewEncFS");
         new Thread(new Runnable() {
             public void run() {
                 final DecodedBuffer buf = StorageManager.INSTANCE
@@ -1566,7 +1544,7 @@ public class FileDialog extends SherlockFragmentActivity {
                 }
                 runOnUiThread(new Runnable() {
                     public void run() {
-                        dismissDialog();
+                        ProgressDialogFragment.dismissDialog(FileDialog.this, "previewEncFS");
                         if (!alertMsg.equals("")) {
                             showToast(alertMsg);
                             return;
@@ -1628,7 +1606,7 @@ public class FileDialog extends SherlockFragmentActivity {
     
     private void exportEncFSFiles(final String[] pathList) {
         if (pathList != null) {
-            showProgressDialog(R.string.wait_msg, R.string.running_export);
+            ProgressDialogFragment.showDialog(this, R.string.running_export, "exportEncFS");
             new Thread(new Runnable(){
                 public void run(){
                     String exportName = currentPath + "/Cryptonite";
@@ -1645,7 +1623,7 @@ public class FileDialog extends SherlockFragmentActivity {
                     }
                     runOnUiThread(new Runnable(){
                         public void run() {
-                            dismissDialog();
+                            ProgressDialogFragment.dismissDialog(FileDialog.this, "exportEncFS");
                             if (alert) {
                                 showToast(R.string.export_failed);
                                 alert = false;

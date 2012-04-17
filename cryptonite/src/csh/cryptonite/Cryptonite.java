@@ -31,7 +31,6 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.app.ActivityManager.RunningServiceInfo;
 
 import android.content.ActivityNotFoundException;
@@ -53,7 +52,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
 
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
 
 import android.text.SpannableString;
@@ -138,7 +136,6 @@ public class Cryptonite extends SherlockFragmentActivity
 
     private DropboxFragment dbFragment;
     private LocalFragment localFragment;
-    private ProgressDialogFragment pdFragment;
 
     // If you'd like to change the access type to the full Dropbox instead of
     // an app folder, change this value.
@@ -196,14 +193,14 @@ public class Cryptonite extends SherlockFragmentActivity
         }
         
         if (needsEncFSBinary()) {
-            showProgressDialog(R.string.wait_msg, R.string.copying_bins);
+            ProgressDialogFragment.showDialog(this, R.string.copying_bins, "copyingBins");
             new Thread(new Runnable(){
                 public void run(){
                     cpBin("encfs");
                     cpBin("truecrypt");
                     runOnUiThread(new Runnable(){
                         public void run() {
-                            dismissDialog();
+                            ProgressDialogFragment.dismissDialog(Cryptonite.this, "copyingBins");
                             setEncFSBinaryVersion();
                         }
                     });
@@ -251,8 +248,8 @@ public class Cryptonite extends SherlockFragmentActivity
             if (savedInstanceState.getString("currentOpenPath") != null) {
                 currentOpenPath = savedInstanceState.getString("currentOpenPath");
             }
-            if (savedInstanceState.getString("currentUploadPath") != null) {
-                currentUploadTargetPath = savedInstanceState.getString("currentUploadPath");
+            if (savedInstanceState.getString("currentUploadTargetPath") != null) {
+                currentUploadTargetPath = savedInstanceState.getString("currentUploadTargetPath");
             }
             if (savedInstanceState.getString("encfsBrowseRoot") != null) {
                 encfsBrowseRoot = savedInstanceState.getString("encfsBrowseRoot");
@@ -308,7 +305,7 @@ public class Cryptonite extends SherlockFragmentActivity
         outState.putString("currentDialogButtonLabel", currentDialogButtonLabel);
         outState.putString("currentDialogRootName", currentDialogRootName);
         outState.putString("currentOpenPath", currentOpenPath);
-        outState.putString("currentUploadPath", currentUploadTargetPath);
+        outState.putString("currentUploadTargetPath", currentUploadTargetPath);
         outState.putString("encfsBrowseRoot", encfsBrowseRoot);
         outState.putStringArray("currentReturnPathList", currentReturnPathList);
         outState.putInt("currentDialogMode", currentDialogMode);
@@ -559,23 +556,6 @@ public class Cryptonite extends SherlockFragmentActivity
 
     }
     
-    public void showProgressDialog(int titleId, int msgId) {
-        pdFragment = ProgressDialogFragment.newInstance(titleId, msgId);
-        pdFragment.show(getSupportFragmentManager(), "progdialog");
-    }
-
-    public void dismissDialog() {
-        if (pdFragment != null) {
-            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-            ft.remove(pdFragment);
-            try {
-                ft.commit();
-                pdFragment = null;
-            } catch (IllegalStateException e) {
-                pdFragment.setCancelable(true);
-            }
-        }
-    }
 
     public void showAlert(int alert_id, int msg_id) {
         showAlert(getString(alert_id), getString(msg_id));
@@ -642,29 +622,28 @@ public class Cryptonite extends SherlockFragmentActivity
     * @param browseStartPath Root path
     */
    public void browseEncFS(final String browsePath, final String browseStartPath) {
-       final VirtualFile browseDirF = new VirtualFile(VirtualFile.VIRTUAL_TAG + "/" + StorageManager.INSTANCE.getEncFSStorage().browsePnt);
-       browseDirF.mkdirs();
+        final VirtualFile browseDirF = new VirtualFile(VirtualFile.VIRTUAL_TAG
+                + "/" + StorageManager.INSTANCE.getEncFSStorage().browsePnt);
+        browseDirF.mkdirs();
 
-       showProgressDialog(R.string.wait_msg, R.string.running_encfs);
-       new Thread(new Runnable(){
-               public void run(){
-                   Log.i(TAG, "Dialog root is " + browsePath);
-                   currentDialogStartPath = browseDirF.getPath();
-                   currentDialogLabel = getString(R.string.select_file_export);
-                   currentDialogButtonLabel = getString(R.string.export);
-                   currentDialogRoot = currentDialogStartPath;
-                   encfsBrowseRoot = currentDialogRoot;
-                   currentDialogRootName = getString(R.string.encfs_root);
-                   currentDialogMode = StorageManager.INSTANCE.getEncFSStorage().fdSelectionMode;
-                   runOnUiThread(new Runnable(){
-                           public void run() {
-                               dismissDialog();
-                               opMode = StorageManager.INSTANCE.getEncFSStorage().selectExportMode;
-                               launchBuiltinFileBrowser();
-                           }
-                       });
-               }
-           }).start();
+        new Thread(new Runnable() {
+            public void run() {
+                Log.i(TAG, "Dialog root is " + browsePath);
+                currentDialogStartPath = browseDirF.getPath();
+                currentDialogLabel = getString(R.string.select_file_export);
+                currentDialogButtonLabel = getString(R.string.export);
+                currentDialogRoot = currentDialogStartPath;
+                encfsBrowseRoot = currentDialogRoot;
+                currentDialogRootName = getString(R.string.encfs_root);
+                currentDialogMode = StorageManager.INSTANCE.getEncFSStorage().fdSelectionMode;
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        opMode = StorageManager.INSTANCE.getEncFSStorage().selectExportMode;
+                        launchBuiltinFileBrowser();
+                    }
+                });
+            }
+        }).start();
     }
     
     public File getPrivateDir(String label) {
@@ -963,7 +942,7 @@ public class Cryptonite extends SherlockFragmentActivity
     }
     
     private void setSession(final boolean useAppFolder) {
-        showProgressDialog(R.string.wait_msg, R.string.dropbox_connecting);
+        ProgressDialogFragment.showDialog(this, R.string.dropbox_connecting, "setSession");
         new Thread(new Runnable(){
             public void run(){
                 SharedPreferences prefs = 
@@ -1005,7 +984,7 @@ public class Cryptonite extends SherlockFragmentActivity
                     .getSession().startAuthentication(Cryptonite.this);
                 runOnUiThread(new Runnable(){
                     public void run() {
-                        dismissDialog();
+                        ProgressDialogFragment.dismissDialog(Cryptonite.this, "setSession");
                     }
                 });
             }
@@ -1247,30 +1226,6 @@ public class Cryptonite extends SherlockFragmentActivity
                                     }
                                 }
                             }).create();
-        }
-    }
-
-    public static class ProgressDialogFragment extends SherlockDialogFragment {
-
-        public static ProgressDialogFragment newInstance(int titleId, int msgId) {
-            ProgressDialogFragment frag = new ProgressDialogFragment();
-            Bundle args = new Bundle();
-            args.putInt("titleId", titleId);
-            args.putInt("msgId", msgId);
-            frag.setArguments(args);
-            return frag;
-        }
-
-        @Override
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            setCancelable(false);
-            final int titleId = getArguments().getInt("titleId");
-            final int msgId = getArguments().getInt("msgId");
-            final ProgressDialog pd = new ProgressDialog(getActivity());
-            pd.setTitle(getString(titleId));
-            pd.setMessage(getString(msgId));
-            pd.setIndeterminate(true);
-            return pd;
         }
     }
 

@@ -16,13 +16,11 @@ import csh.cryptonite.storage.StorageManager;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Environment;
-import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -59,8 +57,6 @@ public class CreateEncFS extends SherlockFragmentActivity {
     private ListView mListView;
     
     private boolean showPassword = false;
-
-    private ProgressDialogFragment pdFragment;
 
     /** Called when the activity is first created. */
     @Override public void onCreate(Bundle savedInstanceState) {
@@ -289,48 +285,6 @@ public class CreateEncFS extends SherlockFragmentActivity {
         }
     }
 
-    public static class ProgressDialogFragment extends SherlockDialogFragment {
-
-        public static ProgressDialogFragment newInstance(int titleId, int msgId) {
-            ProgressDialogFragment frag = new ProgressDialogFragment();
-            Bundle args = new Bundle();
-            args.putInt("titleId", titleId);
-            args.putInt("msgId", msgId);
-            frag.setArguments(args);
-            return frag;
-        }
-
-        @Override
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            setCancelable(false);
-            final int titleId = getArguments().getInt("titleId");
-            final int msgId = getArguments().getInt("msgId");
-            final ProgressDialog pd = new ProgressDialog(getActivity());
-            pd.setTitle(getString(titleId));
-            pd.setMessage(getString(msgId));
-            pd.setIndeterminate(true);
-            return pd;
-        }
-    }
-
-    public void showProgressDialog(int titleId, int msgId) {
-        pdFragment = ProgressDialogFragment.newInstance(titleId, msgId);
-        pdFragment.show(getSupportFragmentManager(), "progdialog");
-    }
-
-    public void dismissDialog() {
-        if (pdFragment != null) {
-            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-            ft.remove(pdFragment);
-            try {
-                ft.commit();
-                pdFragment = null;
-            } catch (IllegalStateException e) {
-                pdFragment.setCancelable(true);
-            }
-        }
-    }
-
     private void createEncFS() {
         
         if (passwordString.length() > 0) {
@@ -339,7 +293,7 @@ public class CreateEncFS extends SherlockFragmentActivity {
                 showToast(R.string.pw_mismatch);
                 return;
             }
-            showProgressDialog(R.string.wait_msg, R.string.creating_encfs);
+            ProgressDialogFragment.showDialog(this, R.string.creating_encfs, "createEncFS");
             new Thread(new Runnable(){
                 public void run(){
                     File browseRoot = getPrivateDir(DirectorySettings.BROWSEPNT, Context.MODE_PRIVATE);
@@ -348,7 +302,7 @@ public class CreateEncFS extends SherlockFragmentActivity {
                             passwordString, browseRoot, currentConfig); 
                     runOnUiThread(new Runnable(){
                         public void run() {
-                            dismissDialog();
+                            ProgressDialogFragment.dismissDialog(CreateEncFS.this, "createEncFS");
                             nullPasswords();
                             Cryptonite.jniResetVolume();
                             setResult(RESULT_OK, getIntent());
