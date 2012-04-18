@@ -22,6 +22,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.dropbox.client2.DropboxAPI.Entry;
 import com.dropbox.client2.DropboxAPI.UploadRequest;
 import com.dropbox.client2.exception.DropboxException;
@@ -31,13 +32,15 @@ import csh.cryptonite.DBInterface;
 import csh.cryptonite.DirectorySettings;
 import csh.cryptonite.R;
 import csh.cryptonite.SelectionMode;
+import csh.cryptonite.UploadEncrypted;
 import android.content.Context;
+import android.os.AsyncTask;
 import android.util.Log;
 
 public class DropboxStorage extends Storage {
 
-    public DropboxStorage(Context context) {
-        super(context);
+    public DropboxStorage(SherlockFragmentActivity activity) {
+        super(activity);
         type = STOR_DROPBOX;
         fdSelectionMode = SelectionMode.MODE_OPEN_MULTISELECT_DB;
         selectExportMode = Cryptonite.SELECTDBEXPORT_MODE;
@@ -147,7 +150,7 @@ public class DropboxStorage extends Storage {
     }
 
     @Override
-    public boolean uploadEncFSFile(String stripstr, String srcPath) {
+    public boolean encryptEncFSFile(String stripstr, String srcPath) {
         File srcFile = new File(srcPath);
         if (!srcFile.isFile()) {
             handleUIToastRequest(R.string.only_files);
@@ -168,13 +171,24 @@ public class DropboxStorage extends Storage {
             return false;
         }
             
+        return true;
+    }
+    
+    @Override
+    public AsyncTask<Void, Long, Boolean> uploadEncFSFile(SherlockFragmentActivity activity, String stripstr) {
+        /* Convert current path to encoded file name */
+        String encodedPath = Cryptonite.jniEncode(stripstr);
+        File encodedFile = new File(encodedPath);
+
         /* Upload file to DB */
         File browseRoot = mAppContext.getDir(DirectorySettings.BROWSEPNT, Context.MODE_PRIVATE);
         String targetPath = encodedPath.substring(browseRoot.getPath().length());
             
         /* rename _de_coded file name if the _en_crypted file exists on Dropbox */
-        handleUIUploadEncrypted(new String[] {targetPath, encodedFile.getPath()});
-        return true;
+        UploadEncrypted upload = new UploadEncrypted(activity, DBInterface.INSTANCE.getDBApi(),
+                new File(targetPath).getParent() + "/",
+                new File(encodedFile.getPath()));
+        return upload;
     }
 
     @Override

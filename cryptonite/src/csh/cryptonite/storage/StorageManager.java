@@ -1,6 +1,6 @@
 package csh.cryptonite.storage;
 
-import android.content.Context;
+import com.actionbarsherlock.app.SherlockFragmentActivity;
 
 public enum StorageManager {
     INSTANCE;
@@ -33,20 +33,20 @@ public enum StorageManager {
         return mLocalStorage;
     }
     
-    public void initLocalStorage(Context context) {
+    public void initLocalStorage(SherlockFragmentActivity activity) {
         if (mLocalStorage == null || mLocalStorage.type != Storage.STOR_LOCAL) {
-            mLocalStorage = new LocalStorage(context);
+            mLocalStorage = new LocalStorage(activity);
         }
     }
     
-    public void initEncFSStorage(Context context, int storType) {
+    public void initEncFSStorage(SherlockFragmentActivity activity, int storType) {
         if (mEncFSStorage == null || mEncFSStorage.type != storType) {
             switch (storType) {
             case Storage.STOR_DROPBOX:
-                mEncFSStorage = new DropboxStorage(context);
+                mEncFSStorage = new DropboxStorage(activity);
                 break;
             case Storage.STOR_LOCAL:
-                mEncFSStorage = new LocalStorage(context);
+                mEncFSStorage = new LocalStorage(activity);
                 break;
             }
         }

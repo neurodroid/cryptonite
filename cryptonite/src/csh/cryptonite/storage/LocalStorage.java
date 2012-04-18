@@ -21,17 +21,19 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+
 import csh.cryptonite.Cryptonite;
 import csh.cryptonite.DirectorySettings;
 import csh.cryptonite.R;
 import csh.cryptonite.SelectionMode;
-import android.content.Context;
+import android.os.AsyncTask;
 import android.util.Log;
 
 public class LocalStorage extends Storage {
 
-    public LocalStorage(Context context) {
-        super(context);
+    public LocalStorage(SherlockFragmentActivity activity) {
+        super(activity);
         type = STOR_LOCAL;
         fdSelectionMode = SelectionMode.MODE_OPEN_MULTISELECT;
         selectExportMode = Cryptonite.SELECTLOCALEXPORT_MODE;
@@ -84,8 +86,13 @@ public class LocalStorage extends Storage {
     }
     
     @Override
-    public boolean uploadEncFSFile(String stripstr, String srcPath) {
+    public boolean encryptEncFSFile(String stripstr, String srcPath) {
         return (Cryptonite.jniEncrypt(stripstr, srcPath, true) == Cryptonite.jniSuccess());
+    }
+    
+    @Override
+    public AsyncTask<Void, Long, Boolean> uploadEncFSFile(SherlockFragmentActivity activity, String stripstr) {
+        return null;
     }
 
     @Override

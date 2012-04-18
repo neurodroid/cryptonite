@@ -30,12 +30,17 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.AsyncTask;
+import android.os.Bundle;
+import android.support.v4.app.FragmentTransaction;
 import android.widget.Toast;
 
+import com.actionbarsherlock.app.SherlockDialogFragment;
+import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.DropboxAPI.UploadRequest;
 import com.dropbox.client2.ProgressListener;
@@ -54,6 +59,8 @@ import com.dropbox.client2.exception.DropboxUnlinkedException;
  */
 public class UploadEncrypted extends AsyncTask<Void, Long, Boolean> {
 
+    public static final String DIALOG_TAG = "dbProgDlg";
+    
     private DropboxAPI<?> mApi;
     private String mPath;
     private File mFile;
@@ -61,37 +68,45 @@ public class UploadEncrypted extends AsyncTask<Void, Long, Boolean> {
     private long mFileLen;
     private UploadRequest mRequest;
     private Context mContext;
-    private final ProgressDialog mDialog;
+    private SherlockFragmentActivity mActivity;
 
     private String mErrorMsg;
 
 
-    public UploadEncrypted(Context context, DropboxAPI<?> api, String dropboxPath,
-            File file) {
+    public UploadEncrypted(final SherlockFragmentActivity activity, DropboxAPI<?> api, String dropboxPath,
+            File file)
+    {
+        mActivity = activity;
+        
         // We set the context this way so we don't accidentally leak activities
-        mContext = context.getApplicationContext();
+        mContext = mActivity.getApplicationContext();
 
         mFileLen = file.length();
         mApi = api;
         mPath = dropboxPath;
         mFile = file;
-
-        mDialog = new ProgressDialog(context);
-        mDialog.setMax(100);
-        mDialog.setMessage(mContext.getString(R.string.dropbox_uploading) + " " + file.getName());
-        mDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-        mDialog.setProgress(0);
-        mDialog.setCancelable(false);
-        mDialog.setButton(DialogInterface.BUTTON_NEGATIVE, 
-                mContext.getString(R.string.cancel), new DialogInterface.OnClickListener()
-        {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                mRequest.abort();
-                dialog.dismiss();
+        
+    }
+    
+    @Override
+    protected void onPreExecute() {
+        FragmentTransaction ft = mActivity.getSupportFragmentManager().beginTransaction();
+        try {
+            DBProgressDialogFragment prev = 
+                    (DBProgressDialogFragment)mActivity.getSupportFragmentManager()
+                    .findFragmentByTag(UploadEncrypted.DIALOG_TAG);
+            if (prev != null) {
+                ft.remove(prev);
             }
-        });
-        mDialog.show();
+        } catch (NullPointerException e) {
+            
+        }
+
+        ft.addToBackStack(null);
+
+        DBProgressDialogFragment pdFragment = 
+                DBProgressDialogFragment.newInstance(mFile.getName());
+        pdFragment.show(ft, UploadEncrypted.DIALOG_TAG);
     }
 
     @Override
@@ -103,7 +118,8 @@ public class UploadEncrypted extends AsyncTask<Void, Long, Boolean> {
             FileInputStream fis = new FileInputStream(mFile);
             String path = mPath + mFile.getName();
             mRequest = mApi.putFileOverwriteRequest(path, fis, mFile.length(),
-                    new ProgressListener() {
+                    new ProgressListener()
+            {
                 @Override
                 public long progressInterval() {
                     // Update the progress bar every half-second or so
@@ -169,15 +185,23 @@ public class UploadEncrypted extends AsyncTask<Void, Long, Boolean> {
     @Override
     protected void onProgressUpdate(Long... progress) {
         int percent = (int)(100.0*(double)progress[0]/mFileLen + 0.5);
-        if (mDialog != null) {
-            mDialog.setProgress(percent);
+        DBProgressDialogFragment prev = null;
+        try {
+            prev = (DBProgressDialogFragment)mActivity
+                    .getSupportFragmentManager().findFragmentByTag(DIALOG_TAG);
+        } catch (NullPointerException e) {
+            
+        }
+        if (prev != null) {
+            ((ProgressDialog)prev.getDialog()).setProgress(percent);
         }
     }
 
     @Override
     protected void onPostExecute(Boolean result) {
-        if (mDialog != null) {
-            mDialog.dismiss();
+        DBProgressDialogFragment.dismissDialog(mActivity, DIALOG_TAG);
+        if (mRequest != null) {
+            mRequest.abort();
         }
         if (result) {
             showToast(mContext.getString(R.string.dropbox_upload_successful));
@@ -190,4 +214,51 @@ public class UploadEncrypted extends AsyncTask<Void, Long, Boolean> {
         Toast error = Toast.makeText(mContext, msg, Toast.LENGTH_LONG);
         error.show();
     }
+    
+    public static class DBProgressDialogFragment extends SherlockDialogFragment {
+
+        public static DBProgressDialogFragment newInstance(String fileName) {
+            DBProgressDialogFragment frag = new DBProgressDialogFragment();
+            Bundle args = new Bundle();
+            args.putString("fileName", fileName);
+            frag.setArguments(args);
+            return frag;
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            setCancelable(false);
+            final String fileName = getArguments().getString("fileName");
+            final ProgressDialog pDialog = new ProgressDialog(getActivity());
+            pDialog.setTitle(getString(R.string.wait_msg));
+            pDialog.setMax(100);
+            pDialog.setMessage(getActivity().getString(R.string.dropbox_uploading) + " " + fileName);
+            pDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            pDialog.setProgress(0);
+            pDialog.setCancelable(false);
+            pDialog.setButton(DialogInterface.BUTTON_NEGATIVE, 
+                    getActivity().getString(R.string.cancel), new DialogInterface.OnClickListener()
+            {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    DBProgressDialogFragment.dismissDialog((SherlockFragmentActivity)getActivity(), DIALOG_TAG);
+                }
+            });
+            return pDialog;
+        }
+        
+        public static void dismissDialog(SherlockFragmentActivity activity, String tag) {
+            DBProgressDialogFragment prev = null;
+            try {
+                prev = (DBProgressDialogFragment)activity.getSupportFragmentManager().findFragmentByTag(tag);
+            } catch (NullPointerException e) {
+                
+            }
+            if (prev != null) {
+                FragmentTransaction ft = activity.getSupportFragmentManager().beginTransaction();
+                ft.remove(prev);
+                ft.commit();
+            }
+        }
+    }    
 }

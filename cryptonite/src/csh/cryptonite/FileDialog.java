@@ -33,6 +33,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
 
 import com.actionbarsherlock.app.SherlockDialogFragment;
 import com.actionbarsherlock.app.SherlockFragmentActivity;
@@ -53,6 +54,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 
 import android.util.Log;
@@ -234,7 +236,7 @@ public class FileDialog extends SherlockFragmentActivity {
                         showPasswordDialog();
                         break;
                     case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
-                        uploadEncFSFile(selectedFile.getPath());
+                        encryptEncFSFile(selectedFile.getPath());
                         break;
                     case SelectionMode.MODE_OPEN_CREATE:
                     case SelectionMode.MODE_OPEN_CREATE_DB:
@@ -1219,7 +1221,7 @@ public class FileDialog extends SherlockFragmentActivity {
                             getIntent().putExtra(RESULT_EXPORT_PATHS, currentPath);
                             getIntent().putExtra(RESULT_SELECTED_FILE, (String)null);
                             setResult(RESULT_OK, getIntent());
-                            finish();                            
+                            finish();            
                         }
                     }
                 });
@@ -1292,7 +1294,7 @@ public class FileDialog extends SherlockFragmentActivity {
         }).start();
     }
 
-    private void uploadEncFSFile(final String srcPath) {
+    private void encryptEncFSFile(final String srcPath) {
         final String stripstr = StorageManager.INSTANCE.getEncFSStorage().stripStr(
                 currentUploadTargetPath, encfsBrowseRoot, srcPath);
         
@@ -1311,14 +1313,14 @@ public class FileDialog extends SherlockFragmentActivity {
                                     new DialogInterface.OnClickListener() {
                                 public void onClick(DialogInterface dialog,
                                         int which) {
-                                    uploadEncFSFileExec(stripstr, srcPath);
+                                    encryptEncFSFileExec(stripstr, srcPath);
                                 }
                             })
                             .setNeutralButton(R.string.rename, 
                                     new DialogInterface.OnClickListener() {
                                 public void onClick(DialogInterface dialog,
                                         int which) {
-                                    uploadEncFSFileExec(nextFilePath, srcPath);
+                                    encryptEncFSFileExec(nextFilePath, srcPath);
                                 }
                             })
                             .setNegativeButton(R.string.cancel,
@@ -1331,7 +1333,7 @@ public class FileDialog extends SherlockFragmentActivity {
                             AlertDialog dialog = builder.create();
                             dialog.show();
                         }else {
-                            uploadEncFSFileExec(stripstr, srcPath);
+                            encryptEncFSFileExec(stripstr, srcPath);
                         }
                     }
                 });
@@ -1339,36 +1341,77 @@ public class FileDialog extends SherlockFragmentActivity {
         }).start();
     }
 
-    private void uploadEncFSFileExec(final String targetPath, final String srcPath) {
+    private void encryptEncFSFileExec(final String targetPath, final String srcPath) {
         ProgressDialogFragment.showDialog(this, R.string.encrypting, "uploadEncFS");
         alertMsg = "";
         new Thread(new Runnable(){
             public void run(){
-                if (!StorageManager.INSTANCE.getEncFSStorage().uploadEncFSFile(targetPath, srcPath)) {
-                    alertMsg = getString(R.string.upload_failure);
+                if (!StorageManager.INSTANCE.getEncFSStorage().encryptEncFSFile(targetPath, srcPath)) {
+                    alertMsg = getString(R.string.encrypt_failure);
                 }        
                 runOnUiThread(new Runnable(){
                     public void run() {
                         ProgressDialogFragment.dismissDialog(FileDialog.this, "uploadEncFS");
                         if (!alertMsg.equals("")) {
                             showToast(alertMsg);
+                            finishSetResults();
                         } else {
-                            showToast(R.string.upload_success);
+                            showToast(R.string.encrypt_success);
+                            uploadEncFSFile(targetPath);
                         }
-                        getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
-                        getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
-                        getIntent().putExtra(RESULT_EXPORT_PATHS, currentPath);
-                        if (selectedFile != null) {
-                            getIntent().putExtra(RESULT_SELECTED_FILE, selectedFile.getPath());
-                        } else {
-                            getIntent().putExtra(RESULT_SELECTED_FILE, (String)null);
-                        }
-                        setResult(RESULT_OK, getIntent());
-                        finish();
                     }
                 });
             }
         }).start();
+    }
+
+    private void uploadEncFSFile(final String targetPath) {
+        final AsyncTask<Void, Long, Boolean> upload =
+                StorageManager.INSTANCE.getEncFSStorage().uploadEncFSFile(this, targetPath);
+        if (upload != null) {
+            upload.execute();
+            new Thread(new Runnable(){
+                public void run(){
+                    alertMsg = "";
+                    Boolean res = false;
+                    try {
+                        res = upload.get();
+                    } catch (InterruptedException e) {
+                        alertMsg = e.toString();
+                    } catch (ExecutionException e) {
+                        alertMsg = e.toString();
+                    }
+                    if (!res) {
+                        alertMsg = " ";
+                    }
+                    runOnUiThread(new Runnable(){
+                        public void run() {
+                            if (!alertMsg.equals("")) {
+                                showToast(getString(R.string.upload_failure) + ": " + alertMsg);
+                            } else {
+                                showToast(R.string.upload_success);
+                            }
+                            finishSetResults();
+                        }
+                    });
+                }
+            }).start();
+        } else {
+            finishSetResults();
+        }
+    }
+
+    private void finishSetResults() {
+        getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
+        getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
+        getIntent().putExtra(RESULT_EXPORT_PATHS, currentPath);
+        if (selectedFile != null) {
+            getIntent().putExtra(RESULT_SELECTED_FILE, selectedFile.getPath());
+        } else {
+            getIntent().putExtra(RESULT_SELECTED_FILE, (String)null);
+        }
+        setResult(RESULT_OK, getIntent());
+        finish();
     }
     
     private boolean openEncFSFile(final String encFSFilePath, String fileRoot) {

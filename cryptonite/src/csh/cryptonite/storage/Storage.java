@@ -19,12 +19,13 @@ package csh.cryptonite.storage;
 import java.io.File;
 import java.io.IOException;
 
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+
 import csh.cryptonite.Cryptonite;
-import csh.cryptonite.DBInterface;
 import csh.cryptonite.R;
 import csh.cryptonite.SelectionMode;
-import csh.cryptonite.UploadEncrypted;
 import android.content.Context;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -36,8 +37,6 @@ public abstract class Storage {
     public static final int STOR_UNDEFINED=-1, STOR_LOCAL=0, STOR_DROPBOX=1;
     public static final String ENCFS_XML_REGEX = "\\.encfs.\\.xml";
 
-    public Context mCallingContext;
-    public Context mAppContext;
     public int type;
     public int fdSelectionMode;
     public int selectExportMode;
@@ -46,13 +45,17 @@ public abstract class Storage {
     public int waitStringId;
     public String browsePnt;
     
+    protected Context mCallingContext;
+    protected Context mAppContext;
+    protected SherlockFragmentActivity mActivity;
     protected String encFSPath;
     
     private UIHandler uiHandler;
     
-    public Storage(Context context) {
-        mCallingContext = context;
-        mAppContext = context.getApplicationContext();
+    public Storage(SherlockFragmentActivity activity) {
+        mActivity = activity;
+        mCallingContext = mActivity.getBaseContext();
+        mAppContext = mActivity.getApplicationContext();
         type = STOR_UNDEFINED;
         fdSelectionMode = SelectionMode.MODE_OPEN_MULTISELECT;
         selectExportMode = Cryptonite.SELECTLOCALEXPORT_MODE;
@@ -67,8 +70,10 @@ public abstract class Storage {
     }
     abstract public boolean initEncFS(String srcDir, String initRoot);
     
-    abstract public boolean uploadEncFSFile(String stripstr, String srcPath);
-    
+    abstract public boolean encryptEncFSFile(String stripstr, String srcPath);
+
+    abstract public AsyncTask<Void, Long, Boolean> uploadEncFSFile(SherlockFragmentActivity activity, String stripstr);
+
     abstract public boolean decryptEncFSFile(String encodedPath, String targetPath);
 
     abstract public Cryptonite.DecodedBuffer decryptEncFSFileToBuffer(String encodedPath);
@@ -186,7 +191,6 @@ public abstract class Storage {
     private final class UIHandler extends Handler
     {
         public static final int DISPLAY_UI_TOAST = 0;
-        public static final int DISPLAY_UI_UPLOAD = 1;
 
         public UIHandler(Looper looper)
         {
@@ -204,22 +208,6 @@ public abstract class Storage {
                 t.show();
                 break;
             }
-            case UIHandler.DISPLAY_UI_UPLOAD:
-            {
-                String[] paths = (String[])msg.obj;
-                if (paths.length < 2) {
-                    Toast t = Toast.makeText(mAppContext, R.string.upload_failure, Toast.LENGTH_LONG);
-                    t.show();
-                    break;
-                }
-                String targetPath = paths[0];
-                String encodedFilePath = paths[1];
-                UploadEncrypted upload = new UploadEncrypted(mCallingContext, DBInterface.INSTANCE.getDBApi(),
-                        new File(targetPath).getParent() + "/",
-                        new File(encodedFilePath));
-                upload.execute();
-                break;
-            }
             default:
                 break;
             }
@@ -234,13 +222,6 @@ public abstract class Storage {
     {
         Message msg = uiHandler.obtainMessage(UIHandler.DISPLAY_UI_TOAST);
         msg.obj = message;
-        uiHandler.sendMessage(msg);
-    }
-
-    protected void handleUIUploadEncrypted(String[] filePaths)
-    {
-        Message msg = uiHandler.obtainMessage(UIHandler.DISPLAY_UI_UPLOAD);
-        msg.obj = filePaths;
         uiHandler.sendMessage(msg);
     }
 

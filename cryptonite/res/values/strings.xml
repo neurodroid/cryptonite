@@ -188,8 +188,9 @@
     <string name="file_icon">File icon</string>
     <string name="upload_warning">Uploading files is an experimental feature. Are you sure you want to proceed?</string>
     <string name="upload_failure">Failed to upload file</string>
-    <string name="upload_success">Successfully encrypted file</string>
-
+    <string name="encrypt_success">Successfully encrypted file</string>
+    <string name="upload_success">Successfully uploaded file</string>
+    
     <!-- Button labels -->
     <string name="local_decrypt">Decrypt local folder</string>
     <string name="local_create">Create local volume</string>
