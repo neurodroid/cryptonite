@@ -89,6 +89,7 @@ public class Cryptonite extends SherlockFragmentActivity
     public static final int MOUNT_MODE=0, SELECTLOCALENCFS_MODE=1, SELECTDBENCFS_MODE=2,
         VIEWMOUNT_MODE=3, SELECTLOCALEXPORT_MODE=4, LOCALEXPORT_MODE=5, DROPBOX_AUTH_MODE=6,
         SELECTDBEXPORT_MODE=7, DBEXPORT_MODE=8, SELECTLOCALUPLOAD_MODE=9, SELECTDBUPLOAD_MODE=10;
+    public static final int RESULT_RETRY = 1;
     private static final int DIRPICK_MODE=0;
     public static final int FILEPICK_MODE=1;
     protected static final int MSG_SHOW_TOAST = 0;
@@ -390,10 +391,8 @@ public class Cryptonite extends SherlockFragmentActivity
                     }
                 }
             } else if (resultCode == Activity.RESULT_CANCELED) {
-                if (data != null) {
-                    /* Restart file dialog */
-                    launchBuiltinFileBrowser();
-                }
+            } else if (resultCode == RESULT_RETRY) {
+                launchBuiltinFileBrowser();
             }
             break;
         case SelectionMode.MODE_OPEN_MULTISELECT:

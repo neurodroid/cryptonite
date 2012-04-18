@@ -6,7 +6,6 @@ import com.actionbarsherlock.app.SherlockFragmentActivity;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 
 public class ProgressDialogFragment extends SherlockDialogFragment {
@@ -30,20 +29,31 @@ public class ProgressDialogFragment extends SherlockDialogFragment {
         return pd;
     }
     
+    /* This brainf*k is required to survive orientation changes without fc */
     public static void showDialog(SherlockFragmentActivity activity, int msgId, String tag) {
         FragmentTransaction ft = activity.getSupportFragmentManager().beginTransaction();
-        Fragment prev = activity.getSupportFragmentManager().findFragmentByTag(tag);
-        if (prev != null) {
-            ft.remove(prev);
+        try {
+            ProgressDialogFragment prev = (ProgressDialogFragment)activity.getSupportFragmentManager().findFragmentByTag(tag);
+            if (prev != null) {
+                ft.remove(prev);
+            }
+        } catch (NullPointerException e) {
+            
         }
+
         ft.addToBackStack(null);
 
-        SherlockDialogFragment pdFragment = ProgressDialogFragment.newInstance(msgId);
+        ProgressDialogFragment pdFragment = ProgressDialogFragment.newInstance(msgId);
         pdFragment.show(ft, tag);
     }
 
     public static void dismissDialog(SherlockFragmentActivity activity, String tag) {
-        Fragment prev = activity.getSupportFragmentManager().findFragmentByTag(tag);
+        ProgressDialogFragment prev = null;
+        try {
+            prev = (ProgressDialogFragment)activity.getSupportFragmentManager().findFragmentByTag(tag);
+        } catch (NullPointerException e) {
+            
+        }
         if (prev != null) {
             FragmentTransaction ft = activity.getSupportFragmentManager().beginTransaction();
             ft.remove(prev);

@@ -917,6 +917,7 @@ public class FileDialog extends SherlockFragmentActivity {
             encFSRoot = Cryptonite.jniEncode("/");
             break;
         }
+        
         final String fEncFSRoot = encFSRoot;
         
         ProgressDialogFragment.showDialog(this, getStorage().waitStringId, "buildDir");
@@ -938,6 +939,7 @@ public class FileDialog extends SherlockFragmentActivity {
                 });
             }
         }).start();
+
     }
     
     private void showExportWarning(final String[] exportPaths) {
@@ -1210,12 +1212,6 @@ public class FileDialog extends SherlockFragmentActivity {
                         nullPassword();
                         if (alertMsg.length() != 0) {
                             showToast(alertMsg);
-                            getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
-                            getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
-                            getIntent().putExtra(RESULT_EXPORT_PATHS, currentPath);
-                            getIntent().putExtra(RESULT_SELECTED_FILE, (String)null);
-                            setResult(android.app.Activity.RESULT_CANCELED, getIntent());
-                            finish();
                         } else {
                             showToast(R.string.encfs_success);
                             getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
@@ -1223,7 +1219,7 @@ public class FileDialog extends SherlockFragmentActivity {
                             getIntent().putExtra(RESULT_EXPORT_PATHS, currentPath);
                             getIntent().putExtra(RESULT_SELECTED_FILE, (String)null);
                             setResult(RESULT_OK, getIntent());
-                            finish();
+                            finish();                            
                         }
                     }
                 });
@@ -1653,4 +1649,5 @@ public class FileDialog extends SherlockFragmentActivity {
             }).start();
         }
     }
+    
 }

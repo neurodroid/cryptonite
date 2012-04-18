@@ -372,5 +372,5 @@ public class CreateEncFS extends SherlockFragmentActivity {
         Arrays.fill(fill, '\0');
         passwordString = new String(fill);
     }
-    
+
 }
