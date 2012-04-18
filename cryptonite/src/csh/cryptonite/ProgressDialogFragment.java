@@ -17,18 +17,30 @@ public class ProgressDialogFragment extends SherlockDialogFragment {
         frag.setArguments(args);
         return frag;
     }
+    
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+    }
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        setCancelable(false);
+        
         final int msgId = getArguments().getInt("msgId");
+         
+        setCancelable(false);
         final ProgressDialog pd = new ProgressDialog(getActivity());
         pd.setTitle(getString(R.string.wait_msg));
         pd.setMessage(getString(msgId));
         pd.setIndeterminate(true);
         return pd;
     }
-    
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+    }
+
     /* This brainf*k is required to survive orientation changes without fc */
     public static void showDialog(SherlockFragmentActivity activity, int msgId, String tag) {
         FragmentTransaction ft = activity.getSupportFragmentManager().beginTransaction();
@@ -41,7 +53,7 @@ public class ProgressDialogFragment extends SherlockDialogFragment {
             
         }
 
-        ft.addToBackStack(null);
+        /* ft.addToBackStack(null); */
 
         ProgressDialogFragment pdFragment = ProgressDialogFragment.newInstance(msgId);
         pdFragment.show(ft, tag);

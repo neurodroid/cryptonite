@@ -857,7 +857,6 @@ public class FileDialog extends SherlockFragmentActivity {
             builder.setView(layout);
             builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
-                        
                     }
                 });
             builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
@@ -1214,6 +1213,12 @@ public class FileDialog extends SherlockFragmentActivity {
                         nullPassword();
                         if (alertMsg.length() != 0) {
                             showToast(alertMsg);
+                            getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
+                            getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
+                            getIntent().putExtra(RESULT_EXPORT_PATHS, currentPath);
+                            getIntent().putExtra(RESULT_SELECTED_FILE, (String)null);
+                            setResult(Cryptonite.RESULT_RETRY, getIntent());
+                            finish();            
                         } else {
                             showToast(R.string.encfs_success);
                             getIntent().putExtra(RESULT_OPEN_PATH, (String)null);

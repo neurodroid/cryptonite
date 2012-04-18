@@ -102,7 +102,7 @@ public class UploadEncrypted extends AsyncTask<Void, Long, Boolean> {
             
         }
 
-        ft.addToBackStack(null);
+        /* ft.addToBackStack(null); */
 
         DBProgressDialogFragment pdFragment = 
                 DBProgressDialogFragment.newInstance(mFile.getName());
