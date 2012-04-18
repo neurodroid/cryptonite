@@ -1279,6 +1279,12 @@ public class FileDialog extends SherlockFragmentActivity {
                         nullPassword();
                         if (!alertMsg.equals("")) {
                             showToast(alertMsg + ": " + fEncFSOutput);
+                            getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
+                            getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
+                            getIntent().putExtra(RESULT_EXPORT_PATHS, currentPath);
+                            getIntent().putExtra(RESULT_SELECTED_FILE, (String)null);
+                            setResult(Cryptonite.RESULT_RETRY, getIntent());
+                            finish();            
                         } else {
                             showToast(getString(R.string.encfs_success_mount)
                                     + " " + DirectorySettings.INSTANCE.mntDir);
