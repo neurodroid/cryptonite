@@ -44,15 +44,13 @@ public class DropboxFragment extends SherlockFragment {
                     // decide between app folder and full access.
                     if (DBInterface.INSTANCE.getDBApi() == null) {
                         mAct.buildSession();
+                        mAct.dbAuthenticate();
                     } else {
                         if (mAct.mLoggedIn) {
                             mAct.logOut();
                             mAct.updateDecryptButtons();
                         } else {
-                            mAct.triedLogin = true;
-                            // Start the remote authentication
-                            DBInterface.INSTANCE.getDBApi()
-                                .getSession().startAuthentication(mAct);
+                            mAct.dbAuthenticate();
                         }
                     }
                 }});

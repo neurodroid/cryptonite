@@ -185,6 +185,11 @@ public class Cryptonite extends SherlockFragmentActivity
         DirectorySettings.INSTANCE.encFSBin = DirectorySettings.INSTANCE.binDirPath + "/encfs";
 
         hasFuse = ShellUtils.supportsFuse();
+        
+        String[] stored = getKeys();
+        if (stored != null && stored.length >= 2) {
+            buildSession();
+        }
 
         /* Running from Instrumentation? */
         if (getIntent() != null) {
@@ -262,7 +267,6 @@ public class Cryptonite extends SherlockFragmentActivity
                 currentDialogMode = savedInstanceState.getInt("currentDialogMode");
             }
             disclaimerShown = savedInstanceState.getBoolean("disclaimerShown");
-            mLoggedIn = savedInstanceState.getBoolean("loggedIn");
             if (currentReturnPath != null && currentDialogStartPath != null) {
                 DirectorySettings.INSTANCE.currentBrowsePath = currentReturnPath;
                 DirectorySettings.INSTANCE.currentBrowseStartPath = currentDialogStartPath;
@@ -276,6 +280,15 @@ public class Cryptonite extends SherlockFragmentActivity
             }
             
         }
+        
+        if (DBInterface.INSTANCE.getDBApi() != null && 
+                DBInterface.INSTANCE.getDBApi().getSession() != null)
+        {
+            mLoggedIn = DBInterface.INSTANCE.getDBApi().getSession().isLinked();
+        } else {
+            mLoggedIn = false;
+        }
+        updateDecryptButtons();
 
         if (!mInstrumentation && !prefs.getBoolean("cb_norris", false) && !disclaimerShown) {
             AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
@@ -311,7 +324,6 @@ public class Cryptonite extends SherlockFragmentActivity
         outState.putStringArray("currentReturnPathList", currentReturnPathList);
         outState.putInt("currentDialogMode", currentDialogMode);
         outState.putBoolean("disclaimerShown", disclaimerShown);
-        outState.putBoolean("loggedIn", mLoggedIn);
         if (StorageManager.INSTANCE.getEncFSStorage() != null) {
             outState.putInt("storageType", StorageManager.INSTANCE.getEncFSStorageType());
             outState.putString("encFSPath", StorageManager.INSTANCE.getEncFSPath());
@@ -520,11 +532,12 @@ public class Cryptonite extends SherlockFragmentActivity
         if (!hasJni) {
             return;
         }
-        
+        // Check whether we can retrieve Dropbox account credentials
+           
         if (DBInterface.INSTANCE.getDBApi() != null && 
                 DBInterface.INSTANCE.getDBApi().getSession() != null) {
             AndroidAuthSession session = DBInterface.INSTANCE.getDBApi().getSession();
-    
+            Log.v(TAG, "Resuming");
             // The next part must be inserted in the onResume() method of the
             // activity from which session.startAuthentication() was called, so
             // that Dropbox authentication completes properly.
@@ -532,6 +545,7 @@ public class Cryptonite extends SherlockFragmentActivity
             if (session.authenticationSuccessful()) {
                 triedLogin = false;
                 try {
+                    Log.v(TAG, "Finishing authentication");
                     // Mandatory call to complete the auth
                     session.finishAuthentication();
     
@@ -881,6 +895,7 @@ public class Cryptonite extends SherlockFragmentActivity
         try {
             key = decrypt(prefs.getString(ACCESS_KEY_NAME, null), getBaseContext());
             secret = decrypt(prefs.getString(ACCESS_SECRET_NAME, null), getBaseContext());
+            Log.v(TAG, "Retrieving " + key + " " + secret);
         } catch (RuntimeException e) {
             Log.e(Cryptonite.TAG, "Couldn't decrypt DB access keys");
             return null;
@@ -905,6 +920,7 @@ public class Cryptonite extends SherlockFragmentActivity
         SharedPreferences prefs = getSharedPreferences(ACCOUNT_DB_PREFS_NAME, 0);
         Editor edit = prefs.edit();
         try {
+            Log.v(TAG, "Storing " + key + " " + secret);
             edit.putString(ACCESS_KEY_NAME, encrypt(key, getBaseContext()));
             edit.putString(ACCESS_SECRET_NAME, encrypt(secret, getBaseContext()));
         } catch (RuntimeException e) {
@@ -977,13 +993,10 @@ public class Cryptonite extends SherlockFragmentActivity
                     session = new AndroidAuthSession(appKeyPair, accessType, accessToken);
                 } else {
                     session = new AndroidAuthSession(appKeyPair, accessType);
+                    
                 }
                 DBInterface.INSTANCE.setDBApi(new DropboxAPI<AndroidAuthSession>(session));
-
-                triedLogin = true;
-                // Start the remote authentication
-                DBInterface.INSTANCE.getDBApi()
-                    .getSession().startAuthentication(Cryptonite.this);
+                
                 runOnUiThread(new Runnable(){
                     public void run() {
                         ProgressDialogFragment.dismissDialog(Cryptonite.this, "setSession");
@@ -992,6 +1005,12 @@ public class Cryptonite extends SherlockFragmentActivity
             }
         }).start();
 
+    }
+    
+    public void dbAuthenticate() {
+        DBInterface.INSTANCE.getDBApi()
+            .getSession().startAuthentication(Cryptonite.this);                
+        triedLogin = true;
     }
     
     public static File getExternalCacheDir(final Context context) {
