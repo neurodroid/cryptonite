@@ -44,7 +44,6 @@ public class DropboxFragment extends SherlockFragment {
                     // decide between app folder and full access.
                     if (DBInterface.INSTANCE.getDBApi() == null) {
                         mAct.buildSession();
-                        mAct.dbAuthenticate();
                     } else {
                         if (mAct.mLoggedIn) {
                             mAct.logOut();

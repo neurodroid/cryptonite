@@ -186,11 +186,6 @@ public class Cryptonite extends SherlockFragmentActivity
 
         hasFuse = ShellUtils.supportsFuse();
         
-        String[] stored = getKeys();
-        if (stored != null && stored.length >= 2) {
-            buildSession();
-        }
-
         /* Running from Instrumentation? */
         if (getIntent() != null) {
             mInstrumentation = getIntent().getBooleanExtra("csh.cryptonite.instrumentation", false);
@@ -281,6 +276,14 @@ public class Cryptonite extends SherlockFragmentActivity
             
         }
         
+        String[] stored = getKeys();
+        if (stored != null && stored.length >= 2) {
+            if (prefs.getBoolean("dbDecided", false)) {            
+                setSession(prefs.getBoolean("cb_appfolder", false), false);
+                updateDecryptButtons();
+            }
+        }
+
         if (DBInterface.INSTANCE.getDBApi() != null && 
                 DBInterface.INSTANCE.getDBApi().getSession() != null)
         {
@@ -288,7 +291,6 @@ public class Cryptonite extends SherlockFragmentActivity
         } else {
             mLoggedIn = false;
         }
-        updateDecryptButtons();
 
         if (!mInstrumentation && !prefs.getBoolean("cb_norris", false) && !disclaimerShown) {
             AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
@@ -330,6 +332,17 @@ public class Cryptonite extends SherlockFragmentActivity
         } else {
             outState.putInt("storageType", Storage.STOR_UNDEFINED);
         }
+    }
+
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (!hasJni) {
+            return;
+        }
+
+        finishAuthentication();   
     }
 
     public static boolean isValidMntDir(Context context, File newMntDir) {
@@ -526,26 +539,18 @@ public class Cryptonite extends SherlockFragmentActivity
         }
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (!hasJni) {
-            return;
-        }
-        // Check whether we can retrieve Dropbox account credentials
-           
+    public void finishAuthentication() {
         if (DBInterface.INSTANCE.getDBApi() != null && 
-                DBInterface.INSTANCE.getDBApi().getSession() != null) {
+                DBInterface.INSTANCE.getDBApi().getSession() != null)
+        {
             AndroidAuthSession session = DBInterface.INSTANCE.getDBApi().getSession();
-            Log.v(TAG, "Resuming");
             // The next part must be inserted in the onResume() method of the
             // activity from which session.startAuthentication() was called, so
             // that Dropbox authentication completes properly.
             // Make sure we're returning from an authentication attempt at all.
+            triedLogin = false;
             if (session.authenticationSuccessful()) {
-                triedLogin = false;
                 try {
-                    Log.v(TAG, "Finishing authentication");
                     // Mandatory call to complete the auth
                     session.finishAuthentication();
     
@@ -562,17 +567,15 @@ public class Cryptonite extends SherlockFragmentActivity
                             Toast.LENGTH_LONG).show();
                 }
             } else {
-                if (triedLogin) {
-                    triedLogin = false;
+                if (!session.isLinked()) {
                     logOut();
                 }
             }
         } else {
             setLoggedIn(false);
         }
-
     }
-
+    
     public void showAlert(int alert_id, int msg_id) {
         showAlert(getString(alert_id), getString(msg_id));
     }
@@ -895,7 +898,6 @@ public class Cryptonite extends SherlockFragmentActivity
         try {
             key = decrypt(prefs.getString(ACCESS_KEY_NAME, null), getBaseContext());
             secret = decrypt(prefs.getString(ACCESS_SECRET_NAME, null), getBaseContext());
-            Log.v(TAG, "Retrieving " + key + " " + secret);
         } catch (RuntimeException e) {
             Log.e(Cryptonite.TAG, "Couldn't decrypt DB access keys");
             return null;
@@ -920,7 +922,6 @@ public class Cryptonite extends SherlockFragmentActivity
         SharedPreferences prefs = getSharedPreferences(ACCOUNT_DB_PREFS_NAME, 0);
         Editor edit = prefs.edit();
         try {
-            Log.v(TAG, "Storing " + key + " " + secret);
             edit.putString(ACCESS_KEY_NAME, encrypt(key, getBaseContext()));
             edit.putString(ACCESS_SECRET_NAME, encrypt(secret, getBaseContext()));
         } catch (RuntimeException e) {
@@ -931,7 +932,7 @@ public class Cryptonite extends SherlockFragmentActivity
 
     public void buildSession() {
         // Has the user already decided whether to use an app folder?
-        SharedPreferences prefs = 
+        final SharedPreferences prefs = 
                 getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
         if (!prefs.getBoolean("dbDecided", false)) {
             AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);
@@ -942,68 +943,80 @@ public class Cryptonite extends SherlockFragmentActivity
                     new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog,
                         int which) {
-                    setSession(false);
+                    setSessionProgressDialog(false);
                 }   
             })  
             .setNegativeButton(R.string.dropbox_folder,
                     new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog,
                         int which) {
-                    setSession(true);
+                    setSessionProgressDialog(true);
                 }
             });
             AlertDialog dialog = builder.create();
             dialog.show();
         } else {
-            setSession(prefs.getBoolean("cb_appfolder", false));
+            setSessionProgressDialog(prefs.getBoolean("cb_appfolder", false));
         }
     }
-    
-    private void setSession(final boolean useAppFolder) {
-        ProgressDialogFragment.showDialog(this, R.string.dropbox_connecting, "setSession");
+
+    private void setSessionProgressDialog(final boolean useAppFolder) {
+        ProgressDialogFragment.showDialog(this, R.string.dropbox_connecting, "dbSession");
         new Thread(new Runnable(){
             public void run(){
-                SharedPreferences prefs = 
-                        getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
-                Editor edit = prefs.edit();
-                edit.putBoolean("dbDecided", true);
-                if (!edit.commit()) {
-                    Log.e(Cryptonite.TAG, "Couldn't write preferences");
-                }
-                edit.putBoolean("cb_appfolder", useAppFolder);
-                if (!edit.commit()) {
-                    Log.e(Cryptonite.TAG, "Couldn't write preferences");
-                }
-                
-                AndroidAuthSession session;
-                AppKeyPair appKeyPair;
-                AccessType accessType;
-                
-                String[] stored = getKeys();
-                
-                if (useAppFolder) {
-                    appKeyPair = new AppKeyPair(jniFolderKey(), jniFolderPw());
-                    accessType = AccessType.APP_FOLDER;
-                } else {
-                    appKeyPair = new AppKeyPair(jniFullKey(), jniFullPw());
-                    accessType = AccessType.DROPBOX;
-                }
-                if (stored != null && stored.length >= 2) {
-                    AccessTokenPair accessToken = new AccessTokenPair(stored[0], stored[1]);
-                    session = new AndroidAuthSession(appKeyPair, accessType, accessToken);
-                } else {
-                    session = new AndroidAuthSession(appKeyPair, accessType);
-                    
-                }
-                DBInterface.INSTANCE.setDBApi(new DropboxAPI<AndroidAuthSession>(session));
-                
+                setSession(useAppFolder, true);
                 runOnUiThread(new Runnable(){
                     public void run() {
-                        ProgressDialogFragment.dismissDialog(Cryptonite.this, "setSession");
+                        ProgressDialogFragment.dismissDialog(Cryptonite.this, "dbSession");
                     }
                 });
             }
         }).start();
+        
+    }
+    
+    private void setSession(final boolean useAppFolder, final boolean authenticate)
+    {
+        SharedPreferences prefs = getBaseContext().getSharedPreferences(
+                ACCOUNT_PREFS_NAME, 0);
+        Editor edit = prefs.edit();
+        edit.putBoolean("dbDecided", true);
+        if (!edit.commit()) {
+            Log.e(Cryptonite.TAG, "Couldn't write preferences");
+        }
+        edit.putBoolean("cb_appfolder", useAppFolder);
+        if (!edit.commit()) {
+            Log.e(Cryptonite.TAG, "Couldn't write preferences");
+        }
+
+        AndroidAuthSession session;
+        AppKeyPair appKeyPair;
+        AccessType accessType;
+
+        String[] stored = getKeys();
+
+        if (useAppFolder) {
+            appKeyPair = new AppKeyPair(jniFolderKey(), jniFolderPw());
+            accessType = AccessType.APP_FOLDER;
+        } else {
+            appKeyPair = new AppKeyPair(jniFullKey(), jniFullPw());
+            accessType = AccessType.DROPBOX;
+        }
+        if (stored != null && stored.length >= 2) {
+            AccessTokenPair accessToken = new AccessTokenPair(stored[0],
+                    stored[1]);
+            session = new AndroidAuthSession(appKeyPair, accessType,
+                    accessToken);
+        } else {
+            session = new AndroidAuthSession(appKeyPair, accessType);
+
+        }
+        DBInterface.INSTANCE.setDBApi(new DropboxAPI<AndroidAuthSession>(
+                session));
+
+        if (authenticate) {
+            dbAuthenticate();
+        }
 
     }
     
@@ -1264,14 +1277,12 @@ public class Cryptonite extends SherlockFragmentActivity
         String binName = binDir + "/" + trunk;
 
         /* Catenate split files */
-        Log.v(Cryptonite.TAG, "Looking for assets in " + arch);
         try {
             String[] assetsFiles = getAssets().list(arch);
             File newf = new File(binName);
             FileOutputStream os = new FileOutputStream(newf);
             for (String assetsFile : assetsFiles) {
                 if (assetsFile.substring(0, assetsFile.indexOf(".")).compareTo(trunk) == 0) {
-                    Log.v(Cryptonite.TAG, "Found " + trunk + " binary part: " + assetsFile);
                     InputStream is = getAssets().open(arch + "/" + assetsFile);
 
                     byte[] buffer = new byte[is.available()]; 
