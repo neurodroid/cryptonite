@@ -119,14 +119,14 @@ public class FileDialog extends SherlockFragmentActivity {
     
     private InputMethodManager inputManager;
     private String parentPath;
-    private String currentPath;
+    String currentPath;
     private String intentStartPath;
-    private String currentPassword = "\0";
+    String currentPassword = "\0";
     private String currentUploadTargetPath;
     private String encfsBrowseRoot;
     private String[] currentExportPathList;
     
-    private int selectionMode;
+    int selectionMode;
 
     private VirtualFile selectedFile;
     private HashMap<String, Integer> lastPositions = new HashMap<String, Integer>();
@@ -838,51 +838,6 @@ public class FileDialog extends SherlockFragmentActivity {
         }
     }
 
-    public static class PasswordDialogFragment extends SherlockDialogFragment {
-
-        public static PasswordDialogFragment newInstance() {
-            PasswordDialogFragment frag = new PasswordDialogFragment();
-            return frag;
-        }
-
-        @Override
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            LayoutInflater inflater = (LayoutInflater) getActivity()
-                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            View layout = inflater.inflate(R.layout.password_dialog, 
-                    (ViewGroup) getActivity().findViewById(R.id.root));
-            final EditText password = (EditText) layout.findViewById(R.id.EditText_Pwd);
-            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-            builder.setTitle(R.string.title_password);
-            builder.setView(layout);
-            builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                    }
-                });
-            builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        ((FileDialog)getActivity()).currentPassword = password.getText().toString();
-                        if (((FileDialog)getActivity()).currentPassword.length() > 0) {
-                            switch (((FileDialog)getActivity()).selectionMode) {
-                             case SelectionMode.MODE_OPEN_ENCFS_MOUNT:
-                                 ((FileDialog)getActivity()).mountEncFS(
-                                         ((FileDialog)getActivity()).currentPath);
-                                 break;
-                             case SelectionMode.MODE_OPEN_ENCFS:
-                             case SelectionMode.MODE_OPEN_ENCFS_DB:
-                                 ((FileDialog)getActivity()).initEncFS(
-                                         ((FileDialog)getActivity()).currentPath);
-                                 break;
-                            }
-                        } else {
-                            ((FileDialog)getActivity()).showToast(R.string.empty_password);
-                        }
-                    }
-                });
-            return builder.create();
-        }
-    }
-
     private void showPasswordDialog() {
         SherlockDialogFragment newFragment = PasswordDialogFragment.newInstance();
         newFragment.show(getSupportFragmentManager(), "pwdialog");
@@ -1153,7 +1108,7 @@ public class FileDialog extends SherlockFragmentActivity {
         return;
     }
     
-    private void showToast(int resId) {
+    void showToast(int resId) {
         showToast(getString(resId));
     }
     
@@ -1181,7 +1136,7 @@ public class FileDialog extends SherlockFragmentActivity {
      * @param srcDir Path to EncFS volume
      * @param pwd password
      */
-    private void initEncFS(final String srcDir) {
+    void initEncFS(final String srcDir) {
         alertMsg = "";
 
         ProgressDialogFragment.showDialog(this, R.string.running_encfs, "initEncFS");
@@ -1237,7 +1192,7 @@ public class FileDialog extends SherlockFragmentActivity {
     
     /** This will run the shipped encfs binary and spawn a daemon on rooted devices
      */
-    private void mountEncFS(final String srcDir) {
+    void mountEncFS(final String srcDir) {
         if (Cryptonite.jniIsValidEncFS(srcDir) != Cryptonite.jniSuccess()) {
             showToast(R.string.invalid_encfs);
             Log.v(Cryptonite.TAG, "Invalid EncFS");

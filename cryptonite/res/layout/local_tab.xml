@@ -51,6 +51,27 @@
             </Button>
         </TableRow>
 
+        <TableRow android:layout_width="wrap_content" >
+
+            <Button
+                android:id="@+id/btnSaveLocal"
+                android:layout_width="0dp"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+                android:text="@string/save"
+                android:typeface="normal" >
+            </Button>
+
+            <Button
+                android:id="@+id/btnLoadLocal"
+                android:layout_width="0dp"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+                android:text="@string/load"
+                android:typeface="normal" >
+            </Button>
+        </TableRow>
+        
         <TextView
             android:id="@+id/tvCreateLocal"
             android:layout_width="fill_parent"
@@ -99,6 +120,27 @@
             </Button>
         </TableRow>
 
+        <TableRow android:layout_width="wrap_content" >
+
+            <Button
+                android:id="@+id/btnSaveMount"
+                android:layout_width="0dp"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+                android:text="@string/save"
+                android:typeface="normal" >
+            </Button>
+
+            <Button
+                android:id="@+id/btnLoadMount"
+                android:layout_width="0dp"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+                android:text="@string/load"
+                android:typeface="normal" >
+            </Button>
+        </TableRow>
+        
         <TextView
             android:id="@+id/tvVersionLocal"
             android:layout_width="fill_parent"

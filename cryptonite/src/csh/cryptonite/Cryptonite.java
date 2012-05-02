@@ -1473,4 +1473,14 @@ public class Cryptonite extends SherlockFragmentActivity
         }
     }
 
+    public boolean hasStoredLocal() {
+        SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+        return prefs.getBoolean("cb_storedlocal", false);
+    }
+
+    public boolean hasStoredDb() {
+        SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+        return prefs.getBoolean("cb_storeddb", false);
+    }
+    
 }

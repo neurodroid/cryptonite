@@ -104,7 +104,9 @@
     <string name="internal_error">Internal program error; please try again</string>
     <string name="encfs_success">Successfully decrypted EncFS volume</string>
     <string name="encfs_success_mount">Successfully mounted EncFS volume on </string>
-
+    <string name="save">Save</string>
+    <string name="load">Load</string>
+    
     <!-- Terminal -->
     <string name="term_info">Run EncFS and TrueCrypt in terminal</string>
     <string name="term_prompt">Start terminal</string>

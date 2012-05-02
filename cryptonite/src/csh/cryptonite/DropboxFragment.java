@@ -15,8 +15,8 @@ import android.widget.TextView;
 public class DropboxFragment extends SherlockFragment {
     
     public TextView tv;
-    public Button buttonAuth, buttonDecrypt, buttonBrowseDecrypted,
-        buttonForgetDecryption, buttonCreate;
+    private Button buttonAuth, buttonDecrypt, buttonBrowseDecrypted,
+        buttonForgetDecryption, buttonCreate, buttonSave, buttonLoad;
     
     private Cryptonite mAct;
 
@@ -90,6 +90,20 @@ public class DropboxFragment extends SherlockFragment {
                     updateDecryptButtons();
                 }});
         
+        /* Save as default */
+        buttonSave = (Button)mView.findViewById(R.id.btnSaveDb);
+        buttonSave.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    updateDecryptButtons();
+                }});
+
+        /* Load default */
+        buttonLoad = (Button)mView.findViewById(R.id.btnLoadDb);
+        buttonLoad.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    
+                }});
+
         /* Create EncFS volume on Dropbox */
         buttonCreate = (Button)mView.findViewById(R.id.btnCreateDb);
         buttonCreate.setOnClickListener(new OnClickListener() {
@@ -131,6 +145,9 @@ public class DropboxFragment extends SherlockFragment {
         buttonBrowseDecrypted.setEnabled(volumeLoaded && 
                 StorageManager.INSTANCE.getEncFSStorageType() == Storage.STOR_DROPBOX);
         buttonForgetDecryption.setEnabled(volumeLoaded);
+        buttonSave.setEnabled(volumeLoaded &&
+                StorageManager.INSTANCE.getEncFSStorageType() == Storage.STOR_DROPBOX);
+        buttonLoad.setEnabled(!volumeLoaded && mAct.hasStoredDb());
         buttonCreate.setEnabled(!volumeLoaded && mAct.mLoggedIn);
         
         updateLoginButtons();

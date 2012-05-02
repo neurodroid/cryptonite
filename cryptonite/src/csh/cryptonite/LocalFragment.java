@@ -25,8 +25,8 @@ public class LocalFragment extends SherlockFragment {
     public TextView tv;
     public TextView tvMountInfo;
     
-    public Button buttonDecrypt, buttonBrowseDecrypted, buttonForgetDecryption,
-        buttonCreate, buttonMount, buttonViewMount;
+    private Button buttonDecrypt, buttonBrowseDecrypted, buttonForgetDecryption,
+        buttonCreate, buttonMount, buttonViewMount, buttonSave, buttonLoad;
     
     private Cryptonite mAct;
     
@@ -82,6 +82,20 @@ public class LocalFragment extends SherlockFragment {
                     updateDecryptButtons();
                 }});
 
+        /* Save as default */
+        buttonSave = (Button)v.findViewById(R.id.btnSaveLocal);
+        buttonSave.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    mAct.updateDecryptButtons();
+                }});
+
+        /* Load default */
+        buttonLoad = (Button)v.findViewById(R.id.btnLoadLocal);
+        buttonLoad.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    
+                }});
+        
         /* Create local EncFS volume */
         buttonCreate = (Button)v.findViewById(R.id.btnCreateLocal);
         buttonCreate.setOnClickListener(new OnClickListener() {
@@ -235,6 +249,9 @@ public class LocalFragment extends SherlockFragment {
         buttonBrowseDecrypted.setEnabled(volumeLoaded &&
                 StorageManager.INSTANCE.getEncFSStorageType() == Storage.STOR_LOCAL);
         buttonForgetDecryption.setEnabled(volumeLoaded);
+        buttonSave.setEnabled(volumeLoaded &&
+                StorageManager.INSTANCE.getEncFSStorageType() == Storage.STOR_LOCAL);
+        buttonLoad.setEnabled(!volumeLoaded && mAct.hasStoredLocal());
         buttonCreate.setEnabled(!volumeLoaded);
     }
     

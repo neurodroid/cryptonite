@@ -60,6 +60,27 @@
             </Button>
         </TableRow>
 
+        <TableRow android:layout_width="wrap_content" >
+
+            <Button
+                android:id="@+id/btnSaveDb"
+                android:layout_width="0dp"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+                android:text="@string/save"
+                android:typeface="normal" >
+            </Button>
+
+            <Button
+                android:id="@+id/btnLoadDb"
+                android:layout_width="0dp"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+                android:text="@string/load"
+                android:typeface="normal" >
+            </Button>
+        </TableRow>
+        
         <TextView
             android:id="@+id/tvCreateDb"
             android:layout_width="fill_parent"
