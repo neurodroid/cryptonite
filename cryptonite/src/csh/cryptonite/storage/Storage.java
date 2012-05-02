@@ -68,6 +68,7 @@ public abstract class Storage {
         uiThread.start();
         uiHandler = new UIHandler(((HandlerThread) uiThread).getLooper());
     }
+
     abstract public boolean initEncFS(String srcDir, String initRoot);
     
     abstract public boolean encryptEncFSFile(String stripstr, String srcPath);
