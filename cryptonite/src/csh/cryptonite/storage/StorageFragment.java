@@ -83,7 +83,7 @@ public abstract class StorageFragment extends SherlockFragment {
                     SharedPreferences prefs = mAct.getBaseContext()
                             .getSharedPreferences(Cryptonite.ACCOUNT_PREFS_NAME, 0);
                     Editor prefEdit = prefs.edit();
-                    
+                    prefEdit.putBoolean(storagePrefsKey, true);
                     prefEdit.commit();
                     updateDecryptButtons();
                 }});

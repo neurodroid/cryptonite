@@ -1,0 +1,24 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent" >
+    
+  <TextView 
+      android:id="@+id/stored_rowtext" 
+      android:layout_width="wrap_content"
+      android:layout_height="35dp"
+      android:gravity="center_vertical" 
+      android:text="@+id/stored_rowtext" 
+      android:textSize="23dp"
+      />
+
+  <TextView
+      android:id="@+id/stored_rowdesc"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_alignParentLeft="true"
+      android:layout_below="@+id/stored_rowtext"
+      android:text="@+id/stored_rowdesc" 
+      android:textSize="12dp"
+      />
+  
+</RelativeLayout>

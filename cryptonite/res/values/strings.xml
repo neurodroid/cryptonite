@@ -106,6 +106,8 @@
     <string name="encfs_success_mount">Successfully mounted EncFS volume on </string>
     <string name="save">Save</string>
     <string name="load">Load</string>
+    <string name="no_volumes">Couldn\'t find any stored volumes</string>
+    <string name="delete_entry">Remove entry</string>
     
     <!-- Terminal -->
     <string name="term_info">Run EncFS and TrueCrypt in terminal</string>
