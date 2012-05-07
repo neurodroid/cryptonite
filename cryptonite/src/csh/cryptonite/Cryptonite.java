@@ -315,7 +315,9 @@ public class Cryptonite extends SherlockFragmentActivity
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putString("tab", mTabHost.getCurrentTabTag());
+        if (mTabHost != null) {
+            outState.putString("tab", mTabHost.getCurrentTabTag());
+        }
         outState.putInt("opMode", opMode);
         outState.putString("currentReturnPath", currentReturnPath);
         outState.putString("currentDialogStartPath", currentDialogStartPath);
@@ -1472,6 +1474,7 @@ public class Cryptonite extends SherlockFragmentActivity
             System.loadLibrary("cryptonite");
             Cryptonite.hasJni = true;
         } catch (java.lang.UnsatisfiedLinkError e) {
+            Log.e(TAG, e.getMessage());
             Cryptonite.hasJni = false;
         }
     }

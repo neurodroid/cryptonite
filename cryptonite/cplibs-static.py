@@ -12,7 +12,7 @@ else:
     platform = 'darwin'
 
 ndk = "%s/android-ndk-r8" % os.getenv("HOME")
-toolchain = "%s/toolchains/arm-linux-androideabi-4.4.3/prebuilt/%s-x86" % (ndk, platform)
+toolchain = "%s/android-toolchain" % os.getenv("HOME")
 openssl_version = "1.0.0i"
 
 def cpfile(src, target):
@@ -37,8 +37,12 @@ for arch in archs:
     cpfile("../encfs/encfs-1.7.4/%s/lib/libencfs.a" % arch, target_dir)
     cpfile("../openssl/openssl-%s/%s/libssl.a" % (openssl_version, arch), target_dir)
     cpfile("../openssl/openssl-%s/%s/libcrypto.a" % (openssl_version, arch), target_dir)
-    cpfile("%s/sources/cxx-stl/gnu-libstdc++/libs/%s/libgnustl_static.a" % (ndk, arch), target_dir)
-    cpfile("%s/lib/gcc/arm-linux-androideabi/4.4.3/libgcc.a" % toolchain, target_dir)
+    if arch=="armeabi":
+        arch_subdir = ""
+    elif arch == "armeabi-v7a":
+        arch_subdir = "armv7-a/"
+    cpfile("%s/arm-linux-androideabi/lib/%slibstdc++.a" % (toolchain, arch_subdir), target_dir)
+    cpfile("%s/lib/gcc/arm-linux-androideabi/4.4.3/%slibgcc.a" % (toolchain, arch_subdir), target_dir)
 
 
 arch = "armeabi"

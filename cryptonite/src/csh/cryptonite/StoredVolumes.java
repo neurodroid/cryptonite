@@ -19,7 +19,7 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
-import csh.cryptonite.database.CryptoniteContentProvider;
+import csh.cryptonite.contentprovider.CryptoniteContentProvider;
 import csh.cryptonite.database.CryptoniteTable;
 
 /*
@@ -82,12 +82,12 @@ public class StoredVolumes extends SherlockFragmentActivity implements
 
     // Opens the second activity if an entry is clicked
     private void onListItemClick(ListView l, View v, int position, long id) {
-        Intent i = new Intent(this, TodoDetailActivity.class);
+        /*Intent i = new Intent(this, TodoDetailActivity.class);
         Uri todoUri = Uri.parse(CryptoniteContentProvider.CONTENT_URI + "/" + id);
         i.putExtra(CryptoniteContentProvider.CONTENT_ITEM_TYPE, todoUri);
 
         // Activity returns an result if called with startActivityForResult
-        startActivityForResult(i, ACTIVITY_EDIT);
+        startActivityForResult(i, ACTIVITY_EDIT);*/
     }
 
     // Called with the result of the other activity

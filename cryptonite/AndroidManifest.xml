@@ -86,6 +86,17 @@
       </intent-filter>
     </activity>
 
+    <activity
+        android:name="StoredVolumes"
+        android:label="@string/stored_volumes"        
+        android:configChanges="orientation|keyboard"
+        android:launchMode="singleTop">
+    </activity>
+
+    <provider
+        android:name=".contentprovider.CryptoniteContentProvider"
+        android:authorities="csh.cryptonite.contentprovider" >
+    </provider>    
 </application>
 
 </manifest> 

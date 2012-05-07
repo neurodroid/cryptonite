@@ -51,7 +51,7 @@ LOCAL_LDLIBS := \
     ./obj/local/${TARGET_ARCH_ABI}/librlog.a \
     ./obj/local/armeabi/libboost_filesystem.a \
     ./obj/local/armeabi/libboost_system.a \
-    ./obj/local/${TARGET_ARCH_ABI}/libgnustl_static.a \
+    ./obj/local/${TARGET_ARCH_ABI}/libstdc++.a \
     ./obj/local/${TARGET_ARCH_ABI}/libgcc.a \
     ./obj/local/${TARGET_ARCH_ABI}/libcrypto.a \
     ./obj/local/${TARGET_ARCH_ABI}/libssl.a \
