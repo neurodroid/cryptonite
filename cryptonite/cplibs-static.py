@@ -11,7 +11,7 @@ if 'linux' in sys.platform:
 else:
     platform = 'darwin'
 
-ndk = "%s/android-ndk-r7b" % os.getenv("HOME")
+ndk = "%s/android-ndk-r8" % os.getenv("HOME")
 toolchain = "%s/toolchains/arm-linux-androideabi-4.4.3/prebuilt/%s-x86" % (ndk, platform)
 openssl_version = "1.0.0i"
 
