@@ -109,7 +109,8 @@
     <string name="no_volumes">Couldn\'t find any stored volumes</string>
     <string name="delete_entry">Remove entry</string>
     <string name="stored_volumes">Stored volumes</string>
-
+    <string name="empty_encoded_filename">Couldn\'t encode file name; please try again</string>
+    
     <!-- Terminal -->
     <string name="term_info">Run EncFS and TrueCrypt in terminal</string>
     <string name="term_prompt">Start terminal</string>

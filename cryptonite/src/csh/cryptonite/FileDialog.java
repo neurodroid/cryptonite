@@ -1268,6 +1268,10 @@ public class FileDialog extends SherlockFragmentActivity {
         new Thread(new Runnable(){
             public void run(){
                 final String nextFilePath = StorageManager.INSTANCE.getEncFSStorage().encodedExists(stripstr);
+                if (nextFilePath == "") {
+                    showToast(R.string.empty_encoded_filename);
+                    return;
+                }
                 runOnUiThread(new Runnable(){
                     public void run() {
                         if (!nextFilePath.equals(stripstr)) {

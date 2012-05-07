@@ -102,6 +102,11 @@ public class DropboxStorage extends Storage {
 
         /* Convert current path to encoded file name */
         String encodedPath = Cryptonite.jniEncode(stripstr);
+        
+        if (encodedPath == null) {
+            return "";
+        }
+
         File encodedFile = new File(encodedPath);
         String targetPath = encodedPath.substring(browseRoot.getPath().length());
 
