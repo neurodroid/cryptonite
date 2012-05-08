@@ -1154,7 +1154,9 @@ public class FileDialog extends SherlockFragmentActivity {
                     StorageManager.INSTANCE.setEncFSPath(currentPath
                             .substring(intentStartPath.length()));
                     Log.i(Cryptonite.TAG, "Dialog root is " + currentPath);
-                    if (Cryptonite.jniInit(srcDir, currentPassword) != Cryptonite.jniSuccess()) {
+                    
+                    SharedPreferences prefs = getBaseContext().getSharedPreferences(Cryptonite.ACCOUNT_PREFS_NAME, 0);
+                    if (Cryptonite.jniInit(srcDir, currentPassword, prefs.getBoolean("cb_anykey", false)) != Cryptonite.jniSuccess()) {
                         Log.v(Cryptonite.TAG, getString(R.string.browse_failed));
                         alertMsg = getString(R.string.browse_failed);
                         // StorageManager.INSTANCE.resetEncFSStorage();

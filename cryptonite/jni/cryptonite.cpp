@@ -414,12 +414,12 @@ static int exportFiles(const boost::shared_ptr<EncFS_Root> &lRootInfo,
     return traverseDirs(lRootInfo, volumeDir, destDir, decodedNames);
 }
 
-static RootPtr initRootInfo(const std::string& rootDir, const std::string& password)
+static RootPtr initRootInfo(const std::string& rootDir, const std::string& password, bool useAnyKey)
 {
     RootPtr result;
     boost::shared_ptr<EncFS_Opts> opts( new EncFS_Opts() );
     opts->createIfNotFound = false;
-    opts->checkKey = true;
+    opts->checkKey = !useAnyKey;
     opts->password.assign(password);
     opts->rootDir.assign(rootDir);
     if(checkDir( opts->rootDir )) {
@@ -459,11 +459,11 @@ extern "C" {
     JNIEXPORT jint JNICALL
     Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv * env, jobject thiz,
                                              jstring srcdir, jstring destdir,
-                                             jstring password);
+                                             jstring password, jboolean useAnyKey);
 
     JNIEXPORT jint JNICALL
     Java_csh_cryptonite_Cryptonite_jniInit(JNIEnv* env, jobject thiz,
-                                           jstring srcdir, jstring password);
+                                           jstring srcdir, jstring password, jboolean useAnyKey);
 
     JNIEXPORT jint JNICALL
     Java_csh_cryptonite_Cryptonite_jniCreate(JNIEnv* env, jobject thiz,
@@ -694,7 +694,7 @@ JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_jniResetVolume(JNIEnv * en
     return checkGRoot() == EXIT_FAILURE;
 }
 
-int setupRootDir(JNIEnv* env, jstring srcdir, jstring password) {
+int setupRootDir(JNIEnv* env, jstring srcdir, jstring password, jboolean useAnyKey) {
 
     int pw_len = (int)env->GetStringLength(password);
     if (pw_len  == 0) {
@@ -708,7 +708,7 @@ int setupRootDir(JNIEnv* env, jstring srcdir, jstring password) {
         LOGE("EncFS root directory is not valid");
         return EXIT_FAILURE;
     }
-    gRootInfo = initRootInfo(msrcdir.str(), mpassword.str());
+    gRootInfo = initRootInfo(msrcdir.str(), mpassword.str(), useAnyKey);
 
     /* clear password copy */
     mpassword.release();
@@ -717,9 +717,9 @@ int setupRootDir(JNIEnv* env, jstring srcdir, jstring password) {
 }
 
 JNIEXPORT jint JNICALL
-Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv* env, jobject thiz, jstring srcdir, jstring destdir, jstring password)
+Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv* env, jobject thiz, jstring srcdir, jstring destdir, jstring password, jboolean useAnyKey)
 {
-    int res = setupRootDir(env, srcdir, password);
+    int res = setupRootDir(env, srcdir, password, useAnyKey);
     if (res != EXIT_SUCCESS) {
         return res;
     }
@@ -738,9 +738,9 @@ Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv* env, jobject thiz, jstring srcd
 
 
 JNIEXPORT jint JNICALL
-Java_csh_cryptonite_Cryptonite_jniInit(JNIEnv* env, jobject thiz, jstring srcdir, jstring password)
+Java_csh_cryptonite_Cryptonite_jniInit(JNIEnv* env, jobject thiz, jstring srcdir, jstring password, jboolean useAnyKey)
 {
-    return setupRootDir(env, srcdir, password);
+    return setupRootDir(env, srcdir, password, useAnyKey);
 }
 
 JNIEXPORT jint JNICALL

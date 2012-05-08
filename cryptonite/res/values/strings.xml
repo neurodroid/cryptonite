@@ -24,6 +24,10 @@
     <string name="cb_appfolder_summary">Restrict access to an app folder on your Dropbox</string>
     <string name="cb_appfolder_enabled">Using app folder</string>
     <string name="cb_appfolder_disabled">Using full Dropbox access</string>
+    <string name="cb_anykey_title">Accept any password</string>
+    <string name="cb_anykey_summary">Accept any password and unlock different files depending of the password</string>
+    <string name="cb_anykey_enabled">Always accepting any password</string>
+    <string name="cb_anykey_disabled">Always refusing bad passwords</string>
     <string name="txt_mntpoint_title">Mount point</string>
     <string name="txt_mntpoint_dlgtitle">Mount point</string>
     <string name="txt_mntpoint_dlgmsg">EncFS mount path:</string>
