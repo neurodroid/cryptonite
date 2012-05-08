@@ -27,7 +27,7 @@
 
 ARCH=armeabi
 # LIBSTDCXXINC=-I${NDKDIR}/sources/cxx-stl/gnu-libstdc++/include/ -I${NDKDIR}/sources/cxx-stl/gnu-libstdc++/libs/${ARCH}/include
-LIBSTDCXXINC=-I${NDKDIR}/android-toolchain-crystax/sysroot/usr/include
+LIBSTDCXXINC=-I${HOME}/android-toolchain-crystax/sysroot/usr/include
 export LIBSTDCXXLIB=-L${HOME}/android-toolchain-crystax/arm-linux-androideabi/lib/${ARCH} -lcrystax
 
 export APPNAME := truecrypt
@@ -35,8 +35,8 @@ export BASE_DIR := $(CURDIR)
 export BUILD_INC := $(BASE_DIR)/Build/Include
 
 export AR := $(HOME)/android-toolchain-crystax/bin/arm-linux-androideabi-ar
-export CC := $(HOME)/neurodroid/nrn/agcc-crystax
-export CXX := $(HOME)/neurodroid/nrn/agcc-crystax
+export CC := agcc-crystax
+export CXX := agcc-crystax
 export AS := $(HOME)/android-toolchain-crystax/bin/arm-linux-androideabi-as
 export RANLIB := $(HOME)/android-toolchain-crystax/bin/arm-linux-androideabi-ranlib
 

@@ -1,6 +1,6 @@
-diff -x '*.in' -x '*.o' -x '*.lo' -x '*.1' -x 'bld*' -x '*~' -ur /home/cs/wxWidgets-2.8.12/configure ./wxWidgets-2.8.12/configure
---- /home/cs/wxWidgets-2.8.12/configure	2011-03-22 11:59:37.000000000 +0000
-+++ ./wxWidgets-2.8.12/configure	2012-03-27 08:56:17.477148042 +0100
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.1' -x 'bld*' -x '*~' -ur /home/cs/wxWidgets-2.8.12/configure b/configure
+--- a/configure	2011-03-22 11:59:37.000000000 +0000
++++ b/configure	2012-03-27 08:56:17.477148042 +0100
 @@ -1884,7 +1884,7 @@
  
              CPPFLAGS="-D_HPUX_SOURCE $CPPFLAGS"
@@ -55,9 +55,9 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.1' -x 'bld*' -x '*~' -ur /home/cs/wxWidg
          if test "x$SUNCXX" = "xyes"; then
              SONAME_FLAG="-h "
          else
-diff -x '*.in' -x '*.o' -x '*.lo' -x '*.1' -x 'bld*' -x '*~' -ur /home/cs/wxWidgets-2.8.12/src/common/filename.cpp ./wxWidgets-2.8.12/src/common/filename.cpp
---- /home/cs/wxWidgets-2.8.12/src/common/filename.cpp	2011-03-22 11:59:41.000000000 +0000
-+++ ./wxWidgets-2.8.12/src/common/filename.cpp	2012-03-27 08:56:33.777146716 +0100
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.1' -x 'bld*' -x '*~' -ur a/src/common/filename.cpp b/src/common/filename.cpp
+--- a/src/common/filename.cpp	2011-03-22 11:59:41.000000000 +0000
++++ b/src/common/filename.cpp	2012-03-27 08:56:33.777146716 +0100
 @@ -2320,11 +2320,11 @@
      if ( wxStat( GetFullPath().fn_str(), &stBuf) == 0 )
      {
