@@ -24,10 +24,10 @@ MYNM=arm-linux-androideabi-nm
 MYSTRIP=arm-linux-androideabi-strip
 
 if test -n "$1"; then
-    MYAGCC=agcc-vfp
+    MYAGCC=agcc-vfp-crystax
     ARCH=armeabi-v7a
 else
-    MYAGCC=agcc
+    MYAGCC=agcc-crystax
     ARCH=armeabi
 fi
 

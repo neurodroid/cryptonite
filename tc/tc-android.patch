@@ -14,9 +14,9 @@
 
 # Copyright (c) 2012, Christoph Schmidt-Hieber
 
-diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur /home/cs/truecrypt-7.1a-source/Core/Unix/CoreUnix.cpp ./truecrypt-7.1a-source/Core/Unix/CoreUnix.cpp
---- /home/cs/truecrypt-7.1a-source/Core/Unix/CoreUnix.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ ./truecrypt-7.1a-source/Core/Unix/CoreUnix.cpp	2012-03-28 12:54:51.657147243 +0100
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Core/Unix/CoreUnix.cpp b/Core/Unix/CoreUnix.cpp
+--- a/Core/Unix/CoreUnix.cpp	2012-02-07 10:36:48.000000000 +0000
++++ b/Core/Unix/CoreUnix.cpp	2012-03-28 12:54:51.657147243 +0100
 @@ -74,7 +74,11 @@
  		args.push_back ("--");
  		args.push_back (mountPoint);
@@ -97,9 +97,9 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  				VolumeInfoList mountedVolumes = GetMountedVolumes (*options.Path);
  				if (mountedVolumes.size() > 0)
  				{
-diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur /home/cs/truecrypt-7.1a-source/Core/Unix/Linux/CoreLinux.cpp ./truecrypt-7.1a-source/Core/Unix/Linux/CoreLinux.cpp
---- /home/cs/truecrypt-7.1a-source/Core/Unix/Linux/CoreLinux.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ ./truecrypt-7.1a-source/Core/Unix/Linux/CoreLinux.cpp	2012-03-28 13:04:00.937147797 +0100
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Core/Unix/Linux/CoreLinux.cpp b/Core/Unix/Linux/CoreLinux.cpp
+--- a/Core/Unix/Linux/CoreLinux.cpp	2012-02-07 10:36:48.000000000 +0000
++++ b/Core/Unix/Linux/CoreLinux.cpp	2012-03-28 13:04:00.937147797 +0100
 @@ -22,6 +22,110 @@
  #include "Driver/Fuse/FuseService.h"
  #include "Core/Unix/CoreServiceProxy.h"
@@ -241,9 +241,9 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  
  		FILE *mtab = fopen ("/etc/mtab", "r");
  
-diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur /home/cs/truecrypt-7.1a-source/Driver/Fuse/Driver.make ./truecrypt-7.1a-source/Driver/Fuse/Driver.make
---- /home/cs/truecrypt-7.1a-source/Driver/Fuse/Driver.make	2012-02-07 10:36:48.000000000 +0000
-+++ ./truecrypt-7.1a-source/Driver/Fuse/Driver.make	2012-03-27 08:55:09.467146427 +0100
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Driver/Fuse/Driver.make b/Driver/Fuse/Driver.make
+--- a/Driver/Fuse/Driver.make	2012-02-07 10:36:48.000000000 +0000
++++ b/Driver/Fuse/Driver.make	2012-03-27 08:55:09.467146427 +0100
 @@ -7,10 +7,10 @@
  #
  
@@ -258,9 +258,9 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  
  include $(BUILD_INC)/Makefile.inc
 Only in ./truecrypt-7.1a-source: License.txt.h
-diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur /home/cs/truecrypt-7.1a-source/Main/CommandLineInterface.cpp ./truecrypt-7.1a-source/Main/CommandLineInterface.cpp
---- /home/cs/truecrypt-7.1a-source/Main/CommandLineInterface.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ ./truecrypt-7.1a-source/Main/CommandLineInterface.cpp	2012-03-28 13:05:38.637146327 +0100
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Main/CommandLineInterface.cpp b/Main/CommandLineInterface.cpp
+--- a/Main/CommandLineInterface.cpp	2012-02-07 10:36:48.000000000 +0000
++++ b/Main/CommandLineInterface.cpp	2012-03-28 13:05:38.637146327 +0100
 @@ -479,7 +479,11 @@
  			ArgVolumes = GetMountedVolumes (parser.GetParamCount() > 0 ? parser.GetParam (0) : wxString());
  
@@ -273,9 +273,9 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  	}
  
  	CommandLineInterface::~CommandLineInterface ()
-diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur /home/cs/truecrypt-7.1a-source/Main/Main.make ./truecrypt-7.1a-source/Main/Main.make
---- /home/cs/truecrypt-7.1a-source/Main/Main.make	2012-02-07 10:36:48.000000000 +0000
-+++ ./truecrypt-7.1a-source/Main/Main.make	2012-03-28 01:34:17.077146653 +0100
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Main/Main.make b/Main/Main.make
+--- a/Main/Main.make	2012-02-07 10:36:48.000000000 +0000
++++ b/Main/Main.make	2012-03-28 01:34:17.077146653 +0100
 @@ -96,7 +96,7 @@
  
  #------ FUSE configuration ------
@@ -299,9 +299,9 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  endif
  
  ifndef NOTEST
-diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur /home/cs/truecrypt-7.1a-source/Main/TextUserInterface.cpp ./truecrypt-7.1a-source/Main/TextUserInterface.cpp
---- /home/cs/truecrypt-7.1a-source/Main/TextUserInterface.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ ./truecrypt-7.1a-source/Main/TextUserInterface.cpp	2012-03-28 13:09:00.557147800 +0100
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Main/TextUserInterface.cpp b/Main/TextUserInterface.cpp
+--- a/Main/TextUserInterface.cpp	2012-02-07 10:36:48.000000000 +0000
++++ b/Main/TextUserInterface.cpp	2012-03-28 13:09:00.557147800 +0100
 @@ -1247,7 +1247,11 @@
  		if (!TextInputStream.get() || feof (stdin) || ferror (stdin))
  			throw UserAbort (SRC_POS);
@@ -314,12 +314,12 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  
  		if (ferror (stdin) || (line.empty() && feof (stdin)))
  			throw UserAbort (SRC_POS);
-Only in ./truecrypt-7.1a-source/Main: truecrypt
-Only in ./truecrypt-7.1a-source/Main: truecrypt.splitaa
-Only in ./truecrypt-7.1a-source/Main: truecrypt.splitab
-diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur /home/cs/truecrypt-7.1a-source/Main/UserInterface.cpp ./truecrypt-7.1a-source/Main/UserInterface.cpp
---- /home/cs/truecrypt-7.1a-source/Main/UserInterface.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ ./truecrypt-7.1a-source/Main/UserInterface.cpp	2012-03-28 13:12:06.167147608 +0100
+Only in b/Main: truecrypt
+Only in b/Main: truecrypt.splitaa
+Only in b/Main: truecrypt.splitab
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Main/UserInterface.cpp b/Main/UserInterface.cpp
+--- a/Main/UserInterface.cpp	2012-02-07 10:36:48.000000000 +0000
++++ b/Main/UserInterface.cpp	2012-03-28 13:12:06.167147608 +0100
 @@ -1400,7 +1400,12 @@
  		EncryptionTest::TestAll();
  
@@ -334,9 +334,9 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  		try
  		{
 Only in ./truecrypt-7.1a-source: Pkcs11
-diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur /home/cs/truecrypt-7.1a-source/Platform/StringConverter.cpp ./truecrypt-7.1a-source/Platform/StringConverter.cpp
---- /home/cs/truecrypt-7.1a-source/Platform/StringConverter.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ ./truecrypt-7.1a-source/Platform/StringConverter.cpp	2012-03-27 20:48:04.847147038 +0100
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Platform/StringConverter.cpp b/Platform/StringConverter.cpp
+--- a/Platform/StringConverter.cpp	2012-02-07 10:36:48.000000000 +0000
++++ b/Platform/StringConverter.cpp	2012-03-27 20:48:04.847147038 +0100
 @@ -213,6 +213,7 @@
  	{
  		try
@@ -377,9 +377,9 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  		}
  		catch (...)
  		{
-diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur /home/cs/truecrypt-7.1a-source/Platform/Unix/File.cpp ./truecrypt-7.1a-source/Platform/Unix/File.cpp
---- /home/cs/truecrypt-7.1a-source/Platform/Unix/File.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ ./truecrypt-7.1a-source/Platform/Unix/File.cpp	2012-03-28 13:15:16.017148086 +0100
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Platform/Unix/File.cpp b/Platform/Unix/File.cpp
+--- a/Platform/Unix/File.cpp	2012-02-07 10:36:48.000000000 +0000
++++ b/Platform/Unix/File.cpp	2012-03-28 13:15:16.017148086 +0100
 @@ -15,6 +15,11 @@
  #include <sys/mount.h>
  #endif
@@ -414,9 +414,9 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  		throw_sys_sub_if (FileHandle == -1, wstring (path));
  
  #if 0 // File locking is disabled to avoid remote filesystem locking issues
-diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur /home/cs/truecrypt-7.1a-source/Platform/Unix/Process.cpp ./truecrypt-7.1a-source/Platform/Unix/Process.cpp
---- /home/cs/truecrypt-7.1a-source/Platform/Unix/Process.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ ./truecrypt-7.1a-source/Platform/Unix/Process.cpp	2012-03-28 13:19:48.087146325 +0100
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Platform/Unix/Process.cpp b/Platform/Unix/Process.cpp
+--- a/Platform/Unix/Process.cpp	2012-02-07 10:36:48.000000000 +0000
++++ b/Platform/Unix/Process.cpp	2012-03-28 13:19:48.087146325 +0100
 @@ -189,6 +189,9 @@
  			if (!errOutput.empty())
  				strErrOutput.insert (strErrOutput.begin(), errOutput.begin(), errOutput.end());
