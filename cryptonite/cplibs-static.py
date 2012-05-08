@@ -57,6 +57,6 @@ p = subprocess.Popen("/usr/bin/split -b 1m truecrypt truecrypt.split",
 p.wait()
 
 splitfiles = glob.glob("../tc/truecrypt-7.1a-source/Main/truecrypt.split*")
-print splitfiles
+print(splitfiles)
 for splitfile in splitfiles:
     cpfile(splitfile, "./assets/%s/" % arch)

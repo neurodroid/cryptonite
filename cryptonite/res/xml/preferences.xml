@@ -22,6 +22,11 @@
       android:key="cb_appfolder"
       android:title="@string/cb_appfolder_title"
       android:summary="@string/cb_appfolder_summary" />
+  
+    <CheckBoxPreference
+      android:key="cb_anykey"
+      android:title="@string/cb_anykey_title"
+      android:summary="@string/cb_anykey_summary" />
     
     <Preference
         android:key="txt_mntpoint"

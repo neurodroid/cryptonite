@@ -42,6 +42,7 @@ public class Preferences extends SherlockPreferenceActivity {
     private CheckBoxPreference chkNorris;
     private CheckBoxPreference chkExtCache;
     private CheckBoxPreference chkAppFolder;
+    private CheckBoxPreference chkAnyKey;
     private Preference txtMntPoint;
     private String currentReturnPath = "";
     
@@ -107,6 +108,18 @@ public class Preferences extends SherlockPreferenceActivity {
                         return true;
                     } else {
                         Toast.makeText(Preferences.this, R.string.cb_appfolder_disabled, Toast.LENGTH_SHORT).show();
+                        return false;
+                    }
+                }});
+        
+        chkAnyKey = (CheckBoxPreference)getPreferenceScreen().findPreference("cb_anykey");
+        chkAnyKey.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+                public boolean onPreferenceClick(Preference preference) {
+                    if (chkAnyKey.isChecked()) {
+                        Toast.makeText(Preferences.this, R.string.cb_anykey_enabled, Toast.LENGTH_SHORT).show();
+                        return true;
+                    } else {
+                        Toast.makeText(Preferences.this, R.string.cb_anykey_disabled, Toast.LENGTH_SHORT).show();
                         return false;
                     }
                 }});
