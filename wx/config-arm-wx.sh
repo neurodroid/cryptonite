@@ -18,10 +18,10 @@
 
 TOOLCHAIN=${HOME}/android-toolchain-crystax
 SYSROOT=${TOOLCHAIN}/sysroot
-MYAR=arm-linux-androideabi-ar
-MYRANLIB=arm-linux-androideabi-ranlib
-MYNM=arm-linux-androideabi-nm
-MYSTRIP=arm-linux-androideabi-strip
+MYAR=${TOOLCHAIN}/bin/arm-linux-androideabi-ar
+MYRANLIB=${TOOLCHAIN}/bin/arm-linux-androideabi-ranlib
+MYNM=${TOOLCHAIN}/bin/arm-linux-androideabi-nm
+MYSTRIP=${TOOLCHAIN}/bin/arm-linux-androideabi-strip
 
 if test -n "$1"; then
     MYAGCC=agcc-vfp-crystax
