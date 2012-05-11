@@ -13,7 +13,7 @@ else:
 
 ndk = "%s/android-ndk-r8" % os.getenv("HOME")
 toolchain = "%s/android-toolchain" % os.getenv("HOME")
-openssl_version = "1.0.0i"
+openssl_version = "1.0.0j"
 
 def cpfile(src, target):
     sys.stdout.write("Copying %s to %s\n" % (src, target))
