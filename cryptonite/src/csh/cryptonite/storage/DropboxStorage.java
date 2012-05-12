@@ -377,8 +377,12 @@ public class DropboxStorage extends Storage {
     }
 
     @Override
-    public void mkVisibleDecoded(String path, String encFSRoot, String rootPath) {
+    public boolean mkVisibleDecoded(String path, String encFSRoot, String rootPath) {
 
+        if (encFSPath == null) {
+            return false;
+        }
+        
         String prevRoot = encFSRoot.substring(0, encFSRoot.length()-encFSPath.length());
         String encodedPath = Cryptonite.jniEncode(path).substring(prevRoot.length()-1);
         
@@ -400,12 +404,15 @@ public class DropboxStorage extends Storage {
                     }
                 }
             }
+            return true;
         } catch (DropboxException e) {
             String alertMsg = mAppContext.getString(R.string.dropbox_read_fail) + ": " + e.getMessage();
             handleUIToastRequest(alertMsg);
+            return false;
         } catch (IOException e) {
             String alertMsg = mAppContext.getString(R.string.dropbox_read_fail) + ": " + e.getMessage();
             handleUIToastRequest(alertMsg);
+            return false;
         }
     }
     

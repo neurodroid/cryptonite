@@ -927,7 +927,10 @@ public class FileDialog extends SherlockFragmentActivity {
                 switch (selectionMode) {
                 case SelectionMode.MODE_OPEN_MULTISELECT:
                 case SelectionMode.MODE_OPEN_MULTISELECT_DB:
-                    getStorage().mkVisibleDecoded(path, fEncFSRoot, rootPath);
+                    if (!getStorage().mkVisibleDecoded(path, fEncFSRoot, rootPath)) {
+                        setResult(Cryptonite.RESULT_ERROR, getIntent());
+                        finish();
+                    }
                     break;
                 default:
                     getStorage().mkVisiblePlain(path, rootPath);

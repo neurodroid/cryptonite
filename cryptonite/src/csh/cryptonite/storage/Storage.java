@@ -88,7 +88,7 @@ public abstract class Storage {
     
     abstract public String encodedExists(String stripstr);
     
-    abstract public void mkVisibleDecoded(String path, String encFSRoot, String rootPath);
+    abstract public boolean mkVisibleDecoded(String path, String encFSRoot, String rootPath);
     
     abstract public void mkVisiblePlain(String path, String rootPath);
     
