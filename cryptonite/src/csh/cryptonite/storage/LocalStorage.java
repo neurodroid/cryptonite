@@ -153,8 +153,12 @@ public class LocalStorage extends Storage {
     }
 
     @Override
-    public void mkVisibleDecoded(String path, String encFSRoot, String rootPath) {
+    public boolean mkVisibleDecoded(String path, String encFSRoot, String rootPath) {
 
+        if (encFSPath == null) {
+            return false;
+        }
+        
         String prevRoot = encFSRoot.substring(0, encFSRoot.length()-encFSPath.length());
         String encodedPath = Cryptonite.jniEncode(path).substring(prevRoot.length()-1);
         
@@ -174,10 +178,12 @@ public class LocalStorage extends Storage {
                     }
                 }
             }
+            return true;
         } catch (IOException e) {
             String alertMsg = mAppContext.getString(R.string.local_read_fail) + e.toString();
             handleUIToastRequest(alertMsg);
             Log.e(Cryptonite.TAG, alertMsg);
+            return false;
         }
     }
     
