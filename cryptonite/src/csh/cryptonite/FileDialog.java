@@ -1258,9 +1258,10 @@ public class FileDialog extends SherlockFragmentActivity {
         alertMsg = "";
         new Thread(new Runnable() {
             public void run() {
+                SharedPreferences prefs = getBaseContext().getSharedPreferences(Cryptonite.ACCOUNT_PREFS_NAME, 0);
                 String encfsoutput = "";
                 String[] cmdlist = { DirectorySettings.INSTANCE.encFSBin,
-                        "--public", "--stdinpass", "\"" + srcDir + "\"",
+                        "--public", prefs.getBoolean("cb_anykey", false) ? "--anykey" : "", "--stdinpass", "\"" + srcDir + "\"",
                         "\"" + DirectorySettings.INSTANCE.mntDir + "\"" };
                 try {
                     encfsoutput = ShellUtils.runBinary(cmdlist,
