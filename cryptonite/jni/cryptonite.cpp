@@ -985,6 +985,7 @@ Java_csh_cryptonite_Cryptonite_jniDecryptToBuffer(JNIEnv* env, jobject thiz,
 
     jniStringManager mencodedname(env, encodedname);
     std::string plainPath = gRootInfo->root->plainPath(mencodedname.c_str());
+    mencodedname.release();
 
     boost::shared_ptr<FileNode> node = 
 	gRootInfo->root->lookupNode( plainPath.c_str(), "encfsctl");
@@ -997,12 +998,46 @@ Java_csh_cryptonite_Cryptonite_jniDecryptToBuffer(JNIEnv* env, jobject thiz,
     }
 
     std::vector<unsigned char> buf;
+
     BufferOutput output(&buf);
     processContents( gRootInfo, plainPath.c_str(), output );
     
     jbyteArray jb = env->NewByteArray(buf.size());
+
+    jclass oomCls;
+    oomCls = env->FindClass("java/lang/OutOfMemoryError");
+
+    jthrowable exc = env->ExceptionOccurred();
+    if (exc) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+        env->ThrowNew(oomCls, "out of memory in jniDecryptToBuffer");
+
+        return 0;
+    }
+    if (jb == NULL) {
+        buf.clear();
+        std::ostringstream err;
+        err << "out of memory";
+        LOGE(err.str().c_str());
+
+        env->ThrowNew(oomCls, "out of memory in jniDecryptToBuffer");
+        
+        return 0;
+    }
+    
     env->SetByteArrayRegion(jb, 0, buf.size(), (jbyte *)&buf[0]);
- 
+    buf.clear();
+
+    exc = env->ExceptionOccurred();
+    if (exc) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+        env->ThrowNew(oomCls, "out of memory in jniDecryptToBuffer");
+
+        return 0;
+    }
+
     return jb;
 }
 

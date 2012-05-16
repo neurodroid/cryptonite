@@ -115,6 +115,7 @@
     <string name="stored_volumes">Stored volumes</string>
     <string name="empty_encoded_filename">Couldn\'t encode file name; please try again</string>
     <string name="decode_failure">Couldn\'t decode volume. Please try again and report this issue if the problem persists.</string>
+    <string name="out_of_memory">File is too large for text preview</string>
     
     <!-- Terminal -->
     <string name="term_info">Run EncFS and TrueCrypt in terminal</string>
