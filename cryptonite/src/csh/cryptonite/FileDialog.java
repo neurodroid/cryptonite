@@ -1515,6 +1515,8 @@ public class FileDialog extends SherlockFragmentActivity {
                         } catch (IOException e) {
                             showToast("Error while attempting to open " + readableName + ": " + e.toString());
                             return;
+                        } catch (OutOfMemoryError e) {
+                            showToast(getString(R.string.out_of_memory) + " (" + e.toString() + ").");
                         }
 
                         fileOpen(readablePath);
@@ -1597,18 +1599,26 @@ public class FileDialog extends SherlockFragmentActivity {
 
         /* Convert current path to encoded file name */
         final String encodedPath = Cryptonite.jniEncode(stripstr);
+        alertMsg = "";
 
         ProgressDialogFragment.showDialog(this, R.string.decrypting, "previewEncFS");
         new Thread(new Runnable() {
             public void run() {
-                final DecodedBuffer buf = StorageManager.INSTANCE
-                        .getEncFSStorage()
-                        .decryptEncFSFileToBuffer(encodedPath);
+                DecodedBuffer buf = null;
+                try {
+                    buf = StorageManager.INSTANCE
+                            .getEncFSStorage()
+                            .decryptEncFSFileToBuffer(encodedPath);
+                } catch (OutOfMemoryError e) {
+                    alertMsg = getString(R.string.out_of_memory) + ". ";
+                    buf = null;
+                }
                 if (buf == null) {
-                    alertMsg = getString(R.string.decrypt_failure);
+                    alertMsg += getString(R.string.decrypt_failure);
                     Log.e(Cryptonite.TAG, "Error while attempting to decrypt"
                             + encodedPath);
                 }
+                final DecodedBuffer fBuf = buf;
                 runOnUiThread(new Runnable() {
                     public void run() {
                         ProgressDialogFragment.dismissDialog(FileDialog.this, "previewEncFS");
@@ -1616,7 +1626,7 @@ public class FileDialog extends SherlockFragmentActivity {
                             showToast(alertMsg);
                             return;
                         }
-                        bufferPreview(buf);
+                        bufferPreview(fBuf);
                     }
                 });
             }
