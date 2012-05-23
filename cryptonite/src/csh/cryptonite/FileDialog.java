@@ -26,6 +26,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLConnection;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -1434,6 +1435,40 @@ public class FileDialog extends SherlockFragmentActivity {
         setResult(RESULT_OK, getIntent());
         finish();
     }
+
+    /* From https://gist.github.com/889747 by mrenouf */
+    private static void copyFile(File sourceFile, File destFile) throws IOException {
+        if (!destFile.exists()) {
+            destFile.createNewFile();
+        }
+        FileInputStream fIn = null;
+        FileOutputStream fOut = null;
+        FileChannel source = null;
+        FileChannel destination = null;
+        try {
+            fIn = new FileInputStream(sourceFile);
+            source = fIn.getChannel();
+            fOut = new FileOutputStream(destFile);
+            destination = fOut.getChannel();
+            long transfered = 0;
+            long bytes = source.size();
+            while (transfered < bytes) {
+                transfered += destination.transferFrom(source, 0, source.size());
+                destination.position(transfered);
+            }
+        } finally {
+            if (source != null) {
+                source.close();
+            } else if (fIn != null) {
+                fIn.close();
+            }
+            if (destination != null) {
+                destination.close();
+            } else if (fOut != null) {
+                fOut.close();
+            }
+        }
+    }
     
     private boolean openEncFSFile(final String encFSFilePath, String fileRoot) {
 
@@ -1488,21 +1523,8 @@ public class FileDialog extends SherlockFragmentActivity {
                         readableFile.getParentFile().mkdirs();
 
                         try {
-                            FileOutputStream fos = new FileOutputStream(
-                                    readableFile);
-
-                            FileInputStream fis = new FileInputStream(new File(
-                                    openFilePath));
-
-                            byte[] buffer = new byte[fis.available()];
-
-                            fis.read(buffer);
-
-                            fos.write(buffer);
-
-                            fis.close();
-                            fos.close();
-
+                            copyFile(new File(openFilePath), readableFile);
+                            
                             /* Make world readable */
                             try {
                                 ShellUtils.chmod(readablePath, "644");
