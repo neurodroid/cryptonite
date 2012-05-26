@@ -1316,17 +1316,21 @@ public class Cryptonite extends SherlockFragmentActivity
 
     }
 
-    public void cleanUpDecrypted() {
-        Cryptonite.jniResetVolume();
-        
+    public static void cleanCache(Context context) {
         /* Delete directories */
-        Cryptonite.deleteDir(getBaseContext().getFilesDir());
-        Cryptonite.deleteDir(getBaseContext().getDir(
+        deleteDir(context.getFilesDir());
+        deleteDir(context.getDir(
                 DirectorySettings.BROWSEPNT, Context.MODE_PRIVATE));
-        Cryptonite.deleteDir(getBaseContext().getDir(
+        deleteDir(context.getDir(
                 DirectorySettings.DROPBOXPNT, Context.MODE_PRIVATE));
-        Cryptonite.deleteDir(DirectorySettings.INSTANCE.openDir);
-        Cryptonite.deleteDir(DirectorySettings.INSTANCE.readDir);
+        deleteDir(DirectorySettings.INSTANCE.openDir);
+        deleteDir(DirectorySettings.INSTANCE.readDir);
+    }
+    
+    public void cleanUpDecrypted() {
+        jniResetVolume();
+        
+        cleanCache(getBaseContext());
         
         /* Delete virtual file system */
         VirtualFileSystem.INSTANCE.clear();

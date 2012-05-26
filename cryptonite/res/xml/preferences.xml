@@ -32,4 +32,9 @@
         android:key="txt_mntpoint"
         android:title="@string/txt_mntpoint_title" />
     
+    <Preference
+        android:key="txt_clearcache"
+        android:title="@string/txt_clearcache_title"
+        android:summary="@string/txt_clearcache_summary"/>
+
 </PreferenceScreen>
