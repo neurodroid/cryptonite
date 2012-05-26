@@ -43,7 +43,10 @@ public class Preferences extends SherlockPreferenceActivity {
     private CheckBoxPreference chkExtCache;
     private CheckBoxPreference chkAppFolder;
     private CheckBoxPreference chkAnyKey;
+    
     private Preference txtMntPoint;
+    private Preference clearCache;
+    
     private String currentReturnPath = "";
     
     @SuppressWarnings("deprecation")
@@ -80,6 +83,8 @@ public class Preferences extends SherlockPreferenceActivity {
         chkExtCache = (CheckBoxPreference)getPreferenceScreen().findPreference("cb_extcache");
         chkExtCache.setOnPreferenceClickListener(new OnPreferenceClickListener() {
                 public boolean onPreferenceClick(Preference preference) {
+                    /* Delete cache in current location before changing it */
+                    Cryptonite.cleanCache(getBaseContext());
                     if (chkExtCache.isChecked()) {
                         String extDir = Cryptonite.getExternalCacheDir(getBaseContext()).getPath();
                         Toast.makeText(Preferences.this, getString(R.string.cb_extcache_enabled) + extDir, 
@@ -156,6 +161,16 @@ public class Preferences extends SherlockPreferenceActivity {
             txtMntPoint.setEnabled(false);
             txtMntPoint.setSummary(R.string.mount_info_unsupported);
         }
+
+        clearCache = getPreferenceScreen().findPreference("txt_clearcache");
+        clearCache.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+            public boolean onPreferenceClick(Preference preference) {
+                Cryptonite.cleanCache(getBaseContext());
+                Toast.makeText(Preferences.this, R.string.txt_clearcache_enabled, Toast.LENGTH_SHORT).show();
+                return true;
+            }
+        });
+        
 
     }
 
