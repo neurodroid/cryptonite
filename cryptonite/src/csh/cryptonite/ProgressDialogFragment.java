@@ -64,12 +64,12 @@ public class ProgressDialogFragment extends SherlockDialogFragment {
         try {
             prev = (ProgressDialogFragment)activity.getSupportFragmentManager().findFragmentByTag(tag);
         } catch (NullPointerException e) {
-            
+
         }
         if (prev != null) {
             FragmentTransaction ft = activity.getSupportFragmentManager().beginTransaction();
             ft.remove(prev);
-            ft.commit();
+            ft.commitAllowingStateLoss();
         }
     }
 }
