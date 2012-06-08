@@ -85,6 +85,12 @@ public class Preferences extends SherlockPreferenceActivity {
                 public boolean onPreferenceClick(Preference preference) {
                     /* Delete cache in current location before changing it */
                     Cryptonite.cleanCache(getBaseContext());
+                    
+                    /* Make sure the external storage is still available */
+                    if (!chkExternal()) {
+                        return false;
+                    }
+                    
                     if (chkExtCache.isChecked()) {
                         String extDir = Cryptonite.getExternalCacheDir(getBaseContext()).getPath();
                         Toast.makeText(Preferences.this, getString(R.string.cb_extcache_enabled) + extDir, 
@@ -98,12 +104,8 @@ public class Preferences extends SherlockPreferenceActivity {
                         return false;
                     }
                 }});
-        /* Do we have external storage at all? */
-        if (!Cryptonite.externalStorageIsWritable()) {
-            chkExtCache.setEnabled(false);
-            chkExtCache.setChecked(false);
-            chkExtCache.setSummary(getBaseContext().getString(R.string.cb_no_external_storage));
-        }
+        
+        chkExternal();
         
         chkAppFolder = (CheckBoxPreference)getPreferenceScreen().findPreference("cb_appfolder");
         chkAppFolder.setOnPreferenceClickListener(new OnPreferenceClickListener() {
@@ -174,6 +176,24 @@ public class Preferences extends SherlockPreferenceActivity {
 
     }
 
+    private boolean chkExternal() {
+        /* Do we have external storage at all? */
+        if (!Cryptonite.externalStorageIsWritable() || Cryptonite.getExternalCacheDir(getBaseContext())==null) {
+            chkExtCache.setEnabled(false);
+            chkExtCache.setChecked(false);
+            chkExtCache.setSummary(getBaseContext().getString(R.string.cb_no_external_storage));
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        chkExternal();
+    }
+    
     /** Called upon exit from other activities */
     public synchronized void onActivityResult(final int requestCode,
                                               int resultCode, final Intent data) {
