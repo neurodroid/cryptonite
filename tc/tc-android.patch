@@ -16,7 +16,7 @@
 
 diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Core/Unix/CoreUnix.cpp b/Core/Unix/CoreUnix.cpp
 --- a/Core/Unix/CoreUnix.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ b/Core/Unix/CoreUnix.cpp	2012-03-28 12:54:51.657147243 +0100
++++ b/Core/Unix/CoreUnix.cpp	2012-05-08 22:28:59.000000000 +0100
 @@ -74,7 +74,11 @@
  		args.push_back ("--");
  		args.push_back (mountPoint);
@@ -48,10 +48,10 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
 -		char *envDir = getenv ("TMPDIR");
 -		return envDir ? envDir : "/tmp";
 +#ifndef TC_ANDROID
-+                char *envDir = getenv ("TMPDIR");
-+	        return envDir ? envDir : "/tmp";
++		char *envDir = getenv ("TMPDIR");
++		return envDir ? envDir : "/tmp";
 +#else
-+                return "/sdcard/Android/data/csh.cryptonite";
++		return "/sdcard/Android/data/csh.cryptonite";
 +#endif
  	}
  
@@ -99,7 +99,7 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  				{
 diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Core/Unix/Linux/CoreLinux.cpp b/Core/Unix/Linux/CoreLinux.cpp
 --- a/Core/Unix/Linux/CoreLinux.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ b/Core/Unix/Linux/CoreLinux.cpp	2012-03-28 13:04:00.937147797 +0100
++++ b/Core/Unix/Linux/CoreLinux.cpp	2012-05-08 22:28:59.000000000 +0100
 @@ -22,6 +22,110 @@
  #include "Driver/Fuse/FuseService.h"
  #include "Core/Unix/CoreServiceProxy.h"
@@ -243,7 +243,7 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  
 diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Driver/Fuse/Driver.make b/Driver/Fuse/Driver.make
 --- a/Driver/Fuse/Driver.make	2012-02-07 10:36:48.000000000 +0000
-+++ b/Driver/Fuse/Driver.make	2012-03-27 08:55:09.467146427 +0100
++++ b/Driver/Fuse/Driver.make	2012-05-08 22:28:59.000000000 +0100
 @@ -7,10 +7,10 @@
  #
  
@@ -257,10 +257,9 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
 +CXXFLAGS += -I$(FUSEDIR)/jni/include
  
  include $(BUILD_INC)/Makefile.inc
-Only in ./truecrypt-7.1a-source: License.txt.h
 diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Main/CommandLineInterface.cpp b/Main/CommandLineInterface.cpp
 --- a/Main/CommandLineInterface.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ b/Main/CommandLineInterface.cpp	2012-03-28 13:05:38.637146327 +0100
++++ b/Main/CommandLineInterface.cpp	2012-05-08 22:28:59.000000000 +0100
 @@ -479,7 +479,11 @@
  			ArgVolumes = GetMountedVolumes (parser.GetParamCount() > 0 ? parser.GetParam (0) : wxString());
  
@@ -275,7 +274,7 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  	CommandLineInterface::~CommandLineInterface ()
 diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Main/Main.make b/Main/Main.make
 --- a/Main/Main.make	2012-02-07 10:36:48.000000000 +0000
-+++ b/Main/Main.make	2012-03-28 01:34:17.077146653 +0100
++++ b/Main/Main.make	2012-05-08 22:28:59.000000000 +0100
 @@ -96,7 +96,7 @@
  
  #------ FUSE configuration ------
@@ -301,7 +300,7 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  ifndef NOTEST
 diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Main/TextUserInterface.cpp b/Main/TextUserInterface.cpp
 --- a/Main/TextUserInterface.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ b/Main/TextUserInterface.cpp	2012-03-28 13:09:00.557147800 +0100
++++ b/Main/TextUserInterface.cpp	2012-05-08 22:28:59.000000000 +0100
 @@ -1247,7 +1247,11 @@
  		if (!TextInputStream.get() || feof (stdin) || ferror (stdin))
  			throw UserAbort (SRC_POS);
@@ -314,12 +313,9 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  
  		if (ferror (stdin) || (line.empty() && feof (stdin)))
  			throw UserAbort (SRC_POS);
-Only in b/Main: truecrypt
-Only in b/Main: truecrypt.splitaa
-Only in b/Main: truecrypt.splitab
 diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Main/UserInterface.cpp b/Main/UserInterface.cpp
 --- a/Main/UserInterface.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ b/Main/UserInterface.cpp	2012-03-28 13:12:06.167147608 +0100
++++ b/Main/UserInterface.cpp	2012-05-08 22:28:59.000000000 +0100
 @@ -1400,7 +1400,12 @@
  		EncryptionTest::TestAll();
  
@@ -333,10 +329,9 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  			throw TestFailed (SRC_POS);
  		try
  		{
-Only in ./truecrypt-7.1a-source: Pkcs11
 diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Platform/StringConverter.cpp b/Platform/StringConverter.cpp
 --- a/Platform/StringConverter.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ b/Platform/StringConverter.cpp	2012-03-27 20:48:04.847147038 +0100
++++ b/Platform/StringConverter.cpp	2012-05-08 22:28:59.000000000 +0100
 @@ -213,6 +213,7 @@
  	{
  		try
@@ -379,7 +374,7 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  		{
 diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Platform/Unix/File.cpp b/Platform/Unix/File.cpp
 --- a/Platform/Unix/File.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ b/Platform/Unix/File.cpp	2012-03-28 13:15:16.017148086 +0100
++++ b/Platform/Unix/File.cpp	2012-07-15 10:51:40.000000000 +0100
 @@ -15,6 +15,11 @@
  #include <sys/mount.h>
  #endif
@@ -392,7 +387,25 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  #ifdef TC_BSD
  #include <sys/disk.h>
  #endif
-@@ -184,7 +189,7 @@
+@@ -174,17 +179,25 @@
+ #	endif
+ 		}
+ #endif
++#ifdef TC_ANDROID
++		off_t current = lseek64 (FileHandle, 0, SEEK_CUR);
++#else
+ 		off_t current = lseek (FileHandle, 0, SEEK_CUR);
++#endif
+ 		throw_sys_sub_if (current == -1, wstring (Path));
+ 		SeekEnd (0);
++#ifdef TC_ANDROID
++		uint64 length = lseek64 (FileHandle, 0, SEEK_CUR);
++#else
+ 		uint64 length = lseek (FileHandle, 0, SEEK_CUR);
++#endif
+ 		SeekAt (current);
+ 		return length;
+ 	}
  
  	void File::Open (const FilePath &path, FileOpenMode mode, FileShareMode shareMode, FileOpenFlags flags)
  	{
@@ -401,22 +414,78 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  		int sysFlags = O_LARGEFILE;
  #else
  		int sysFlags = 0;
-@@ -224,7 +229,12 @@
+@@ -224,7 +237,12 @@
  			ModTime = statData.st_mtime;
  		}
  
 +#ifndef TC_ANDROID
  		FileHandle = open (string (path).c_str(), sysFlags, S_IRUSR | S_IWUSR);
 +#else
-+                string ansii_path = StringConverter::ToSingle(wstring(path));
++		string ansii_path = StringConverter::ToSingle(wstring(path));
 +		FileHandle = open (ansii_path.c_str(), sysFlags, S_IRUSR | S_IWUSR);
 +#endif
  		throw_sys_sub_if (FileHandle == -1, wstring (path));
  
  #if 0 // File locking is disabled to avoid remote filesystem locking issues
+@@ -298,7 +316,15 @@
+ #ifdef TC_TRACE_FILE_OPERATIONS
+ 		TraceFileOperation (FileHandle, Path, false, buffer.Size(), position);
+ #endif
++#ifdef TC_ANDROID
++		loff_t current = lseek64 (FileHandle, 0, SEEK_CUR);
++		throw_sys_sub_if (current == -1, string (Path));
++		SeekAt (position);
++		ssize_t bytesRead = read (FileHandle, buffer, buffer.Size());
++		SeekAt (current);
++#else
+ 		ssize_t bytesRead = pread (FileHandle, buffer, buffer.Size(), position);
++#endif
+ 		throw_sys_sub_if (bytesRead == -1, wstring (Path));
+ 
+ 		return bytesRead;
+@@ -307,7 +333,11 @@
+ 	void File::SeekAt (uint64 position) const
+ 	{
+ 		if_debug (ValidateState());
++#ifdef TC_ANDROID
++		throw_sys_sub_if (lseek64 (FileHandle, position, SEEK_SET) == -1, wstring (Path));
++#else
+ 		throw_sys_sub_if (lseek (FileHandle, position, SEEK_SET) == -1, wstring (Path));
++#endif
+ 	}
+ 
+ 	void File::SeekEnd (int offset) const
+@@ -323,7 +353,11 @@
+ 		}
+ #endif
+ 
++#ifdef TC_ANDROID
++		throw_sys_sub_if (lseek64 (FileHandle, offset, SEEK_END) == -1, wstring (Path));
++#else
+ 		throw_sys_sub_if (lseek (FileHandle, offset, SEEK_END) == -1, wstring (Path));
++#endif
+ 	}
+ 
+ 	void File::Write (const ConstBufferPtr &buffer) const
+@@ -343,6 +377,15 @@
+ #ifdef TC_TRACE_FILE_OPERATIONS
+ 		TraceFileOperation (FileHandle, Path, true, buffer.Size(), position);
+ #endif
++#ifdef TC_ANDROID
++		loff_t current = lseek64 (FileHandle, 0, SEEK_CUR);
++		throw_sys_sub_if (current == -1, string (Path));
++		SeekAt (position);
++		ssize_t bytesWritten = write (FileHandle, buffer, buffer.Size());
++		SeekAt (current);
++		throw_sys_sub_if (bytesWritten != (ssize_t) buffer.Size(), string (Path));
++#else
+ 		throw_sys_sub_if (pwrite (FileHandle, buffer, buffer.Size(), position) != (ssize_t) buffer.Size(), wstring (Path));
++#endif
+ 	}
+ }
 diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Platform/Unix/Process.cpp b/Platform/Unix/Process.cpp
 --- a/Platform/Unix/Process.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ b/Platform/Unix/Process.cpp	2012-03-28 13:19:48.087146325 +0100
++++ b/Platform/Unix/Process.cpp	2012-05-08 22:28:59.000000000 +0100
 @@ -189,6 +189,9 @@
  			if (!errOutput.empty())
  				strErrOutput.insert (strErrOutput.begin(), errOutput.begin(), errOutput.end());
