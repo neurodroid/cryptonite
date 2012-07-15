@@ -392,7 +392,7 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  		}
  #endif
 +#ifdef TC_ANDROID
-+		off_t current = lseek64 (FileHandle, 0, SEEK_CUR);
++		loff_t current = lseek64 (FileHandle, 0, SEEK_CUR);
 +#else
  		off_t current = lseek (FileHandle, 0, SEEK_CUR);
 +#endif
