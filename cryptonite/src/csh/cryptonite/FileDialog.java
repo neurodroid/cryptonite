@@ -237,7 +237,15 @@ public class FileDialog extends SherlockFragmentActivity {
                         showPasswordDialog();
                         break;
                     case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
-                        encryptEncFSFile(selectedFile.getPath());
+                        if (selectedFile != null && selectedFile.getPath() != null) {
+                            encryptEncFSFile(selectedFile.getPath());
+                        } else {
+                            if (selectedFile.getPath() != null) {
+                                showToast(getString(R.string.file_not_found)+ selectedFile.getPath());
+                            } else {
+                                showToast(getString(R.string.file_not_found)+ "null");
+                            }
+                        }
                         break;
                     case SelectionMode.MODE_OPEN_CREATE:
                     case SelectionMode.MODE_OPEN_CREATE_DB:
