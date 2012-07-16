@@ -436,6 +436,11 @@ public class FileDialog extends SherlockFragmentActivity {
             currentPath = currentRoot;
             f = new VirtualFile(currentPath);
             files = f.listFiles();
+            if (files == null) {
+                showToast(R.string.file_list_problem);
+                setResult(RESULT_CANCELED, getIntent());
+                finish();
+            }
         }
         myPath.setText(getText(R.string.location) + ": " + currentRootLabel +
                        currentPathFromRoot);
