@@ -1168,8 +1168,15 @@ public class FileDialog extends SherlockFragmentActivity {
                 } else {
                     DirectorySettings.INSTANCE.currentBrowsePath = currentPath;
                     DirectorySettings.INSTANCE.currentBrowseStartPath = intentStartPath;
-                    StorageManager.INSTANCE.setEncFSPath(currentPath
-                            .substring(intentStartPath.length()));
+                    try {
+                        StorageManager.INSTANCE.setEncFSPath(currentPath
+                                .substring(intentStartPath.length()));
+                    } catch (StringIndexOutOfBoundsException e) {
+                        alertMsg = getString(R.string.decrypt_failure) + 
+                                " currentPath: " + currentPath + 
+                                " intentStartPath: " + intentStartPath;
+                        Log.v(Cryptonite.TAG, alertMsg);
+                    }
                     Log.i(Cryptonite.TAG, "Dialog root is " + currentPath);
                     
                     SharedPreferences prefs = getBaseContext().getSharedPreferences(Cryptonite.ACCOUNT_PREFS_NAME, 0);
