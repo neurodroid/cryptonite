@@ -34,7 +34,7 @@ else
     ARCH=armeabi
 fi
 
-LIBSTDCXXINC=""
+LIBSTDCXXINC="-I${TOOLCHAIN}/arm-linux-androideabi/include/c++/4.6 -I${TOOLCHAIN}/arm-linux-androideabi/include/c++/4.6/arm-linux-androideabi"
 LIBSTDCXXLIB="-lstdc++"
 
 TARGET=`pwd`/${ARCH}

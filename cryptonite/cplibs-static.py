@@ -38,7 +38,7 @@ for arch in archs:
     cpfile("../openssl/openssl-%s/%s/libssl.a" % (openssl_version, arch), target_dir)
     cpfile("../openssl/openssl-%s/%s/libcrypto.a" % (openssl_version, arch), target_dir)
     cpfile("%s/sources/cxx-stl/gnu-libstdc++/libs/%s/libgnustl_static.a" % (ndk, arch), target_dir)
-    cpfile("%s/lib/gcc/arm-linux-androideabi/4.4.3/libgcc.a" % toolchain, target_dir)
+    cpfile("%s/lib/gcc/arm-linux-androideabi/4.6.x-google/libgcc.a" % toolchain, target_dir)
 
 
 arch = "armeabi"
