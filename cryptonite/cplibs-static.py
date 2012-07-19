@@ -37,9 +37,12 @@ for arch in archs:
     cpfile("../encfs/encfs-1.7.4/%s/lib/libencfs.a" % arch, target_dir)
     cpfile("../openssl/openssl-%s/%s/libssl.a" % (openssl_version, arch), target_dir)
     cpfile("../openssl/openssl-%s/%s/libcrypto.a" % (openssl_version, arch), target_dir)
-    cpfile("%s/sources/cxx-stl/gnu-libstdc++/libs/%s/libgnustl_static.a" % (ndk, arch), target_dir)
-    cpfile("%s/lib/gcc/arm-linux-androideabi/4.6.x-google/libgcc.a" % toolchain, target_dir)
-
+    if arch=="armeabi":
+        arch_subdir = ""
+    elif arch == "armeabi-v7a":
+        arch_subdir = "armv7-a/"
+    cpfile("%s/arm-linux-androideabi/lib/%slibstdc++.a" % (toolchain, arch_subdir), target_dir)
+    cpfile("%s/lib/gcc/arm-linux-androideabi/4.6.x-google/%slibgcc.a" % (toolchain, arch_subdir), target_dir)
 
 arch = "armeabi"
 
