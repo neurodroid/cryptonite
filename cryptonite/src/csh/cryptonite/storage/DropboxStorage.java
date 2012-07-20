@@ -378,13 +378,26 @@ public class DropboxStorage extends Storage {
     @Override
     public boolean mkVisibleDecoded(String path, String encFSRoot, String rootPath) {
 
-        if (encFSPath == null) {
+        if (encFSRoot == null || encFSPath == null) {
+            Log.e(Cryptonite.TAG, "Path is null in DropboxStorage.mkVisibleDecoded");
             return false;
         }
         
-        String prevRoot = encFSRoot.substring(0, encFSRoot.length()-encFSPath.length());
-        String encodedPath = Cryptonite.jniEncode(path).substring(prevRoot.length()-1);
+        String prevRoot = "";
+        String encodedPath = "";
         
+        try {
+            prevRoot = encFSRoot.substring(0, encFSRoot.length()-encFSPath.length());
+            encodedPath = Cryptonite.jniEncode(path).substring(prevRoot.length()-1);
+        } catch (IndexOutOfBoundsException e) {
+            Log.e(Cryptonite.TAG, "Index out of bounds" + 
+                    ": encFSRoot = " + encFSRoot + 
+                    ", encFSPath = " + encFSPath + 
+                    ", path = " + path + 
+                    ", prevRoot = " + prevRoot + 
+                    ", jniEncode(path) = " + Cryptonite.jniEncode(path));
+        }
+
         try {
 
             Entry dbEntry = DropboxInterface.INSTANCE.getDBEntry(encodedPath);
