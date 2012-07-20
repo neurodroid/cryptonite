@@ -1,6 +1,6 @@
 if [ ! -d truecrypt-7.1a-source ]
 then
-    tar -xjf TrueCrypt\ 7.1a\ Source.tar.gz
+    tar -xzf TrueCrypt\ 7.1a\ Source.tar.gz
     cd truecrypt-7.1a-source
     patch -p1 < ../tc-android.patch
     mkdir -p Pkcs11
