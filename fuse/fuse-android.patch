@@ -1,0 +1,34 @@
+--- a/fuse-android/jni/fusexmp.c	2012-07-24 18:32:52.302788040 +0100
++++ b/fuse-android/jni/fusexmp.c	2012-07-24 18:36:10.859772628 +0100
+@@ -251,7 +251,15 @@
+ 	if (fd == -1)
+ 		return -errno;
+ 
++#ifndef ANDROID
+ 	res = pread(fd, buf, size, offset);
++#else
++	loff_t current = lseek64 (fd, 0, SEEK_CUR);
++	lseek64 (fd, offset, SEEK_SET);
++	ssize_t bytesRead = read (fd, buf,size);
++	lseek64 (fd, current, SEEK_SET);
++	res = bytesRead;
++#endif
+ 	if (res == -1)
+ 		res = -errno;
+ 
+@@ -270,7 +278,15 @@
+ 	if (fd == -1)
+ 		return -errno;
+ 
++#ifndef ANDROID
+ 	res = pwrite(fd, buf, size, offset);
++#else
++	loff_t current = lseek64 (fd, 0, SEEK_CUR);
++	lseek64 (fd, offset, SEEK_SET);
++	ssize_t bytesWritten = write (fd, buf, size);
++	lseek64 (fd, current, SEEK_SET);
++	res = bytesWritten;
++#endif
+ 	if (res == -1)
+ 		res = -errno;
+ 
