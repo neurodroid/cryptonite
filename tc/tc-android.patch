@@ -1,22 +1,6 @@
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-# Copyright (c) 2012, Christoph Schmidt-Hieber
-
 diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Core/Unix/CoreUnix.cpp b/Core/Unix/CoreUnix.cpp
 --- a/Core/Unix/CoreUnix.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ b/Core/Unix/CoreUnix.cpp	2012-05-08 22:28:59.000000000 +0100
++++ b/Core/Unix/CoreUnix.cpp	2012-07-20 10:47:07.974481751 +0100
 @@ -74,7 +74,11 @@
  		args.push_back ("--");
  		args.push_back (mountPoint);
@@ -45,11 +29,9 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  	
  	string CoreUnix::GetTempDirectory () const
  	{
--		char *envDir = getenv ("TMPDIR");
--		return envDir ? envDir : "/tmp";
 +#ifndef TC_ANDROID
-+		char *envDir = getenv ("TMPDIR");
-+		return envDir ? envDir : "/tmp";
+ 		char *envDir = getenv ("TMPDIR");
+ 		return envDir ? envDir : "/tmp";
 +#else
 +		return "/sdcard/Android/data/csh.cryptonite";
 +#endif
@@ -99,7 +81,7 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  				{
 diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Core/Unix/Linux/CoreLinux.cpp b/Core/Unix/Linux/CoreLinux.cpp
 --- a/Core/Unix/Linux/CoreLinux.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ b/Core/Unix/Linux/CoreLinux.cpp	2012-05-08 22:28:59.000000000 +0100
++++ b/Core/Unix/Linux/CoreLinux.cpp	2012-07-20 10:47:07.974481751 +0100
 @@ -22,6 +22,110 @@
  #include "Driver/Fuse/FuseService.h"
  #include "Core/Unix/CoreServiceProxy.h"
@@ -243,7 +225,7 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  
 diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Driver/Fuse/Driver.make b/Driver/Fuse/Driver.make
 --- a/Driver/Fuse/Driver.make	2012-02-07 10:36:48.000000000 +0000
-+++ b/Driver/Fuse/Driver.make	2012-05-08 22:28:59.000000000 +0100
++++ b/Driver/Fuse/Driver.make	2012-07-20 10:47:07.974481751 +0100
 @@ -7,10 +7,10 @@
  #
  
@@ -257,9 +239,61 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
 +CXXFLAGS += -I$(FUSEDIR)/jni/include
  
  include $(BUILD_INC)/Makefile.inc
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Driver/Fuse/FuseService.cpp b/Driver/Fuse/FuseService.cpp
+--- a/Driver/Fuse/FuseService.cpp	2012-02-07 10:36:48.000000000 +0000
++++ b/Driver/Fuse/FuseService.cpp	2012-07-24 18:45:54.890668674 +0100
+@@ -179,8 +179,11 @@
+ 		}
+ 		return -ENOENT;
+ 	}
+-
++#ifndef TC_ANDROID
+ 	static int fuse_service_read (const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
++#else
++	static int fuse_service_read (const char *path, char *buf, size_t size, loff_t offset, struct fuse_file_info *fi)
++#endif
+ 	{
+ 		try
+ 		{
+@@ -230,7 +233,11 @@
+ 				shared_ptr <Buffer> infoBuf = FuseService::GetVolumeInfo();
+ 				BufferPtr outBuf ((byte *)buf, size);
+ 
++#ifndef TC_ANDROID
+ 				if (offset >= (off_t) infoBuf->Size())
++#else
++				if (offset >= (loff_t) infoBuf->Size())
++#endif
+ 					return 0;
+ 
+ 				if (offset + size > infoBuf->Size())
+@@ -248,7 +255,11 @@
+ 		return -ENOENT;
+ 	}
+ 
++#ifndef TC_ANDROID
+ 	static int fuse_service_readdir (const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi)
++#else
++	static int fuse_service_readdir (const char *path, void *buf, fuse_fill_dir_t filler, loff_t offset, struct fuse_file_info *fi)
++#endif
+ 	{
+ 		try
+ 		{
+@@ -271,7 +282,11 @@
+ 		return 0;
+ 	}
+ 
++#ifndef TC_ANDROID
+ 	static int fuse_service_write (const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
++#else
++	static int fuse_service_write (const char *path, const char *buf, size_t size, loff_t offset, struct fuse_file_info *fi)
++#endif
+ 	{
+ 		try
+ 		{
 diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Main/CommandLineInterface.cpp b/Main/CommandLineInterface.cpp
 --- a/Main/CommandLineInterface.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ b/Main/CommandLineInterface.cpp	2012-05-08 22:28:59.000000000 +0100
++++ b/Main/CommandLineInterface.cpp	2012-07-20 10:47:07.974481751 +0100
 @@ -479,7 +479,11 @@
  			ArgVolumes = GetMountedVolumes (parser.GetParamCount() > 0 ? parser.GetParam (0) : wxString());
  
@@ -274,7 +308,7 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  	CommandLineInterface::~CommandLineInterface ()
 diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Main/Main.make b/Main/Main.make
 --- a/Main/Main.make	2012-02-07 10:36:48.000000000 +0000
-+++ b/Main/Main.make	2012-05-08 22:28:59.000000000 +0100
++++ b/Main/Main.make	2012-07-20 10:47:07.974481751 +0100
 @@ -96,7 +96,7 @@
  
  #------ FUSE configuration ------
@@ -300,7 +334,7 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  ifndef NOTEST
 diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Main/TextUserInterface.cpp b/Main/TextUserInterface.cpp
 --- a/Main/TextUserInterface.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ b/Main/TextUserInterface.cpp	2012-05-08 22:28:59.000000000 +0100
++++ b/Main/TextUserInterface.cpp	2012-07-20 10:47:07.974481751 +0100
 @@ -1247,7 +1247,11 @@
  		if (!TextInputStream.get() || feof (stdin) || ferror (stdin))
  			throw UserAbort (SRC_POS);
@@ -315,7 +349,7 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  			throw UserAbort (SRC_POS);
 diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Main/UserInterface.cpp b/Main/UserInterface.cpp
 --- a/Main/UserInterface.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ b/Main/UserInterface.cpp	2012-05-08 22:28:59.000000000 +0100
++++ b/Main/UserInterface.cpp	2012-07-20 10:47:07.974481751 +0100
 @@ -1400,7 +1400,12 @@
  		EncryptionTest::TestAll();
  
@@ -331,7 +365,7 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  		{
 diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Platform/StringConverter.cpp b/Platform/StringConverter.cpp
 --- a/Platform/StringConverter.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ b/Platform/StringConverter.cpp	2012-05-08 22:28:59.000000000 +0100
++++ b/Platform/StringConverter.cpp	2012-07-20 10:47:07.978481765 +0100
 @@ -213,6 +213,7 @@
  	{
  		try
@@ -374,7 +408,7 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  		{
 diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Platform/Unix/File.cpp b/Platform/Unix/File.cpp
 --- a/Platform/Unix/File.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ b/Platform/Unix/File.cpp	2012-07-15 10:51:40.000000000 +0100
++++ b/Platform/Unix/File.cpp	2012-07-20 10:47:07.978481765 +0100
 @@ -15,6 +15,11 @@
  #include <sys/mount.h>
  #endif
@@ -485,7 +519,7 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  }
 diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Platform/Unix/Process.cpp b/Platform/Unix/Process.cpp
 --- a/Platform/Unix/Process.cpp	2012-02-07 10:36:48.000000000 +0000
-+++ b/Platform/Unix/Process.cpp	2012-05-08 22:28:59.000000000 +0100
++++ b/Platform/Unix/Process.cpp	2012-07-20 10:47:07.978481765 +0100
 @@ -189,6 +189,9 @@
  			if (!errOutput.empty())
  				strErrOutput.insert (strErrOutput.begin(), errOutput.begin(), errOutput.end());
