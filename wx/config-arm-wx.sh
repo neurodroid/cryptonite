@@ -71,4 +71,5 @@ AR=${MYAR} RANLIB=${MYRANLIB} NM=${MYNM} STRIP=${MYSTRIP} CC=${MYAGCC} CXX=${MYA
         --enable-static \
         --disable-shared
 
+mkdir -p ./lib/wx/include/arm-eabi-base-unicode-release-static-2.8/wx
 cp ./../../setup.h.0 ./lib/wx/include/arm-eabi-base-unicode-release-static-2.8/wx/setup.h
