@@ -1,31 +1,7 @@
 diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Core/Unix/CoreUnix.cpp b/Core/Unix/CoreUnix.cpp
 --- a/Core/Unix/CoreUnix.cpp	2012-02-07 10:36:48.000000000 +0000
 +++ b/Core/Unix/CoreUnix.cpp	2012-07-20 10:47:07.974481751 +0100
-@@ -74,7 +74,11 @@
- 		args.push_back ("--");
- 		args.push_back (mountPoint);
- 
-+#ifndef TC_ANDROID
- 		Process::Execute ("umount", args);
-+#else
-+		Process::Execute ("/system/xbin/umount", args);
-+#endif
- 	}
- 
- 	shared_ptr <VolumeInfo> CoreUnix::DismountVolume (shared_ptr <VolumeInfo> mountedVolume, bool ignoreOpenFiles, bool syncVolumeInfo)
-@@ -120,7 +124,11 @@
- 		{
- 			try
- 			{
-+#ifndef TC_ANDROID
- 				Process::Execute ("umount", args);
-+#else
-+				Process::Execute ("/system/xbin/umount", args);
-+#endif
- 				break;
- 			}
- 			catch (ExecutedProcessFailed&)
-@@ -326,8 +334,12 @@
+@@ -326,8 +326,12 @@
  	
  	string CoreUnix::GetTempDirectory () const
  	{
@@ -38,19 +14,7 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  	}
  
  	bool CoreUnix::IsMountPointAvailable (const DirectoryPath &mountPoint) const
-@@ -373,7 +385,11 @@
- 		args.push_back (devicePath);
- 		args.push_back (mountPoint);
- 
-+#ifndef TC_ANDROID
- 		Process::Execute ("mount", args);
-+#else
-+		Process::Execute ("/system/xbin/mount", args);
-+#endif
- 	}
- 
- 	VolumeSlotNumber CoreUnix::MountPointToSlotNumber (const DirectoryPath &mountPoint) const
-@@ -533,14 +549,18 @@
+@@ -533,14 +537,18 @@
  
  			try
  			{
@@ -69,7 +33,7 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  			}
  			catch (...)
  			{
-@@ -553,6 +573,9 @@
+@@ -553,6 +561,9 @@
  		{
  			try
  			{

@@ -73,6 +73,7 @@ encfs/encfs-1*
 # tc source
 
 tc/truecrypt-*
+tc/TrueCrypt*
 
 # wx source
 
