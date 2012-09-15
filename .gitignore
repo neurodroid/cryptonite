@@ -66,6 +66,10 @@ boost/boost_*
 
 openssl/openssl-*
 
+# protobuf source
+
+protobuf/protobuf-*
+
 # encfs source
 
 encfs-1.7.4/encfs-1*
@@ -73,6 +77,15 @@ encfs-1.7.4/encfs-1*
 # encfs svn build
 
 encfs-svn/build
+encfs-svn/build-aux
+encfs-svn/m4
+!encfs-svn/m4/Makefile.am
+!encfs-svn/m4/ax_ext_check_header.m4
+!encfs-svn/m4/ax_ext_have_lib.m4
+!encfs-svn/m4/ax_pthread.m4
+encfs-svn/config.h.in
+encfs-svn/autom4te.cache
+encfs-svn/po/Makevars.template
 
 # tc source
 

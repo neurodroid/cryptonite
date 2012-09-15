@@ -17,10 +17,7 @@
 # Copyright (c) 2012, Christoph Schmidt-Hieber
 
 TOOLCHAIN=${HOME}/android-toolchain
-FUSEDIR=`pwd`/../../fuse/fuse-android
-OPENSSLDIR=`pwd`/../../openssl/openssl-1.0.0j
-RLOGDIR=`pwd`/../../rlog/rlog-1.4
-PROTOBUFDIR=`pwd`/../../protobuf/protobuf-2.4.1
+SYSROOT=${TOOLCHAIN}/sysroot
 MYAR=${TOOLCHAIN}/bin/arm-linux-androideabi-ar
 MYRANLIB=${TOOLCHAIN}/bin/arm-linux-androideabi-ranlib
 MYNM=${TOOLCHAIN}/bin/arm-linux-androideabi-nm
@@ -36,20 +33,16 @@ fi
 
 LIBSTDCXXINC="-I${TOOLCHAIN}/arm-linux-androideabi/include/c++/4.6 -I${TOOLCHAIN}/arm-linux-androideabi/include/c++/4.6/arm-linux-androideabi"
 LIBSTDCXXLIB="-lstdc++"
-
+PROTOC=`which protoc`
 TARGET=`pwd`/${ARCH}
 
 AR=${MYAR} RANLIB=${MYRANLIB} NM=${MYNM} STRIP=${MYSTRIP} CC=${MYAGCC} CXX=${MYAGCC} \
-    RLOG_CFLAGS="-I${RLOGDIR}/${ARCH}/include" \
-    RLOG_LIBS="-L${RLOGDIR}/${ARCH}/lib -lrlog" \
-    PROTOBUF_CFLAGS="-I${PROTOBUFDIR}/${ARCH}/include" \
-    PROTOBUF_LIBS="-L${PROTOBUFDIR}/${ARCH}/lib -lprotobuf" \
-    OPENSSL_CFLAGS="-DOPENSSL_NO_ENGINE -DHAVE_EVP_AES -DHAVE_EVP_BF -D__STDC_FORMAT_MACROS -I${OPENSSLDIR}/include" \
-    OPENSSL_LIBS="${OPENSSLDIR}/${ARCH}/libssl.a ${OPENSSLDIR}/${ARCH}/libcrypto.a -ldl" \
-    CPPFLAGS="-I${TOOLCHAIN}/sysroot/usr/include -I${FUSEDIR}/jni/include ${RLOG_CFLAGS} ${PROTOBUF_CFLAGS} ${OPENSSL_CFLAGS}" \
+    PKG_CONFIG="" \
+    CPPFLAGS="-I${SYSROOT}/usr/include" \
     CXXFLAGS="${LIBSTDCXXINC} -fexceptions -frtti" \
-    LDFLAGS="${LIBSTDCXXLIB} -L${FUSEDIR}/obj/local/${ARCH} -lgcc ${RLOG_LIBS} ${PROTOBUF_LIBS} ${OPENSSL_LIBS}" \
-    ../configure \
-         --prefix=${TARGET} \
-         --host=arm-eabi --build=x86-linux \
-         --enable-static --disable-shared
+    LDFLAGS="${LIBSTDCXXLIB} -lgcc" \
+    ./configure \
+        --prefix=${TARGET} \
+        --host=arm-eabi --build=x86-linux \
+        --enable-static --disable-shared \
+        --with-protoc=${PROTOC}
