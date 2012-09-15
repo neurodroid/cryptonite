@@ -91,6 +91,7 @@ encfs-svn/config.h.in
 encfs-svn/autom4te.cache
 encfs-svn/po/Makevars.template
 encfs-svn/armeabi
+encfs-svn/armeabi-v7a
 encfs-svn/encfs.spec
 encfs-svn/encfs/.deps/
 encfs-svn/encfs/config.pb.cc

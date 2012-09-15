@@ -29,12 +29,11 @@ for arch in archs:
 
     target_dir = "./obj/local/%s/" % arch
 
-    cpfile("../boost/boost_1_46_1/android/lib/libboost_filesystem.a", target_dir)
-    cpfile("../boost/boost_1_46_1/android/lib/libboost_serialization.a", target_dir)
-    cpfile("../boost/boost_1_46_1/android/lib/libboost_system.a", target_dir)
     cpfile("../fuse/fuse-android/obj/local/%s/libfuse.a" % arch, target_dir)
     cpfile("../rlog/rlog-1.4/%s/lib/librlog.a" % arch, target_dir)
-    cpfile("../encfs/encfs-1.7.4/%s/lib/libencfs.a" % arch, target_dir)
+    cpfile("../protobuf/protobuf-2.4.1/%s/lib/libprotobuf.a" % arch, target_dir)
+    cpfile("../tinyxml/tinyxml/%s/libtinyxml.a" % arch, target_dir)
+    cpfile("../encfs-svn/%s/lib/libencfs.a" % arch, target_dir)
     cpfile("../openssl/openssl-%s/%s/libssl.a" % (openssl_version, arch), target_dir)
     cpfile("../openssl/openssl-%s/%s/libcrypto.a" % (openssl_version, arch), target_dir)
     if arch=="armeabi":

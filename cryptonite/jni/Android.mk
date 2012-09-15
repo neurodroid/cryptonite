@@ -23,12 +23,13 @@ LOCAL_MODULE    := libcryptonite
 LOCAL_SRC_FILES := cryptonite.cpp android_key.cpp
 
 LOCAL_C_INCLUDES := \
-    ../encfs/encfs-1.7.4 \
-    ../encfs/encfs-1.7.4/encfs \
-    ../encfs/encfs-1.7.4/intl \
+    ../encfs-svn \
+    ../encfs-svn/encfs \
+    ../encfs-svn/intl \
     ../fuse/fuse-android/jni/include \
-    ../boost/boost_1_46_1 \
     ../rlog/rlog-1.4/${TARGET_ARCH_ABI}/include \
+    ../protobuf/protobuf-2.4.1/${TARGET_ARCH_ABI}/include \
+    ../tinyxml/tinyxml \
     ../openssl/openssl-1.0.0j/include
 
 LOCAL_CPPFLAGS := \
@@ -40,17 +41,16 @@ LOCAL_CPPFLAGS := \
     -DOPENSSL_NO_ENGINE \
     -DHAVE_EVP_AES \
     -DHAVE_EVP_BF \
-    -DBOOST_FILESYSTEM_VERSION=2 \
+    -DTIXML_USE_STL \
     -fexceptions \
     -frtti
 
 LOCAL_LDLIBS := \
     ./obj/local/${TARGET_ARCH_ABI}/libencfs.a \
     ./obj/local/${TARGET_ARCH_ABI}/libfuse.a \
-    ./obj/local/armeabi/libboost_serialization.a \
     ./obj/local/${TARGET_ARCH_ABI}/librlog.a \
-    ./obj/local/armeabi/libboost_filesystem.a \
-    ./obj/local/armeabi/libboost_system.a \
+    ./obj/local/${TARGET_ARCH_ABI}/libprotobuf.a \
+    ./obj/local/${TARGET_ARCH_ABI}/libtinyxml.a \
     ./obj/local/${TARGET_ARCH_ABI}/libgnustl_static.a \
     ./obj/local/${TARGET_ARCH_ABI}/libgcc.a \
     ./obj/local/${TARGET_ARCH_ABI}/libcrypto.a \
