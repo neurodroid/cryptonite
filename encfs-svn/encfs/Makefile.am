@@ -140,7 +140,7 @@ SUFFIXES = .1 .pod .proto
 config.pb.cc: config.pb.h
 
 config.pb.h: config.proto
-	@PROTOC@ --cpp_out=. config.proto
+	@PROTOC@ --cpp_out=. -I$(top_srcdir)/encfs $(top_srcdir)/encfs/config.proto
 
 if BUILD_MAN
 # since we have POD2MAN, we can specify how to rebuild encfs.1 if necessary

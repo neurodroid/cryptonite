@@ -70,6 +70,10 @@ openssl/openssl-*
 
 protobuf/protobuf-*
 
+# tinyxml source
+
+tinyxml/tinyxml*
+
 # encfs source
 
 encfs-1.7.4/encfs-1*
@@ -86,6 +90,22 @@ encfs-svn/m4
 encfs-svn/config.h.in
 encfs-svn/autom4te.cache
 encfs-svn/po/Makevars.template
+encfs-svn/armeabi
+encfs-svn/encfs.spec
+encfs-svn/encfs/.deps/
+encfs-svn/encfs/config.pb.cc
+encfs-svn/encfs/config.pb.h
+encfs-svn/encfs/encfs
+encfs-svn/encfs/encfs-man.html
+encfs-svn/encfs/encfs.1
+encfs-svn/encfs/encfsctl
+encfs-svn/encfs/encfsctl.1
+encfs-svn/encfs/makeKey
+encfs-svn/encfs/pod2htmd.tmp
+encfs-svn/encfs/pod2htmi.tmp
+encfs-svn/encfs/test
+encfs-svn/makedist2.sh
+encfs-svn/po/POTFILES
 
 # tc source
 

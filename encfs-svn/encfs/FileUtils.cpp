@@ -875,6 +875,10 @@ bool selectZeroBlockPassThrough()
         "This avoids writing encrypted blocks when file holes are created."));
 }
 
+#ifdef ANDROID
+CipherKey makeNewKey(EncfsConfig &config, const char *password, int passwdLen);
+#endif
+
 RootPtr createConfig( EncFS_Context *ctx,
     const shared_ptr<EncFS_Opts> &opts )
 {
@@ -1124,8 +1128,8 @@ RootPtr createConfig( EncFS_Context *ctx,
   CipherKey userKey;
   rDebug( "useStdin: %i", useStdin );
 #ifdef ANDROID
-  if (!opts->password.empty())
-    userKey = config->makeKey( opts->password.c_str(), opts->password.length() );
+  if(!opts->password.empty())
+    userKey = makeNewKey(config, opts->password.c_str(), opts->password.length());
   else
 #endif
   if(useStdin)
@@ -1619,7 +1623,7 @@ RootPtr initFS( EncFS_Context *ctx, const shared_ptr<EncFS_Opts> &opts )
 
 #ifdef ANDROID
     if(!opts->password.empty())
-        userKey = config->makeKey( opts->password.c_str(), opts->password.length() );
+        userKey = decryptKey(config, opts->password.c_str(), opts->password.length());
     else
 #endif
     if(opts->passwordProgram.empty())
