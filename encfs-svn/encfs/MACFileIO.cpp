@@ -102,7 +102,7 @@ bool MACFileIO::setIV( uint64_t iv )
     return base->setIV( iv );
 }
 
-inline static off_t roundUpDivide( off_t numerator, int denominator )
+inline static loff_t roundUpDivide( loff_t numerator, int denominator )
 {
     // integer arithmetic always rounds down, so we can round up by adding
     // enough so that any value other then a multiple of denominator gets
@@ -120,9 +120,9 @@ inline static off_t roundUpDivide( off_t numerator, int denominator )
 //   ... blockNum = 1
 //   ... partialBlock = 0
 //   ... adjLoc = 1 * blockSize
-static off_t locWithHeader( off_t offset, int blockSize, int headerSize )
+static loff_t locWithHeader( loff_t offset, int blockSize, int headerSize )
 {
-    off_t blockNum = roundUpDivide( offset , blockSize - headerSize );
+    loff_t blockNum = roundUpDivide( offset , blockSize - headerSize );
     return offset + blockNum * headerSize;
 }
 
@@ -131,9 +131,9 @@ static off_t locWithHeader( off_t offset, int blockSize, int headerSize )
 // The output value will always be less then the input value, because the
 // headers are stored at the beginning of the block, so even the first data is
 // offset by the size of the header.
-static off_t locWithoutHeader( off_t offset, int blockSize, int headerSize )
+static loff_t locWithoutHeader( loff_t offset, int blockSize, int headerSize )
 {
-    off_t blockNum = roundUpDivide( offset , blockSize );
+    loff_t blockNum = roundUpDivide( offset , blockSize );
     return offset - blockNum * headerSize;
 }
 
@@ -152,13 +152,13 @@ int MACFileIO::getAttr( struct stat *stbuf ) const
     return res;
 }
 
-off_t MACFileIO::getSize() const
+loff_t MACFileIO::getSize() const
 {
     // adjust the size to hide the header overhead we tack on..
     int headerSize = macBytes + randBytes;
     int bs = blockSize() + headerSize;
 
-    off_t size = base->getSize();
+    loff_t size = base->getSize();
     if(size > 0)
 	size = locWithoutHeader( size, bs, headerSize );
 
@@ -282,7 +282,7 @@ bool MACFileIO::writeOneBlock( const IORequest &req )
     return ok;
 }
 
-int MACFileIO::truncate( off_t size )
+int MACFileIO::truncate( loff_t size )
 {
     int headerSize = macBytes + randBytes;
     int bs = blockSize() + headerSize;

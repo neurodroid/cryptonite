@@ -26,7 +26,7 @@
 
 struct IORequest
 {
-    off_t offset;
+    loff_t offset;
 
     // amount of bytes to read/write.
     int dataLen;
@@ -66,12 +66,12 @@ public:
    
     // get filesystem attributes for a file
     virtual int getAttr( struct stat *stbuf ) const =0;
-    virtual off_t getSize( ) const =0;
+    virtual loff_t getSize( ) const =0;
 
     virtual ssize_t read( const IORequest &req ) const =0;
     virtual bool write( const IORequest &req ) =0;
 
-    virtual int truncate( off_t size ) =0;
+    virtual int truncate( loff_t size ) =0;
 
     virtual bool isWritable() const =0;
 private:

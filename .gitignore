@@ -70,6 +70,10 @@ openssl/openssl-*
 
 encfs-1.7.4/encfs-1*
 
+# encfs svn build
+
+encfs-svn/build
+
 # tc source
 
 tc/truecrypt-*

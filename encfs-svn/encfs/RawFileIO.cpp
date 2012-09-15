@@ -203,7 +203,7 @@ const char *RawFileIO::getFileName() const
     return name.c_str();
 }
 
-off_t RawFileIO::getSize() const
+loff_t RawFileIO::getSize() const
 {
     if(!knownSize)
     {
@@ -247,7 +247,7 @@ bool RawFileIO::write( const IORequest &req )
     int retrys = 10;
     void *buf = req.data;
     ssize_t bytes = req.dataLen;
-    off_t offset = req.offset;
+    loff_t offset = req.offset;
 
     while( bytes && retrys > 0 )
     {
@@ -277,7 +277,7 @@ bool RawFileIO::write( const IORequest &req )
     {
 	if(knownSize)
 	{
-	    off_t last = req.offset + req.dataLen;
+	    loff_t last = req.offset + req.dataLen;
 	    if(last > fileSize)
 		fileSize = last;
 	}
@@ -286,7 +286,7 @@ bool RawFileIO::write( const IORequest &req )
     }
 }
 
-int RawFileIO::truncate( off_t size )
+int RawFileIO::truncate( loff_t size )
 {
     int res;
 

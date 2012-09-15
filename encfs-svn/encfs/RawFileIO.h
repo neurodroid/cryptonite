@@ -37,12 +37,12 @@ public:
     virtual int open( int flags );
     
     virtual int getAttr( struct stat *stbuf ) const;
-    virtual off_t getSize() const;
+    virtual loff_t getSize() const;
 
     virtual ssize_t read( const IORequest & req ) const;
     virtual bool write( const IORequest &req );
 
-    virtual int truncate( off_t size );
+    virtual int truncate( loff_t size );
 
     virtual bool isWritable() const;
 protected:
@@ -50,7 +50,7 @@ protected:
     std::string name;
 
     bool knownSize;
-    off_t fileSize;
+    loff_t fileSize;
 
     int fd;
     int oldfd;

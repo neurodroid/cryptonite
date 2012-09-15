@@ -518,17 +518,17 @@ int encfs_chown(const char *path, uid_t uid, gid_t gid)
     return withCipherPath( "chown", path, _do_chown, make_tuple(uid, gid));
 }
 
-int _do_truncate( FileNode *fnode, off_t size )
+int _do_truncate( FileNode *fnode, loff_t size )
 {
     return fnode->truncate( size );
 }
 
-int encfs_truncate(const char *path, off_t size)
+int encfs_truncate(const char *path, loff_t size)
 {
     return withFileNode( "truncate", path, NULL, _do_truncate, size );
 }
 
-int encfs_ftruncate(const char *path, off_t size, struct fuse_file_info *fi)
+int encfs_ftruncate(const char *path, loff_t size, struct fuse_file_info *fi)
 {
     return withFileNode( "ftruncate", path, fi, _do_truncate, size );
 }
@@ -644,12 +644,12 @@ int encfs_release(const char *path, struct fuse_file_info *finfo)
     }
 }
 
-int _do_read(FileNode *fnode, tuple<unsigned char *, size_t, off_t> data)
+int _do_read(FileNode *fnode, tuple<unsigned char *, size_t, loff_t> data)
 {
     return fnode->read( get<2>(data), get<0>(data), get<1>(data));
 }
 
-int encfs_read(const char *path, char *buf, size_t size, off_t offset,
+int encfs_read(const char *path, char *buf, size_t size, loff_t offset,
 	struct fuse_file_info *file)
 {
     return withFileNode( "read", path, file, _do_read,
@@ -667,7 +667,7 @@ int encfs_fsync(const char *path, int dataSync,
     return withFileNode( "fsync", path, file, _do_fsync, dataSync );
 }
 
-int _do_write(FileNode *fnode, tuple<const char *, size_t, off_t> data)
+int _do_write(FileNode *fnode, tuple<const char *, size_t, loff_t> data)
 {
     size_t size = get<1>(data);
     if(fnode->write( get<2>(data), (unsigned char *)get<0>(data), size ))
@@ -677,7 +677,7 @@ int _do_write(FileNode *fnode, tuple<const char *, size_t, off_t> data)
 }
 
 int encfs_write(const char *path, const char *buf, size_t size,
-                     off_t offset, struct fuse_file_info *file)
+                     loff_t offset, struct fuse_file_info *file)
 {
     return withFileNode("write", path, file, _do_write,
 	    make_tuple(buf, size, offset));

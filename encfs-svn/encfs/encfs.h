@@ -69,15 +69,15 @@ int encfs_rename(const char *from, const char *to);
 int encfs_link(const char *from, const char *to);
 int encfs_chmod(const char *path, mode_t mode);
 int encfs_chown(const char *path, uid_t uid, gid_t gid);
-int encfs_truncate(const char *path, off_t size);
-int encfs_ftruncate(const char *path, off_t size,
+int encfs_truncate(const char *path, loff_t size);
+int encfs_ftruncate(const char *path, loff_t size,
 	struct fuse_file_info *fi);
 int encfs_utime(const char *path, struct utimbuf *buf);
 int encfs_open(const char *path, struct fuse_file_info *info);
 int encfs_release(const char *path, struct fuse_file_info *info);
-int encfs_read(const char *path, char *buf, size_t size, off_t offset,
+int encfs_read(const char *path, char *buf, size_t size, loff_t offset,
 	struct fuse_file_info *info);
-int encfs_write(const char *path, const char *buf, size_t size, off_t offset,
+int encfs_write(const char *path, const char *buf, size_t size, loff_t offset,
 	struct fuse_file_info *info);
 int encfs_statfs(const char *, struct statvfs *fst);
 int encfs_flush(const char *, struct fuse_file_info *info);
