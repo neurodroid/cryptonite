@@ -27,7 +27,7 @@
 #include <cstdlib>
 #include <pthread.h>
 #include <unistd.h>
-#ifdef linux
+#if defined (linux) || defined (ANDROID)
 #include <sys/fsuid.h>
 #endif
 
@@ -580,19 +580,23 @@ int DirNode::mkdir(const char *plaintextPath, mode_t mode,
     rLog( Info, "mkdir on %s", cyName.c_str() );
 
     // if uid or gid are set, then that should be the directory owner
+#ifndef ANDROID
     int olduid = -1;
     int oldgid = -1;
     if(uid != 0)
 	olduid = setfsuid( uid );
     if(gid != 0)
 	oldgid = setfsgid( gid );
+#endif
 
     int res = ::mkdir( cyName.c_str(), mode );
 
+#ifndef ANDROID
     if(olduid >= 0)
 	setfsuid( olduid );
     if(oldgid >= 0)
 	setfsgid( oldgid );
+#endif
 
     if(res == -1)
     {

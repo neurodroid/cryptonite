@@ -59,6 +59,11 @@ enum ConfigMode
   Config_Prompt,
   Config_Standard,
   Config_Paranoia
+#ifdef ANDROID
+  ,
+  Config_Compatible,
+  Config_Quick
+#endif
 };
 
 struct EncFS_Opts
@@ -73,6 +78,9 @@ struct EncFS_Opts
 
   std::string passwordProgram; // path to password program (or empty)
   bool useStdin; // read password from stdin rather then prompting
+#ifdef ANDROID
+  std::string password; // supply password directly if encfs is used as a library
+#endif
   bool annotate; // print annotation line prompt to stderr.
 
   bool ownerCreate; // set owner of new files to caller

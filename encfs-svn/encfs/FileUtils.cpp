@@ -958,6 +958,38 @@ RootPtr createConfig( EncFS_Context *ctx,
     chainedIV = true;
     externalIV = true;
     desiredKDFDuration = ParanoiaKDFDuration;
+#ifdef ANDROID
+  } else if(configMode == Config_Compatible)
+  {
+    // xgroup(setup)
+    cout << _("Compatible configuration selected.") << "\n";
+    // AES w/ 256 bit key, stream name encoding, no initialization
+    // vectors.
+    keySize = 256;
+    blockSize = DefaultBlockSize;
+    alg = findCipherAlgorithm("AES", keySize);
+    blockMACBytes = 0;
+    blockMACRandBytes = 0;
+    externalIV = false;
+    nameIOIface = StreamNameIO::CurrentInterface();
+    uniqueIV = false;
+    chainedIV = false;
+  } else if(configMode == Config_Quick)
+  {
+    // xgroup(setup)
+    cout << _("Quick configuration selected.") << "\n";
+    // Blowfish w/ 128 bit key, stream name encoding, no
+    // initialization vectors
+    keySize = 128;
+    blockSize = DefaultBlockSize;
+    alg = findCipherAlgorithm("Blowfish", keySize);
+    blockMACBytes = 0;
+    blockMACRandBytes = 0;
+    externalIV = false;
+    nameIOIface = StreamNameIO::CurrentInterface();
+    uniqueIV = false;
+    chainedIV = false;
+#endif
   } else if(configMode == Config_Standard || answer[0] != 'x')
   {
     // xgroup(setup)
@@ -1091,6 +1123,11 @@ RootPtr createConfig( EncFS_Context *ctx,
   // get user key and use it to encode volume key
   CipherKey userKey;
   rDebug( "useStdin: %i", useStdin );
+#ifdef ANDROID
+  if (!opts->password.empty())
+    userKey = config->makeKey( opts->password.c_str(), opts->password.length() );
+  else
+#endif
   if(useStdin)
   {
     if (annotate)
@@ -1580,6 +1617,11 @@ RootPtr initFS( EncFS_Context *ctx, const shared_ptr<EncFS_Opts> &opts )
     // get user key
     CipherKey userKey;
 
+#ifdef ANDROID
+    if(!opts->password.empty())
+        userKey = config->makeKey( opts->password.c_str(), opts->password.length() );
+    else
+#endif
     if(opts->passwordProgram.empty())
     {
       if (opts->annotate)

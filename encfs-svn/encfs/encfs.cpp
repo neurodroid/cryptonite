@@ -426,6 +426,7 @@ int encfs_symlink(const char *from, const char *to)
 
 	// use setfsuid / setfsgid so that the new link will be owned by the
 	// uid/gid provided by the fuse_context.
+#ifndef ANDROID
 	int olduid = -1;
 	int oldgid = -1;
 	if(ctx->publicFilesystem)
@@ -434,11 +435,14 @@ int encfs_symlink(const char *from, const char *to)
 	    olduid = setfsuid( context->uid );
 	    oldgid = setfsgid( context->gid );
 	}
+#endif
 	res = ::symlink( fromCName.c_str(), toCName.c_str() );
+#ifndef ANDROID
 	if(olduid >= 0)
 	    setfsuid( olduid );
 	if(oldgid >= 0)
 	    setfsgid( oldgid );
+#endif
 
 	if(res == -1)
 	    res = -errno;
@@ -549,7 +553,11 @@ int _do_utimens(EncFS_Context *, const string &cyName,
     tv[1].tv_sec = ts[1].tv_sec;
     tv[1].tv_usec = ts[1].tv_nsec / 1000;
 
+#ifndef ANDROID
     int res = lutimes( cyName.c_str(), tv);
+#else
+    int res = utimes( cyName.c_str(), tv);
+#endif
     return (res == -1) ? -errno : ESUCCESS;
 }
 
@@ -681,6 +689,7 @@ int encfs_statfs(const char *path, struct statvfs *st)
     EncFS_Context *ctx = context();
 
     int res = -EIO;
+#ifndef ANDROID //TODO: find equivalent for Android
     try
     {
 	(void)path; // path should always be '/' for now..
@@ -701,6 +710,7 @@ int encfs_statfs(const char *path, struct statvfs *st)
 	rError("error caught in statfs");
 	err.log( _RLWarningChannel );
     }
+#endif
     return res;
 }
 

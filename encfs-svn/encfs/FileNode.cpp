@@ -24,7 +24,7 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
-#ifdef linux
+#if defined (linux) || defined (ANDROID)
 #include <sys/fsuid.h>
 #endif
 
@@ -168,6 +168,7 @@ int FileNode::mknod(mode_t mode, dev_t rdev, uid_t uid, gid_t gid)
     int res;
     int olduid = -1;
     int oldgid = -1;
+#ifndef ANDROID
     if(uid != 0)
     {
 	olduid = setfsuid( uid );
@@ -186,6 +187,7 @@ int FileNode::mknod(mode_t mode, dev_t rdev, uid_t uid, gid_t gid)
             return -EPERM;
         }
     }
+#endif
 
     /*
      * cf. xmp_mknod() in fusexmp.c
@@ -201,10 +203,12 @@ int FileNode::mknod(mode_t mode, dev_t rdev, uid_t uid, gid_t gid)
     else
         res = ::mknod( _cname.c_str(), mode, rdev );
 
+#ifndef ANDROID
     if(olduid >= 0)
 	setfsuid( olduid );
     if(oldgid >= 0)
 	setfsgid( oldgid );
+#endif
 
     if(res == -1)
     {
@@ -282,7 +286,7 @@ int FileNode::sync(bool datasync)
     if(fh >= 0)
     {
 	int res = -EIO;
-#ifdef linux
+#if defined(linux) && !defined (ANDROID)
 	if(datasync)
 	    res = fdatasync( fh );
 	else

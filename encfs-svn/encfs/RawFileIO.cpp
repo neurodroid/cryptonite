@@ -293,7 +293,7 @@ int RawFileIO::truncate( off_t size )
     if(fd >= 0 && canWrite)
     {
 	res = ::ftruncate( fd, size );
-#ifndef __FreeBSD__
+#if !defined (__FreeBSD__) && !defined (ANDROID)
 	::fdatasync( fd );
 #endif
     } else

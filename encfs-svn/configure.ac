@@ -82,24 +82,24 @@ else
 fi
 
 # check for a supported FUSE_MAJOR_VERSION.
-AC_MSG_CHECKING([For supported FUSE API version])
-AC_RUN_IFELSE([ 
-    AC_LANG_PROGRAM([[#include "fuse.h"]],
-[[
-    if(FUSE_MAJOR_VERSION == 2 && FUSE_MINOR_VERSION >= 5)
-    {
-	return 0;
-    } else
-	return -1;
-]])], 
-    [AC_MSG_RESULT([yes])],
-    [AC_MSG_RESULT([no])
-    AC_MSG_FAILURE([
-Encfs 1.3 requires FUSE 2.5 or newer.  Please check config.log for errors.  If
-you cannot determine the problem, mail encfs-users@lists.sourceforge.net
-and include the config.log file])
-    ]
-)
+dnl AC_MSG_CHECKING([For supported FUSE API version])
+dnl AC_RUN_IFELSE([ 
+dnl     AC_LANG_PROGRAM([[#include "fuse.h"]],
+dnl [[
+dnl     if(FUSE_MAJOR_VERSION == 2 && FUSE_MINOR_VERSION >= 5)
+dnl     {
+dnl 	return 0;
+dnl     } else
+dnl 	return -1;
+dnl ]])], 
+dnl     [AC_MSG_RESULT([yes])],
+dnl     [AC_MSG_RESULT([no])
+dnl     AC_MSG_FAILURE([
+dnl Encfs 1.3 requires FUSE 2.5 or newer.  Please check config.log for errors.  If
+dnl you cannot determine the problem, mail encfs-users@lists.sourceforge.net
+dnl and include the config.log file])
+dnl     ]
+dnl )
 
 dnl fuse_operations.setxattr was added 2004-03-31
 dnl only enable it if setxattr function is found..

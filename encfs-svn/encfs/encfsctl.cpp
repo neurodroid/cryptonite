@@ -379,7 +379,11 @@ static int cmd_ls( int argc, char **argv )
 		fnode->getAttr( &stbuf );
 
 		struct tm stm;
+#ifdef ANDROID
+		localtime_r( (const time_t*)&stbuf.st_mtime, &stm );
+#else
 		localtime_r( &stbuf.st_mtime, &stm );
+#endif
 		stm.tm_year += 1900;
 		// TODO: when I add "%s" to the end and name.c_str(), I get a
 		// seg fault from within strlen.  Why ???
