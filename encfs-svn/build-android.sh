@@ -3,6 +3,8 @@
 TOOLCHAIN=${HOME}/android-toolchain
 MYSTRIP=${TOOLCHAIN}/bin/arm-linux-androideabi-strip
 
+autoreconf -i
+
 rm -rf armeabi
 ./config-arm-encfs.sh
 make clean
