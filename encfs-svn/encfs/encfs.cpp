@@ -23,7 +23,11 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <cerrno>
+#ifndef ANDROID
 #include <sys/statvfs.h>
+#else
+#include <sys/vfs.h>
+#endif
 #include <sys/time.h>
 
 #include <sys/types.h>
@@ -683,13 +687,42 @@ int encfs_write(const char *path, const char *buf, size_t size,
 	    make_tuple(buf, size, offset));
 }
 
+#ifdef ANDROID
+// statfvfs() equivalent for Android
+int statvfs(const char *path, struct statvfs *st)
+{
+    int res = -EIO;
+    struct statfs buf;
+
+    memset(&buf,0,sizeof(buf));
+    res = statfs(path, &buf);
+
+    if(!res && st!=NULL)
+    {
+        st->f_bsize=buf.f_bsize;
+        st->f_frsize=buf.f_frsize;
+        st->f_blocks=buf.f_blocks;
+        st->f_bfree=buf.f_bfree;
+        st->f_bavail=buf.f_bavail;
+        st->f_files=buf.f_files;
+        st->f_ffree=buf.f_ffree;
+        st->f_favail=buf.f_ffree;
+        st->f_fsid=buf.f_fsid.__val[1];
+        st->f_fsid<<=16;
+        st->f_fsid|=buf.f_fsid.__val[0];
+        st->f_flag=0;
+        st->f_namemax=buf.f_namelen;
+    }
+    return res;
+}
+#endif
+
 // statfs works even if encfs is detached..
 int encfs_statfs(const char *path, struct statvfs *st)
 {
     EncFS_Context *ctx = context();
 
     int res = -EIO;
-#ifndef ANDROID //TODO: find equivalent for Android
     try
     {
 	(void)path; // path should always be '/' for now..
@@ -710,7 +743,6 @@ int encfs_statfs(const char *path, struct statvfs *st)
 	rError("error caught in statfs");
 	err.log( _RLWarningChannel );
     }
-#endif
     return res;
 }
 

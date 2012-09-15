@@ -1418,7 +1418,11 @@ SecureMem *passwordFromProgram(const std::string &passProg,
   if(pid == 0)
   {
     const char *argv[4];
+#ifdef ANDROID
+    argv[0] = "/system/bin/sh";
+#else
     argv[0] = "/bin/sh";
+#endif
     argv[1] = "-c";
     argv[2] = passProg.c_str();
     argv[3] = 0;
