@@ -68,7 +68,7 @@ openssl/openssl-*
 
 # encfs source
 
-encfs/encfs-1*
+encfs-1.7.4/encfs-1*
 
 # tc source
 
