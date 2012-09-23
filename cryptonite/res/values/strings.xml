@@ -215,7 +215,7 @@
     <string name="create_success_local">Successfully created EncFS volume.</string>
     <string name="create_failure">Couldn\'t create EncFS volume</string>
     <string name="creating_encfs">Creating EncFS volume&#8230;</string>
-    <string name="encfs6_exists">An EncFS volume already exists in this folder</string>
+    <string name="encfs_exists">An EncFS volume already exists in this folder</string>
     <string name="create_warning">Creating volumes is an experimental feature. Are you sure you want to proceed?</string>
     <string name="create_short">Create volume</string>
      

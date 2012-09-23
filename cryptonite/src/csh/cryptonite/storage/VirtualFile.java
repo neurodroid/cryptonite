@@ -62,12 +62,20 @@ public class VirtualFile extends File {
     public VirtualFile[] listFiles() {
         
         if (!isVirtual) {
-            List<VirtualFile> cryptFiles = new ArrayList<VirtualFile>();
-            File[] files = super.listFiles();
-            for (File file : files) {
-                cryptFiles.add(new VirtualFile(file.getPath()));
+            if (isDirectory()) {
+                List<VirtualFile> cryptFiles = new ArrayList<VirtualFile>();
+                File[] files = super.listFiles();
+                if (files != null) {
+                    for (File file : files) {
+                        cryptFiles.add(new VirtualFile(file.getPath()));
+                    }
+                    return cryptFiles.toArray(new VirtualFile[0]);
+                } else {
+                    return null;
+                }
+            } else {
+                return null;
             }
-            return cryptFiles.toArray(new VirtualFile[0]);
         } else {
             if (isDirectory()) {
                 return children.toArray(new VirtualFile[0]);

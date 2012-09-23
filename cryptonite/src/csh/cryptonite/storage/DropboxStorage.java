@@ -63,7 +63,8 @@ public class DropboxStorage extends Storage {
                         if (dbEntry.contents.size() > 0) {
                             for (Entry dbChild : dbEntry.contents) {
                                 if (!dbChild.isDir) {
-                                    if (dbChild.fileName().matches(ENCFS_XML_REGEX)) {
+                                    if (dbChild.fileName().matches(ENCFS_XML_V6_REGEX) ||
+                                            dbChild.fileName().matches(ENCFS_XML_V7_REGEX)) {
                                         String localEncfsXmlPath = initRoot + dbChild.path;
                                         FileOutputStream fos = new FileOutputStream(localEncfsXmlPath);
                                         DBInterface.INSTANCE.getDBApi()
@@ -309,7 +310,7 @@ public class DropboxStorage extends Storage {
     public boolean createEncFS(String currentReturnPath, String passwordString, 
             File browseRoot, int config) {
         /* Create encrypted folder in temporary directory */
-        String cachePath = browseRoot + "/.encfs6.xml";
+        String cachePath = browseRoot + "/.encfs.txt";
         new File(cachePath).delete();
         
         /* Upload file to DB */
@@ -318,7 +319,7 @@ public class DropboxStorage extends Storage {
             targetPath += "/";
         }
         /* Is there an existing EncFSVolume? */
-        String dbPath = targetPath + ".encfs6.xml";
+        String dbPath = targetPath + "/.encfs.txt";
 
         boolean fileExists = true;
         try {
@@ -328,7 +329,7 @@ public class DropboxStorage extends Storage {
             return false;
         }
         if (fileExists) {
-            handleUIToastRequest(R.string.encfs6_exists);
+            handleUIToastRequest(R.string.encfs_exists);
             return false;
         }
         

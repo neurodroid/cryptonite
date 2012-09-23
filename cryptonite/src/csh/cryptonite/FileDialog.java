@@ -463,15 +463,23 @@ public class FileDialog extends SherlockFragmentActivity {
         TreeMap<String, String> filesMap = new TreeMap<String, String>();
         TreeMap<String, String> filesPathMap = new TreeMap<String, String>();
 
+        if (files == null) {
+            showToast(R.string.file_list_problem);
+            setResult(RESULT_CANCELED, getIntent());
+            finish();
+        }
+
         /* getPath() returns full path including file name */
         for (VirtualFile file : files) {
-            if (file.isDirectory()) {
-                String dirName = file.getName();
-                dirsMap.put(dirName, dirName);
-                dirsPathMap.put(dirName, file.getPath());
-            } else {
-                filesMap.put(file.getName(), file.getName());
-                filesPathMap.put(file.getName(), file.getPath());
+            if (file != null) {
+                if (file.isDirectory()) {
+                    String dirName = file.getName();
+                    dirsMap.put(dirName, dirName);
+                    dirsPathMap.put(dirName, file.getPath());
+                } else {
+                    filesMap.put(file.getName(), file.getName());
+                    filesPathMap.put(file.getName(), file.getPath());
+                }
             }
         }
 

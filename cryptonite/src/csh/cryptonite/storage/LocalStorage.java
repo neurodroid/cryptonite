@@ -137,9 +137,9 @@ public class LocalStorage extends Storage {
     @Override
     public boolean createEncFS(String currentReturnPath, String passwordString, 
             File browseRoot, int config) {
-        String encfs6Path = currentReturnPath + "/" + ".encfs6.xml";
-        if (new File(encfs6Path).exists()) {
-            handleUIToastRequest(R.string.encfs6_exists);
+        String encfsPath = currentReturnPath + "/" + ".encfs.txt";
+        if (new File(encfsPath).exists()) {
+            handleUIToastRequest(R.string.encfs_exists);
             return false;
         }
         if (Cryptonite.jniCreate(currentReturnPath, passwordString, config) == Cryptonite.jniSuccess()) {
@@ -154,7 +154,7 @@ public class LocalStorage extends Storage {
     @Override
     public boolean mkVisibleDecoded(String path, String encFSRoot, String rootPath) {
 
-        if (encFSPath == null) {
+        if (encFSRoot == null || encFSPath == null) {
             return false;
         }
         
