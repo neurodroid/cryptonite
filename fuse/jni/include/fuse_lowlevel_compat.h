@@ -33,10 +33,10 @@ struct fuse_lowlevel_ops_compat25 {
 		      const char *newname);
 	void (*open) (fuse_req_t req, fuse_ino_t ino,
 		      struct fuse_file_info *fi);
-	void (*read) (fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
+	void (*read) (fuse_req_t req, fuse_ino_t ino, size_t size, loff_t off,
 		      struct fuse_file_info *fi);
 	void (*write) (fuse_req_t req, fuse_ino_t ino, const char *buf,
-		       size_t size, off_t off, struct fuse_file_info *fi);
+		       size_t size, loff_t off, struct fuse_file_info *fi);
 	void (*flush) (fuse_req_t req, fuse_ino_t ino,
 		       struct fuse_file_info *fi);
 	void (*release) (fuse_req_t req, fuse_ino_t ino,
@@ -45,7 +45,7 @@ struct fuse_lowlevel_ops_compat25 {
 		       struct fuse_file_info *fi);
 	void (*opendir) (fuse_req_t req, fuse_ino_t ino,
 			 struct fuse_file_info *fi);
-	void (*readdir) (fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
+	void (*readdir) (fuse_req_t req, fuse_ino_t ino, size_t size, loff_t off,
 			 struct fuse_file_info *fi);
 	void (*releasedir) (fuse_req_t req, fuse_ino_t ino,
 			    struct fuse_file_info *fi);
@@ -70,7 +70,7 @@ struct fuse_session *fuse_lowlevel_new_compat25(struct fuse_args *args,
 size_t fuse_dirent_size(size_t namelen);
 
 char *fuse_add_dirent(char *buf, const char *name, const struct stat *stbuf,
-		      off_t off);
+		      loff_t off);
 
 #ifndef __FreeBSD__
 
@@ -100,10 +100,10 @@ struct fuse_lowlevel_ops_compat {
 		      const char *newname);
 	void (*open) (fuse_req_t req, fuse_ino_t ino,
 		      struct fuse_file_info_compat *fi);
-	void (*read) (fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
+	void (*read) (fuse_req_t req, fuse_ino_t ino, size_t size, loff_t off,
 		      struct fuse_file_info_compat *fi);
 	void (*write) (fuse_req_t req, fuse_ino_t ino, const char *buf,
-		       size_t size, off_t off, struct fuse_file_info_compat *fi);
+		       size_t size, loff_t off, struct fuse_file_info_compat *fi);
 	void (*flush) (fuse_req_t req, fuse_ino_t ino,
 		       struct fuse_file_info_compat *fi);
 	void (*release) (fuse_req_t req, fuse_ino_t ino,
@@ -112,7 +112,7 @@ struct fuse_lowlevel_ops_compat {
 		       struct fuse_file_info_compat *fi);
 	void (*opendir) (fuse_req_t req, fuse_ino_t ino,
 			 struct fuse_file_info_compat *fi);
-	void (*readdir) (fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
+	void (*readdir) (fuse_req_t req, fuse_ino_t ino, size_t size, loff_t off,
 			 struct fuse_file_info_compat *fi);
 	void (*releasedir) (fuse_req_t req, fuse_ino_t ino,
 			    struct fuse_file_info_compat *fi);

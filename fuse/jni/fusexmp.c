@@ -67,7 +67,7 @@ static int xmp_readlink(const char *path, char *buf, size_t size)
 
 
 static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-		       off_t offset, struct fuse_file_info *fi)
+		       loff_t offset, struct fuse_file_info *fi)
 {
 	DIR *dp;
 	struct dirent *de;
@@ -200,7 +200,7 @@ static int xmp_chown(const char *path, uid_t uid, gid_t gid)
 	return 0;
 }
 
-static int xmp_truncate(const char *path, off_t size)
+static int xmp_truncate(const char *path, loff_t size)
 {
 	int res;
 
@@ -240,7 +240,7 @@ static int xmp_open(const char *path, struct fuse_file_info *fi)
 	return 0;
 }
 
-static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
+static int xmp_read(const char *path, char *buf, size_t size, loff_t offset,
 		    struct fuse_file_info *fi)
 {
 	int fd;
@@ -251,7 +251,15 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 	if (fd == -1)
 		return -errno;
 
+#ifndef ANDROID
 	res = pread(fd, buf, size, offset);
+#else
+	lloff_t current = lseek64 (fd, 0, SEEK_CUR);
+	lseek64 (fd, offset, SEEK_SET);
+	ssize_t bytesRead = read (fd, buf,size);
+	lseek64 (fd, current, SEEK_SET);
+	res = bytesRead;
+#endif
 	if (res == -1)
 		res = -errno;
 
@@ -260,7 +268,7 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 }
 
 static int xmp_write(const char *path, const char *buf, size_t size,
-		     off_t offset, struct fuse_file_info *fi)
+		     loff_t offset, struct fuse_file_info *fi)
 {
 	int fd;
 	int res;
@@ -270,7 +278,15 @@ static int xmp_write(const char *path, const char *buf, size_t size,
 	if (fd == -1)
 		return -errno;
 
+#ifndef ANDROID
 	res = pwrite(fd, buf, size, offset);
+#else
+	lloff_t current = lseek64 (fd, 0, SEEK_CUR);
+	lseek64 (fd, offset, SEEK_SET);
+	ssize_t bytesWritten = write (fd, buf, size);
+	lseek64 (fd, current, SEEK_SET);
+	res = bytesWritten;
+#endif
 	if (res == -1)
 		res = -errno;
 
