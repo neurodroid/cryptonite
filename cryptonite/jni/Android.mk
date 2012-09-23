@@ -26,7 +26,7 @@ LOCAL_C_INCLUDES := \
     ../encfs-svn \
     ../encfs-svn/encfs \
     ../encfs-svn/intl \
-    ../fuse/fuse-android/jni/include \
+    ../fuse/jni/include \
     ../rlog/rlog-1.4/${TARGET_ARCH_ABI}/include \
     ../protobuf/protobuf-2.4.1/${TARGET_ARCH_ABI}/include \
     ../tinyxml/tinyxml \
