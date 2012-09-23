@@ -17,7 +17,7 @@
 # Copyright (c) 2012, Christoph Schmidt-Hieber
 
 TOOLCHAIN=${HOME}/android-toolchain
-FUSEDIR=`pwd`/../fuse/fuse-android
+FUSEDIR=`pwd`/../fuse
 OPENSSLDIR=`pwd`/../openssl/openssl-1.0.0j
 RLOGDIR=`pwd`/../rlog/rlog-1.4
 PROTOBUFDIR=`pwd`/../protobuf/protobuf-2.4.1

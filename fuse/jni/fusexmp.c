@@ -254,7 +254,7 @@ static int xmp_read(const char *path, char *buf, size_t size, loff_t offset,
 #ifndef ANDROID
 	res = pread(fd, buf, size, offset);
 #else
-	lloff_t current = lseek64 (fd, 0, SEEK_CUR);
+	loff_t current = lseek64 (fd, 0, SEEK_CUR);
 	lseek64 (fd, offset, SEEK_SET);
 	ssize_t bytesRead = read (fd, buf,size);
 	lseek64 (fd, current, SEEK_SET);
@@ -281,7 +281,7 @@ static int xmp_write(const char *path, const char *buf, size_t size,
 #ifndef ANDROID
 	res = pwrite(fd, buf, size, offset);
 #else
-	lloff_t current = lseek64 (fd, 0, SEEK_CUR);
+	loff_t current = lseek64 (fd, 0, SEEK_CUR);
 	lseek64 (fd, offset, SEEK_SET);
 	ssize_t bytesWritten = write (fd, buf, size);
 	lseek64 (fd, current, SEEK_SET);

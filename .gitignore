@@ -50,9 +50,10 @@ libtool
 stamp-h1
 stamp-h*
 
-# fuse source
+# fuse build output
 
-fuse/fuse-android
+fuse/libs
+fuse/obj
 
 # rlog source
 

@@ -29,7 +29,7 @@ for arch in archs:
 
     target_dir = "./obj/local/%s/" % arch
 
-    cpfile("../fuse/fuse-android/obj/local/%s/libfuse.a" % arch, target_dir)
+    cpfile("../fuse/obj/local/%s/libfuse.a" % arch, target_dir)
     cpfile("../rlog/rlog-1.4/%s/lib/librlog.a" % arch, target_dir)
     cpfile("../protobuf/protobuf-2.4.1/%s/lib/libprotobuf.a" % arch, target_dir)
     cpfile("../tinyxml/tinyxml/%s/libtinyxml.a" % arch, target_dir)
