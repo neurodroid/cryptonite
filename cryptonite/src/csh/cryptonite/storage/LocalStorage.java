@@ -137,7 +137,7 @@ public class LocalStorage extends Storage {
     @Override
     public boolean createEncFS(String currentReturnPath, String passwordString, 
             File browseRoot, int config) {
-        String encfsPath = currentReturnPath + "/" + ".encfs.txt";
+        String encfsPath = currentReturnPath + "/" + ENCFS_XML_CURRENT;
         if (new File(encfsPath).exists()) {
             handleUIToastRequest(R.string.encfs_exists);
             return false;
