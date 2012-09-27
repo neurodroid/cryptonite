@@ -310,7 +310,7 @@ public class DropboxStorage extends Storage {
     public boolean createEncFS(String currentReturnPath, String passwordString, 
             File browseRoot, int config) {
         /* Create encrypted folder in temporary directory */
-        String cachePath = browseRoot + "/.encfs.txt";
+        String cachePath = browseRoot + "/" + ENCFS_XML_CURRENT;
         new File(cachePath).delete();
         
         /* Upload file to DB */
@@ -319,7 +319,7 @@ public class DropboxStorage extends Storage {
             targetPath += "/";
         }
         /* Is there an existing EncFSVolume? */
-        String dbPath = targetPath + "/.encfs.txt";
+        String dbPath = targetPath + "/" + ENCFS_XML_CURRENT;
 
         boolean fileExists = true;
         try {
