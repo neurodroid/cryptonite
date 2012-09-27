@@ -14,12 +14,18 @@ else:
 ndk = "%s/android-ndk-r8" % os.getenv("HOME")
 toolchain = "%s/android-toolchain" % os.getenv("HOME")
 openssl_version = "1.0.0j"
+encfs_version = "1.7.4"
 
 def cpfile(src, target):
     sys.stdout.write("Copying %s to %s\n" % (src, target))
     shutil.copy(src, target)
 
 archs = ["armeabi","armeabi-v7a"]
+
+if encfs_version != "svn":
+    encfs_dir = "encfs-%s/encfs-%s" % (encfs_version, encfs_version)
+else:
+    encfs_dir = "encfs-svn"
 
 for arch in archs:
     try:
@@ -29,11 +35,16 @@ for arch in archs:
 
     target_dir = "./obj/local/%s/" % arch
 
+    if encfs_version != "svn":
+        cpfile("../boost/boost_1_46_1/android/lib/libboost_filesystem.a", target_dir)
+        cpfile("../boost/boost_1_46_1/android/lib/libboost_serialization.a", target_dir)
+        cpfile("../boost/boost_1_46_1/android/lib/libboost_system.a", target_dir)
+    else:
+        cpfile("../protobuf/protobuf-2.4.1/%s/lib/libprotobuf.a" % arch, target_dir)
+        cpfile("../tinyxml/tinyxml/%s/libtinyxml.a" % arch, target_dir)
     cpfile("../fuse/obj/local/%s/libfuse.a" % arch, target_dir)
     cpfile("../rlog/rlog-1.4/%s/lib/librlog.a" % arch, target_dir)
-    cpfile("../protobuf/protobuf-2.4.1/%s/lib/libprotobuf.a" % arch, target_dir)
-    cpfile("../tinyxml/tinyxml/%s/libtinyxml.a" % arch, target_dir)
-    cpfile("../encfs-svn/%s/lib/libencfs.a" % arch, target_dir)
+    cpfile("../%s/%s/lib/libencfs.a" % (encfs_dir, arch), target_dir)
     cpfile("../openssl/openssl-%s/%s/libssl.a" % (openssl_version, arch), target_dir)
     cpfile("../openssl/openssl-%s/%s/libcrypto.a" % (openssl_version, arch), target_dir)
     if arch=="armeabi":

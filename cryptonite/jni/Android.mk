@@ -21,16 +21,32 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE    := libcryptonite
 LOCAL_SRC_FILES := cryptonite.cpp android_key.cpp
+ENCFS_VERSION   := 1.7.4
+
+ifeq ($(ENCFS_VERSION), svn)
+    ENCFS_PATH     := encfs-svn
+    ENCFS_INCLUDES := ../protobuf/protobuf-2.4.1/$(TARGET_ARCH_ABI)/include \
+                      ../tinyxml/tinyxml
+    ENCFS_CPPFLAGS := -DENCFS_SVN -DTIXML_USE_STL
+    ENCFS_LDLIBS   := ./obj/local/$(TARGET_ARCH_ABI)/libprotobuf.a \
+                      ./obj/local/$(TARGET_ARCH_ABI)/libtinyxml.a
+else
+    ENCFS_PATH  := encfs-$(ENCFS_VERSION)/encfs-$(ENCFS_VERSION)
+    ENCFS_INCLUDES := ../boost/boost_1_46_1
+    ENCFS_CPPFLAGS := -DBOOST_FILESYSTEM_VERSION=2
+    ENCFS_LDLIBS   := ./obj/local/armeabi/libboost_serialization.a \
+                      ./obj/local/armeabi/libboost_filesystem.a \
+                      ./obj/local/armeabi/libboost_system.a
+endif
 
 LOCAL_C_INCLUDES := \
-    ../encfs-svn \
-    ../encfs-svn/encfs \
-    ../encfs-svn/intl \
+    ../encfs-1.7.4/encfs-1.7.4 \
+    ../encfs-1.7.4/encfs-1.7.4/encfs \
+    ../encfs-1.7.4/encfs-1.7.4/intl \
     ../fuse/jni/include \
-    ../rlog/rlog-1.4/${TARGET_ARCH_ABI}/include \
-    ../protobuf/protobuf-2.4.1/${TARGET_ARCH_ABI}/include \
-    ../tinyxml/tinyxml \
-    ../openssl/openssl-1.0.0j/include
+    ../rlog/rlog-1.4/$(TARGET_ARCH_ABI)/include \
+    ../openssl/openssl-1.0.0j/include \
+    $(ENCFS_INCLUDES)
 
 LOCAL_CPPFLAGS := \
     -D_FILE_OFFSET_BITS=64 \
@@ -41,20 +57,19 @@ LOCAL_CPPFLAGS := \
     -DOPENSSL_NO_ENGINE \
     -DHAVE_EVP_AES \
     -DHAVE_EVP_BF \
-    -DTIXML_USE_STL \
     -fexceptions \
-    -frtti
+    -frtti \
+    $(ENCFS_CPPFLAGS)
 
 LOCAL_LDLIBS := \
-    ./obj/local/${TARGET_ARCH_ABI}/libencfs.a \
-    ./obj/local/${TARGET_ARCH_ABI}/libfuse.a \
-    ./obj/local/${TARGET_ARCH_ABI}/librlog.a \
-    ./obj/local/${TARGET_ARCH_ABI}/libprotobuf.a \
-    ./obj/local/${TARGET_ARCH_ABI}/libtinyxml.a \
-    ./obj/local/${TARGET_ARCH_ABI}/libgnustl_static.a \
-    ./obj/local/${TARGET_ARCH_ABI}/libgcc.a \
-    ./obj/local/${TARGET_ARCH_ABI}/libcrypto.a \
-    ./obj/local/${TARGET_ARCH_ABI}/libssl.a \
+    ./obj/local/$(TARGET_ARCH_ABI)/libencfs.a \
+    ./obj/local/$(TARGET_ARCH_ABI)/libfuse.a \
+    ./obj/local/$(TARGET_ARCH_ABI)/librlog.a \
+    $(ENCFS_LDLIBS) \
+    ./obj/local/$(TARGET_ARCH_ABI)/libgnustl_static.a \
+    ./obj/local/$(TARGET_ARCH_ABI)/libgcc.a \
+    ./obj/local/$(TARGET_ARCH_ABI)/libcrypto.a \
+    ./obj/local/$(TARGET_ARCH_ABI)/libssl.a \
     -llog -ldl
 
 LOCAL_ALLOW_UNDEFINED_SYMBOLS := true

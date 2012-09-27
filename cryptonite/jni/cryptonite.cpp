@@ -29,7 +29,9 @@
 #include <string>
 #include <set>
 #include <vector>
+#ifdef ENCFS_SVN
 #include <memory>
+#endif
 #include <iostream>
 #include <sstream>
 #include <cerrno>
@@ -84,8 +86,21 @@ static int isValidEncFS(std::string rootDir) {
     if( !checkDir( rootDir ))
 	return EXIT_FAILURE;
 
+#ifdef ENCFS_SVN
     EncfsConfig config;
+#else
+    shared_ptr<EncFSConfig> config(new EncFSConfig);
+#endif
+
     ConfigType type = readConfig( rootDir, config );
+
+#ifdef ENCFS_SVN
+    std::string config_creator = config.creator();
+    int config_revision = config.revision();
+#else
+    std::string config_creator = config->creator;
+    int config_revision = config->subVersion;
+#endif
 
     std::ostringstream info;
     // show information stored in config..
@@ -100,23 +115,25 @@ static int isValidEncFS(std::string rootDir) {
              "It is not supported in this EncFS build.");
 	return EXIT_FAILURE;
     case Config_V3:
-        info << "Version 3 configuration; created by " << config.creator().c_str();
+        info << "Version 3 configuration; created by " << config_creator.c_str();
         break;
     case Config_V4:
-        info << "Version 4 configuration; created by " << config.creator().c_str();
+        info << "Version 4 configuration; created by " << config_creator.c_str();
         break;
     case Config_V5:
-        info << "Version 5 configuration; created by " << config.creator().c_str()
-             << " (revision " << config.revision() << ")";
+        info << "Version 5 configuration; created by " << config_creator.c_str()
+             << " (revision " << config_revision << ")";
 	break;
     case Config_V6:
-        info << "Version 6 configuration; created by " << config.creator().c_str()
-             << " (revision " << config.revision() << ")";
+        info << "Version 6 configuration; created by " << config_creator.c_str()
+             << " (revision " << config_revision << ")";
 	break;
+#ifdef ENCFS_SVN
     case Config_V7:
-        info << "Version 7 configuration; created by " << config.creator().c_str()
-             << " (revision " << config.revision() << ")";
+        info << "Version 7 configuration; created by " << config_creator.c_str()
+             << " (revision " << config_revision << ")";
 	break;
+#endif
     }
     LOGI(info.str().c_str());
 
@@ -214,7 +231,7 @@ public:
 };
 
 static int copyLink(const struct stat &stBuf, 
-        const std::tr1::shared_ptr<EncFS_Root> &rootInfo,
+        const shared_ptr<EncFS_Root> &rootInfo,
         const std::string &cpath, const std::string &destName )
 {
     std::vector<char> buf(stBuf.st_size+1, 0);
@@ -241,11 +258,11 @@ static int copyLink(const struct stat &stBuf,
     return EXIT_SUCCESS;
 }
 
-static int copyContents(const std::tr1::shared_ptr<EncFS_Root> &rootInfo, 
+static int copyContents(const shared_ptr<EncFS_Root> &rootInfo, 
                         const char* encfsName, const char* targetName,
                         bool fake)
 {
-    std::tr1::shared_ptr<FileNode> node = 
+    shared_ptr<FileNode> node = 
 	rootInfo->root->lookupNode( encfsName, "encfsctl" );
 
     if(!node)
@@ -303,7 +320,7 @@ static int copyContents(const std::tr1::shared_ptr<EncFS_Root> &rootInfo,
     return EXIT_SUCCESS;
 }
 
-static int traverseDirs(const std::tr1::shared_ptr<EncFS_Root> &rootInfo, 
+static int traverseDirs(const shared_ptr<EncFS_Root> &rootInfo, 
                         std::string volumeDir, std::string destDir,
                         const std::set<std::string>& toWrite )
 {
@@ -398,7 +415,7 @@ static int traverseDirs(const std::tr1::shared_ptr<EncFS_Root> &rootInfo,
     return EXIT_SUCCESS;
 }
 
-static int exportFiles(const std::tr1::shared_ptr<EncFS_Root> &rootInfo, 
+static int exportFiles(const shared_ptr<EncFS_Root> &rootInfo, 
                        std::string volumeDir, std::string destDir,
                        const std::set<std::string>& decodedNames) {
     return traverseDirs(rootInfo, volumeDir, destDir, decodedNames);
@@ -407,7 +424,7 @@ static int exportFiles(const std::tr1::shared_ptr<EncFS_Root> &rootInfo,
 static RootPtr initRootInfo(const std::string& rootDir, const std::string& password, bool useAnyKey)
 {
     RootPtr result;
-    std::tr1::shared_ptr<EncFS_Opts> opts( new EncFS_Opts() );
+    shared_ptr<EncFS_Opts> opts( new EncFS_Opts() );
     opts->createIfNotFound = false;
     opts->checkKey = !useAnyKey;
     opts->password.assign(password);
@@ -734,7 +751,7 @@ Java_csh_cryptonite_Cryptonite_jniCreate(JNIEnv* env, jobject thiz, jstring srcd
     jniStringManager mpassword(env, password);
 
     RootPtr result;
-    std::tr1::shared_ptr<EncFS_Opts> opts( new EncFS_Opts() );
+    shared_ptr<EncFS_Opts> opts( new EncFS_Opts() );
     opts->createIfNotFound = true;
     opts->checkKey = true;
     opts->password.assign(mpassword.str());
@@ -901,7 +918,7 @@ Java_csh_cryptonite_Cryptonite_jniDecrypt(JNIEnv* env, jobject thiz, jstring enc
     out << "Decoding " << mencodedname.str() << " to " << plainPath << " in " << destname;
     LOGI(out.str().c_str()); */
 
-    std::tr1::shared_ptr<FileNode> node = 
+    shared_ptr<FileNode> node = 
 	gRootInfo->root->lookupNode( plainPath.c_str(), "encfsctl");
 
     if(!node) {
@@ -966,7 +983,7 @@ Java_csh_cryptonite_Cryptonite_jniDecryptToBuffer(JNIEnv* env, jobject thiz,
     std::string plainPath = gRootInfo->root->plainPath(mencodedname.c_str());
     mencodedname.release();
 
-    std::tr1::shared_ptr<FileNode> node = 
+    shared_ptr<FileNode> node = 
 	gRootInfo->root->lookupNode( plainPath.c_str(), "encfsctl");
 
     if(!node) {
@@ -1037,7 +1054,7 @@ Java_csh_cryptonite_Cryptonite_jniEncrypt(JNIEnv * env, jobject thiz,
     jniStringManager mplainpath(env, plainpath);
     jniStringManager msrcpath(env, srcpath);
     
-    std::tr1::shared_ptr<FileNode> node = 
+    shared_ptr<FileNode> node = 
 	gRootInfo->root->lookupNode( mplainpath.c_str(), "encfsctl");
 
     if(!node) {
