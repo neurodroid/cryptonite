@@ -187,7 +187,7 @@ public class CryptoniteTest extends ActivityInstrumentationTestCase2<Cryptonite>
             /* Initialise volume */
             File targetDir = getConfigDir(encfsConfigType);
             assertEquals(Cryptonite.jniSuccess(), 
-                    Cryptonite.jniInit(targetDir.getPath(), "password"));
+                         Cryptonite.jniInit(targetDir.getPath(), "password", false));
 
             /* Make directories */
 
@@ -219,7 +219,7 @@ public class CryptoniteTest extends ActivityInstrumentationTestCase2<Cryptonite>
         for (int encfsConfigType : encfs_config_types) {
             File targetDir = getConfigDir(encfsConfigType);
             assertEquals(Cryptonite.jniSuccess(), 
-                    Cryptonite.jniInit(targetDir.getPath(), "password"));
+                         Cryptonite.jniInit(targetDir.getPath(), "password", false));
         
             File decryptedCacheDir = getCacheDir();
             if (decryptedCacheDir.exists()) {

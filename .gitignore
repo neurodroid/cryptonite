@@ -146,6 +146,7 @@ cryptonite/tests/obj/*
 
 .classpath
 local.properties
+proguard-project.txt
 commit.sh
 
 cryptonite/jni/android_key.h*
