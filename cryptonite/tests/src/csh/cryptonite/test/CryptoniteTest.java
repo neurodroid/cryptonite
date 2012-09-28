@@ -56,11 +56,11 @@ public class CryptoniteTest extends ActivityInstrumentationTestCase2<Cryptonite>
      */
     public CryptoniteTest() {
         super(Cryptonite.class);
-        
+
         encfs_config_types = new int[2];
         encfs_config_types[0] = CreateEncFS.CONFIG_PARANOIA;
         encfs_config_types[1] = CreateEncFS.CONFIG_COMPATIBLE;
-        
+
         for (int encfsConfigType : encfs_config_types) {
             File targetDir = getConfigDir(encfsConfigType);
             Cryptonite.deleteDir(targetDir);
