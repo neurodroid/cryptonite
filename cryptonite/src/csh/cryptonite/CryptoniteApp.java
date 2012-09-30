@@ -16,6 +16,7 @@
 
 package csh.cryptonite;
 
+import csh.cryptonite.storage.DropboxInterface;
 import csh.cryptonite.storage.StorageManager;
 import csh.cryptonite.storage.VirtualFileSystem;
 
@@ -32,7 +33,7 @@ public class CryptoniteApp extends Application {
     public void onCreate() {
         VirtualFileSystem.INSTANCE.init();
         StorageManager.INSTANCE.init();
-        DBInterface.INSTANCE.init();
+        DropboxInterface.INSTANCE.init();
     }
 
 }

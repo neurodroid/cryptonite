@@ -11,4 +11,6 @@ public class SelectionMode {
     public static final int MODE_OPEN_CREATE_DB = 17;
     public static final int MODE_OPEN_ENCFS_MOUNT = 18;
     public static final int MODE_OPEN_EXPORT_TARGET = 19;
+    public static final int MODE_OPEN_DEFAULT = 20;
+    public static final int MODE_OPEN_DEFAULT_DB = 21;
 }

@@ -115,7 +115,14 @@
     <string name="empty_encoded_filename">Couldn\'t encode file name; please try again</string>
     <string name="decode_failure">Couldn\'t decode volume. Please try again and report this issue if the problem persists.</string>
     <string name="out_of_memory">File is too large for text preview</string>
-    
+    <string name="save">Save</string>
+    <string name="load">Load</string>
+    <string name="no_volumes">Couldn\'t find any stored volumes</string>
+    <string name="delete_entry">Remove entry</string>
+    <string name="stored_volumes">Stored volumes</string>
+    <string name="default_restore">Restore default</string>
+    <string name="default_save">Save as default</string>
+    <string name="default_missing">Couldn\'t find default folder</string>
     <!-- Terminal -->
     <string name="term_info">Run EncFS and TrueCrypt in terminal</string>
     <string name="term_prompt">Start terminal</string>

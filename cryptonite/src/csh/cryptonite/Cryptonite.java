@@ -77,6 +77,11 @@ import com.dropbox.client2.session.AppKeyPair;
 import com.dropbox.client2.session.Session.AccessType;
 import com.dropbox.client2.session.TokenPair;
 
+import csh.cryptonite.database.Volume;
+import csh.cryptonite.database.VolumesDataSource;
+import csh.cryptonite.storage.DropboxInterface;
+import csh.cryptonite.storage.DropboxFragment;
+import csh.cryptonite.storage.LocalFragment;
 import csh.cryptonite.storage.Storage;
 import csh.cryptonite.storage.StorageManager;
 import csh.cryptonite.storage.VirtualFile;
@@ -140,6 +145,8 @@ public class Cryptonite extends SherlockFragmentActivity
     private DropboxFragment dbFragment;
     private LocalFragment localFragment;
 
+    private VolumesDataSource mDataSource;
+
     // If you'd like to change the access type to the full Dropbox instead of
     // an app folder, change this value.
     final static private AccessType ACCESS_TYPE = AccessType.DROPBOX;
@@ -162,7 +169,10 @@ public class Cryptonite extends SherlockFragmentActivity
             jniFail();
             return;
         }
-        
+
+        mDataSource = new VolumesDataSource(this);
+        mDataSource.open();
+
         encfsVersion = "EncFS " + jniEncFSVersion();
         opensslVersion = jniOpenSSLVersion();
         textOut = encfsVersion + "\n" + opensslVersion;
@@ -286,10 +296,10 @@ public class Cryptonite extends SherlockFragmentActivity
             }
         }
 
-        if (DBInterface.INSTANCE.getDBApi() != null && 
-                DBInterface.INSTANCE.getDBApi().getSession() != null)
+        if (DropboxInterface.INSTANCE.getDBApi() != null && 
+                DropboxInterface.INSTANCE.getDBApi().getSession() != null)
         {
-            mLoggedIn = DBInterface.INSTANCE.getDBApi().getSession().isLinked();
+            mLoggedIn = DropboxInterface.INSTANCE.getDBApi().getSession().isLinked();
         } else {
             mLoggedIn = false;
         }
@@ -314,7 +324,9 @@ public class Cryptonite extends SherlockFragmentActivity
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putString("tab", mTabHost.getCurrentTabTag());
+        if (mTabHost != null) {
+            outState.putString("tab", mTabHost.getCurrentTabTag());
+        }
         outState.putInt("opMode", opMode);
         outState.putString("currentReturnPath", currentReturnPath);
         outState.putString("currentDialogStartPath", currentDialogStartPath);
@@ -336,15 +348,21 @@ public class Cryptonite extends SherlockFragmentActivity
         }
     }
 
-
     @Override
     protected void onResume() {
+        mDataSource.open();
         super.onResume();
         if (!hasJni) {
             return;
         }
 
         finishAuthentication();   
+    }
+
+    @Override
+    protected void onPause() {
+        mDataSource.close();
+        super.onPause();
     }
 
     public static boolean isValidMntDir(Context context, File newMntDir) {
@@ -391,6 +409,8 @@ public class Cryptonite extends SherlockFragmentActivity
         switch (requestCode) {
         case SelectionMode.MODE_OPEN_ENCFS:
         case SelectionMode.MODE_OPEN_ENCFS_DB:
+        case SelectionMode.MODE_OPEN_DEFAULT:
+        case SelectionMode.MODE_OPEN_DEFAULT_DB:
         case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
         case SelectionMode.MODE_OPEN_CREATE:
             /* file dialog */
@@ -406,8 +426,13 @@ public class Cryptonite extends SherlockFragmentActivity
                         break;
                     case SELECTLOCALENCFS_MODE:
                     case SELECTDBENCFS_MODE:
-                        StorageManager.INSTANCE.setEncFSPath(currentReturnPath
-                                .substring(currentDialogStartPath.length()));
+                        if (requestCode != SelectionMode.MODE_OPEN_DEFAULT_DB) {
+                            StorageManager.INSTANCE.setEncFSPath(currentReturnPath
+                                    .substring(currentDialogStartPath.length()));
+                        } else {
+                            StorageManager.INSTANCE.setEncFSPath(currentReturnPath
+                                    .substring(currentDialogRoot.length()));
+                        }
                         updateDecryptButtons();
                         break;
                     case LOCALEXPORT_MODE:
@@ -517,7 +542,7 @@ public class Cryptonite extends SherlockFragmentActivity
                 prefEdit.putBoolean("dbDecided", true);
                 prefEdit.commit();
                 /* enforce re-authentication */
-                DBInterface.INSTANCE.setDBApi(null);
+                DropboxInterface.INSTANCE.setDBApi(null);
                 if (mLoggedIn) {
                     Toast.makeText(Cryptonite.this,
                             R.string.dropbox_forced_logout,
@@ -547,11 +572,11 @@ public class Cryptonite extends SherlockFragmentActivity
     }
 
     public void finishAuthentication() {
-        if (DBInterface.INSTANCE.getDBApi() != null && 
-                DBInterface.INSTANCE.getDBApi().getSession() != null)
+        if (DropboxInterface.INSTANCE.getDBApi() != null && 
+                DropboxInterface.INSTANCE.getDBApi().getSession() != null)
         {
             if (triedLogin) {
-                AndroidAuthSession session = DBInterface.INSTANCE.getDBApi().getSession();
+                AndroidAuthSession session = DropboxInterface.INSTANCE.getDBApi().getSession();
                 // The next part must be inserted in the onResume() method of the
                 // activity from which session.startAuthentication() was called, so
                 // that Dropbox authentication completes properly.
@@ -566,7 +591,7 @@ public class Cryptonite extends SherlockFragmentActivity
                         TokenPair tokens = session.getAccessTokenPair();
                         storeKeys(tokens.key, tokens.secret);
                         
-                        DBInterface.INSTANCE.clearDBHashMap();
+                        DropboxInterface.INSTANCE.clearDBHashMap();
                         
                         setLoggedIn(true);
                     } catch (IllegalStateException e) {
@@ -580,7 +605,7 @@ public class Cryptonite extends SherlockFragmentActivity
                     }
                 }
             } else {
-                mLoggedIn = DBInterface.INSTANCE.getDBApi().getSession().isLinked();
+                mLoggedIn = DropboxInterface.INSTANCE.getDBApi().getSession().isLinked();
             }
         } else {
             setLoggedIn(false);
@@ -862,9 +887,9 @@ public class Cryptonite extends SherlockFragmentActivity
     
     public void logOut() {
         // Remove credentials from the session
-        if (DBInterface.INSTANCE.getDBApi() != null) {
-            DBInterface.INSTANCE.getDBApi().getSession().unlink();
-                        DBInterface.INSTANCE.clearDBHashMap();
+        if (DropboxInterface.INSTANCE.getDBApi() != null) {
+            DropboxInterface.INSTANCE.getDBApi().getSession().unlink();
+            DropboxInterface.INSTANCE.clearDBHashMap();
         }
         
         // Change UI state to display logged out version
@@ -1021,7 +1046,7 @@ public class Cryptonite extends SherlockFragmentActivity
             session = new AndroidAuthSession(appKeyPair, accessType);
 
         }
-        DBInterface.INSTANCE.setDBApi(new DropboxAPI<AndroidAuthSession>(
+        DropboxInterface.INSTANCE.setDBApi(new DropboxAPI<AndroidAuthSession>(
                 session));
 
         if (authenticate) {
@@ -1031,7 +1056,7 @@ public class Cryptonite extends SherlockFragmentActivity
     }
     
     public void dbAuthenticate() {
-        DBInterface.INSTANCE.getDBApi()
+        DropboxInterface.INSTANCE.getDBApi()
             .getSession().startAuthentication(Cryptonite.this);                
         triedLogin = true;
     }
@@ -1473,6 +1498,22 @@ public class Cryptonite extends SherlockFragmentActivity
         dialog.show();
     }
 
+    public void saveDefault(long storType, long virtual) {
+        String src = StorageManager.INSTANCE.getEncFSStorage().getEncFSPath();
+        String label = src;
+        String target = "";
+        String encfsConfig = "";
+        mDataSource.createVolume(storType, virtual, label, src, target, encfsConfig);
+    }
+    
+    public Volume restoreDefault(long storType, long virtual) {
+        return mDataSource.getVolume(storType, virtual);
+    }
+
+    public boolean hasDefault(long storType, long virtual) {
+        return mDataSource.getVolume(storType, virtual) != null;
+    }
+
     /* this is used to load the 'cryptonite' library on application
      * startup. The library has already been unpacked into
      * /data/data/csh.cryptonite/lib/libcryptonite.so at
@@ -1483,6 +1524,7 @@ public class Cryptonite extends SherlockFragmentActivity
             System.loadLibrary("cryptonite");
             Cryptonite.hasJni = true;
         } catch (java.lang.UnsatisfiedLinkError e) {
+            Log.e(TAG, e.getMessage());
             Cryptonite.hasJni = false;
         }
     }

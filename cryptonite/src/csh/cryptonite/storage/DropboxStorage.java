@@ -28,7 +28,6 @@ import com.dropbox.client2.DropboxAPI.UploadRequest;
 import com.dropbox.client2.exception.DropboxException;
 
 import csh.cryptonite.Cryptonite;
-import csh.cryptonite.DBInterface;
 import csh.cryptonite.DirectorySettings;
 import csh.cryptonite.R;
 import csh.cryptonite.SelectionMode;
@@ -56,7 +55,7 @@ public class DropboxStorage extends Storage {
          * to browse folder */
         String dbPath = srcDir.substring(initRoot.length());
         try {
-            Entry dbEntry = DBInterface.INSTANCE.getDBEntry(dbPath); 
+            Entry dbEntry = DropboxInterface.INSTANCE.getDBEntry(dbPath); 
             if (dbEntry != null) {
                 if (dbEntry.isDir) {
                     if (dbEntry.contents != null) {
@@ -67,7 +66,7 @@ public class DropboxStorage extends Storage {
                                             dbChild.fileName().matches(ENCFS_XML_V7_REGEX)) {
                                         String localEncfsXmlPath = initRoot + dbChild.path;
                                         FileOutputStream fos = new FileOutputStream(localEncfsXmlPath);
-                                        DBInterface.INSTANCE.getDBApi()
+                                        DropboxInterface.INSTANCE.getDBApi()
                                             .getFile(dbChild.path, null, fos, null);
                                         Log.i(Cryptonite.TAG, "Downloaded " + dbChild.fileName() + " to " + localEncfsXmlPath);
                                     }
@@ -116,7 +115,7 @@ public class DropboxStorage extends Storage {
         String dbPath = new File(targetPath).getParent() + "/" + encodedFile.getName();
         boolean fileExists = true;
         try {
-            fileExists = DBInterface.INSTANCE.dbFileExists(dbPath);
+            fileExists = DropboxInterface.INSTANCE.dbFileExists(dbPath);
         } catch (DropboxException e) {
             handleUIToastRequest(e.toString());
             return "";
@@ -139,7 +138,7 @@ public class DropboxStorage extends Storage {
                 String nextDbPath = new File(targetPath).getParent() + "/" + nextEncodedFile.getName();
                 boolean nextFileExists = true;
                 try {
-                    nextFileExists = DBInterface.INSTANCE.dbFileExists(nextDbPath);
+                    nextFileExists = DropboxInterface.INSTANCE.dbFileExists(nextDbPath);
                 } catch (DropboxException e) {
                     handleUIToastRequest(e.toString());
                     break;
@@ -191,7 +190,7 @@ public class DropboxStorage extends Storage {
         String targetPath = encodedPath.substring(browseRoot.getPath().length());
             
         /* rename _de_coded file name if the _en_crypted file exists on Dropbox */
-        UploadEncrypted upload = new UploadEncrypted(activity, DBInterface.INSTANCE.getDBApi(),
+        UploadEncrypted upload = new UploadEncrypted(activity, DropboxInterface.INSTANCE.getDBApi(),
                 new File(targetPath).getParent() + "/",
                 new File(encodedFile.getPath()));
         return upload;
@@ -284,16 +283,16 @@ public class DropboxStorage extends Storage {
         String dbPath = new File(targetPath).getParent() + "/" + new File(path).getName();
         boolean fileExists = true;
         try {
-            fileExists = DBInterface.INSTANCE.dbFileExists(dbPath);
+            fileExists = DropboxInterface.INSTANCE.dbFileExists(dbPath);
         } catch (DropboxException e) {
             handleUIToastRequest(mAppContext.getString(R.string.delete_fail) + ": " + e.toString());
             return false;
         }
         if (fileExists) {
             try {
-                DBInterface.INSTANCE.getDBApi().delete(dbPath);
-                DBInterface.INSTANCE.removeDBHashMapEntry(dbPath);
-                DBInterface.INSTANCE.removeDBHashMapEntry(new File(dbPath).getParent());
+                DropboxInterface.INSTANCE.getDBApi().delete(dbPath);
+                DropboxInterface.INSTANCE.removeDBHashMapEntry(dbPath);
+                DropboxInterface.INSTANCE.removeDBHashMapEntry(new File(dbPath).getParent());
             } catch (DropboxException e) {
                 handleUIToastRequest(mAppContext.getString(R.string.delete_fail) +
                         ": " + e.toString());
@@ -323,7 +322,7 @@ public class DropboxStorage extends Storage {
 
         boolean fileExists = true;
         try {
-            fileExists = DBInterface.INSTANCE.dbFileExists(dbPath);
+            fileExists = DropboxInterface.INSTANCE.dbFileExists(dbPath);
         } catch (DropboxException e) {
             handleUIToastRequest(e.toString());
             return false;
@@ -354,7 +353,7 @@ public class DropboxStorage extends Storage {
             
             FileInputStream fis = new FileInputStream(cacheFile);
             String path = targetPath + cacheFile.getName();
-            UploadRequest request = DBInterface.INSTANCE.getDBApi()
+            UploadRequest request = DropboxInterface.INSTANCE.getDBApi()
                     .putFileOverwriteRequest(path, fis, cacheFile.length(), null);
 
             if (request != null) {
@@ -402,7 +401,7 @@ public class DropboxStorage extends Storage {
 
         try {
 
-            Entry dbEntry = DBInterface.INSTANCE.getDBEntry(encodedPath);
+            Entry dbEntry = DropboxInterface.INSTANCE.getDBEntry(encodedPath);
             
             if (dbEntry != null) {
                 if (dbEntry.isDir && !dbEntry.isDeleted) {
@@ -434,7 +433,7 @@ public class DropboxStorage extends Storage {
     public void mkVisiblePlain(String path, String rootPath) {
         try {
 
-            Entry dbEntry = DBInterface.INSTANCE.getDBEntry(path);
+            Entry dbEntry = DropboxInterface.INSTANCE.getDBEntry(path);
 
             if (dbEntry != null) {
                 if (dbEntry.isDir && !dbEntry.isDeleted) {
@@ -468,7 +467,7 @@ public class DropboxStorage extends Storage {
         String dbPath = new File(targetPath).getParent() + "/" + new File(encodedPath).getName();
         boolean fileExists = true;
         try {
-            fileExists = DBInterface.INSTANCE.dbFileExists(dbPath);
+            fileExists = DropboxInterface.INSTANCE.dbFileExists(dbPath);
         } catch (DropboxException e) {
             handleUIToastRequest(mAppContext.getString(R.string.new_folder_fail) + ": " + e.toString());
             return false;
@@ -478,7 +477,7 @@ public class DropboxStorage extends Storage {
             return false;
         } else {
             try {
-                DBInterface.INSTANCE.getDBApi().createFolder(dbPath);
+                DropboxInterface.INSTANCE.getDBApi().createFolder(dbPath);
             } catch (DropboxException e) {
                 handleUIToastRequest(mAppContext.getString(R.string.new_folder_fail) +
                         ": " + e.toString());
@@ -495,7 +494,7 @@ public class DropboxStorage extends Storage {
         String targetPath = plainPath.substring(browseRoot.getPath().length());
         boolean fileExists = true;
         try {
-            fileExists = DBInterface.INSTANCE.dbFileExists(targetPath);
+            fileExists = DropboxInterface.INSTANCE.dbFileExists(targetPath);
         } catch (DropboxException e) {
             handleUIToastRequest(mAppContext.getString(R.string.new_folder_fail) + ": " + e.toString());
             return false;
@@ -505,7 +504,7 @@ public class DropboxStorage extends Storage {
             return false;
         } else {
             try {
-                DBInterface.INSTANCE.getDBApi().createFolder(targetPath);
+                DropboxInterface.INSTANCE.getDBApi().createFolder(targetPath);
             } catch (DropboxException e) {
                 handleUIToastRequest(mAppContext.getString(R.string.new_folder_fail) +
                         ": " + e.toString());
@@ -514,7 +513,18 @@ public class DropboxStorage extends Storage {
         }
         return true;
     }
-    
+
+    @Override
+    public boolean exists(String plainPath) {
+        boolean fileExists = true;
+        try {
+            fileExists = DropboxInterface.INSTANCE.dbFileExists(plainPath);
+        } catch (DropboxException e) {
+            return false;
+        }
+        return fileExists;
+    }
+
     /** Create an empty file in a local destination directory
      * preserving relative file paths from Dropbox
      * @param dbEntry Dropbox entry
@@ -526,6 +536,10 @@ public class DropboxStorage extends Storage {
         if (dbEntry.isDir) {
             file.mkdirs();
         } else {
+            /* Does the parent exist? */
+            if (!file.getParentFile().exists()) {
+                file.getParentFile().mkdirs();
+            }
             file.createNewFile();
         }
     }
@@ -569,7 +583,7 @@ public class DropboxStorage extends Storage {
 
         /* Download encoded file to cache dir */
         FileOutputStream fos = new FileOutputStream(cachePath);
-        DBInterface.INSTANCE.getDBApi().getFile(encFSDBRoot + srcPath, null, fos, null);
+        DropboxInterface.INSTANCE.getDBApi().getFile(encFSDBRoot + srcPath, null, fos, null);
         fos.close();
         
         return (Cryptonite.jniDecrypt(encFSLocalRoot + srcPath, targetDir, forceReadable) == Cryptonite.jniSuccess());
@@ -593,7 +607,7 @@ public class DropboxStorage extends Storage {
 
         /* Download encoded file to cache dir */
         FileOutputStream fos = new FileOutputStream(cachePath);
-        DBInterface.INSTANCE.getDBApi().getFile(encFSDBRoot + srcPath, null, fos, null);
+        DropboxInterface.INSTANCE.getDBApi().getFile(encFSDBRoot + srcPath, null, fos, null);
         fos.close();
         
         byte[] buf = Cryptonite.jniDecryptToBuffer(encFSLocalRoot + srcPath);
@@ -640,7 +654,7 @@ public class DropboxStorage extends Storage {
         String dbPath = "/" + encodedPath.substring(dbLocalRoot.length()) ;
                 
         /* Find file in Dropbox */
-        Entry dbEntry = DBInterface.INSTANCE.getDBEntry(dbPath);
+        Entry dbEntry = DropboxInterface.INSTANCE.getDBEntry(dbPath);
         if (dbEntry == null) {
             return;
         }

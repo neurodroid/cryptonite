@@ -215,6 +215,7 @@ public class FileDialog extends SherlockFragmentActivity {
         switch (selectionMode) {
         case SelectionMode.MODE_OPEN_CREATE_DB:
         case SelectionMode.MODE_OPEN_ENCFS_DB:
+        case SelectionMode.MODE_OPEN_DEFAULT_DB:
         case SelectionMode.MODE_OPEN_MULTISELECT_DB:
         case SelectionMode.MODE_OPEN_MULTISELECT:
             localFilePickerStorage = false;
@@ -233,6 +234,8 @@ public class FileDialog extends SherlockFragmentActivity {
                     switch (selectionMode) {
                     case SelectionMode.MODE_OPEN_ENCFS:
                     case SelectionMode.MODE_OPEN_ENCFS_DB:
+                    case SelectionMode.MODE_OPEN_DEFAULT:
+                    case SelectionMode.MODE_OPEN_DEFAULT_DB:
                     case SelectionMode.MODE_OPEN_ENCFS_MOUNT:
                         showPasswordDialog();
                         break;
@@ -285,6 +288,8 @@ public class FileDialog extends SherlockFragmentActivity {
         switch (selectionMode) {
         case SelectionMode.MODE_OPEN_ENCFS:
         case SelectionMode.MODE_OPEN_ENCFS_DB:
+        case SelectionMode.MODE_OPEN_DEFAULT:
+        case SelectionMode.MODE_OPEN_DEFAULT_DB:
         case SelectionMode.MODE_OPEN_ENCFS_MOUNT:
         case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
         case SelectionMode.MODE_OPEN_CREATE:
@@ -319,6 +324,13 @@ public class FileDialog extends SherlockFragmentActivity {
             }
             
         });
+
+        switch (selectionMode) {
+        case SelectionMode.MODE_OPEN_DEFAULT:
+        case SelectionMode.MODE_OPEN_DEFAULT_DB:
+            showPasswordDialog();
+            
+        }
     }
 
     @Override
@@ -406,6 +418,7 @@ public class FileDialog extends SherlockFragmentActivity {
         switch (selectionMode) {
         case SelectionMode.MODE_OPEN_CREATE_DB:
         case SelectionMode.MODE_OPEN_ENCFS_DB:
+        case SelectionMode.MODE_OPEN_DEFAULT_DB:
         case SelectionMode.MODE_OPEN_MULTISELECT_DB:
         case SelectionMode.MODE_OPEN_MULTISELECT:
             buildDir(dirPath, rootPath, rootName);
@@ -432,16 +445,7 @@ public class FileDialog extends SherlockFragmentActivity {
         
         VirtualFile f = new VirtualFile(currentPath);
         VirtualFile[] files = f.listFiles();
-        if (files == null) {
-            currentPath = currentRoot;
-            f = new VirtualFile(currentPath);
-            files = f.listFiles();
-            if (files == null) {
-                showToast(R.string.file_list_problem);
-                setResult(RESULT_CANCELED, getIntent());
-                finish();
-            }
-        }
+
         myPath.setText(getText(R.string.location) + ": " + currentRootLabel +
                        currentPathFromRoot);
 
@@ -463,63 +467,61 @@ public class FileDialog extends SherlockFragmentActivity {
         TreeMap<String, String> filesMap = new TreeMap<String, String>();
         TreeMap<String, String> filesPathMap = new TreeMap<String, String>();
 
-        if (files == null) {
-            showToast(R.string.file_list_problem);
-            setResult(RESULT_CANCELED, getIntent());
-            finish();
-        }
+        if (files != null) {
 
-        /* getPath() returns full path including file name */
-        for (VirtualFile file : files) {
-            if (file != null) {
-                if (file.isDirectory()) {
-                    String dirName = file.getName();
-                    dirsMap.put(dirName, dirName);
-                    dirsPathMap.put(dirName, file.getPath());
-                } else {
-                    filesMap.put(file.getName(), file.getName());
-                    filesPathMap.put(file.getName(), file.getPath());
+            /* getPath() returns full path including file name */
+            for (VirtualFile file : files) {
+                if (file != null) {
+                    if (file.isDirectory()) {
+                        String dirName = file.getName();
+                        dirsMap.put(dirName, dirName);
+                        dirsPathMap.put(dirName, file.getPath());
+                    } else {
+                        filesMap.put(file.getName(), file.getName());
+                        filesPathMap.put(file.getName(), file.getPath());
+                    }
                 }
             }
-        }
 
-        item.addAll(dirsMap.tailMap("").values());
-        item.addAll(filesMap.tailMap("").values());
-        pathList.addAll(dirsPathMap.tailMap("").values());
-        pathList.addAll(filesPathMap.tailMap("").values());
+            item.addAll(dirsMap.tailMap("").values());
+            item.addAll(filesMap.tailMap("").values());
+            pathList.addAll(dirsPathMap.tailMap("").values());
+            pathList.addAll(filesPathMap.tailMap("").values());
 
-        for (String dirpath : dirsPathMap.tailMap("").keySet()) {
-            addItem(new VirtualFile(dirsPathMap.tailMap("").get(dirpath)),
-                    R.drawable.ic_launcher_folder);
-        }
+            for (String dirpath : dirsPathMap.tailMap("").keySet()) {
+                addItem(new VirtualFile(dirsPathMap.tailMap("").get(dirpath)),
+                        R.drawable.ic_launcher_folder);
+            }
 
-        for (String filepath : filesPathMap.tailMap("").keySet()) {
-            addItem(new VirtualFile(filesPathMap.tailMap("").get(filepath)),
-                    R.drawable.ic_launcher_file);
-        }
-        
-        ArrayAdapter<HashMap<String, Object>> fileList = 
-                new FileDialogArrayAdapter(this, mList);
-        fileList.notifyDataSetChanged();
-        mListView.setAdapter(fileList);
+            for (String filepath : filesPathMap.tailMap("").keySet()) {
+                addItem(new VirtualFile(filesPathMap.tailMap("").get(filepath)),
+                        R.drawable.ic_launcher_file);
+            }
 
-        switch (selectionMode) {
-        case SelectionMode.MODE_OPEN_ENCFS:
-        case SelectionMode.MODE_OPEN_ENCFS_DB:
-        case SelectionMode.MODE_OPEN_ENCFS_MOUNT:
-        case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
-        case SelectionMode.MODE_OPEN_CREATE:
-        case SelectionMode.MODE_OPEN_CREATE_DB: 
-        case SelectionMode.MODE_OPEN_EXPORT_TARGET:
-        {
-            mListView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
-            break;
-        }
-        default: {
-            mListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
-        }
-        }
+            ArrayAdapter<HashMap<String, Object>> fileList = 
+                    new FileDialogArrayAdapter(this, mList);
+            fileList.notifyDataSetChanged();
+            mListView.setAdapter(fileList);
 
+            switch (selectionMode) {
+            case SelectionMode.MODE_OPEN_ENCFS:
+            case SelectionMode.MODE_OPEN_ENCFS_DB:
+            case SelectionMode.MODE_OPEN_DEFAULT:
+            case SelectionMode.MODE_OPEN_DEFAULT_DB:
+            case SelectionMode.MODE_OPEN_ENCFS_MOUNT:
+            case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
+            case SelectionMode.MODE_OPEN_CREATE:
+            case SelectionMode.MODE_OPEN_CREATE_DB: 
+            case SelectionMode.MODE_OPEN_EXPORT_TARGET:
+            {
+                mListView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+                break;
+            }
+            default: {
+                mListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+            }
+            }
+        }
     }
 
     private void addItem(VirtualFile file, Integer imageId) {
@@ -892,6 +894,8 @@ public class FileDialog extends SherlockFragmentActivity {
                                  break;
                              case SelectionMode.MODE_OPEN_ENCFS:
                              case SelectionMode.MODE_OPEN_ENCFS_DB:
+                             case SelectionMode.MODE_OPEN_DEFAULT:
+                             case SelectionMode.MODE_OPEN_DEFAULT_DB:
                                  ((FileDialog)getActivity()).initEncFS(
                                          ((FileDialog)getActivity()).currentPath);
                                  break;
@@ -1220,7 +1224,13 @@ public class FileDialog extends SherlockFragmentActivity {
                     // StorageManager.INSTANCE.resetEncFSStorage();
                 } else {
                     DirectorySettings.INSTANCE.currentBrowsePath = currentPath;
-                    DirectorySettings.INSTANCE.currentBrowseStartPath = intentStartPath;
+                    switch (selectionMode) {
+                    case SelectionMode.MODE_OPEN_DEFAULT_DB:
+                        DirectorySettings.INSTANCE.currentBrowseStartPath = currentRoot;
+                        break;
+                    default:
+                        DirectorySettings.INSTANCE.currentBrowseStartPath = intentStartPath;
+                    }
                     try {
                         StorageManager.INSTANCE.setEncFSPath(currentPath
                                 .substring(intentStartPath.length()));

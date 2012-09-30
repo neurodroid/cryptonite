@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/local_sv"
+    android:id="@+id/db_sv"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:scrollbars="vertical" >
@@ -12,8 +12,17 @@
         android:orientation="vertical"
         android:stretchColumns="*" >
 
+        <Button
+            android:id="@+id/btnAuthDb"
+            android:layout_width="0dp"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            android:text="@string/dropbox_link"
+            android:typeface="normal" >
+        </Button>
+
         <TextView
-            android:id="@+id/tvBrowseLocal"
+            android:id="@+id/tvBrowseDb"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:text="@string/browse_info"
@@ -22,18 +31,18 @@
         </TextView>
 
         <Button
-            android:id="@+id/btnDecryptLocal"
+            android:id="@+id/btnDecryptDb"
             android:layout_width="0dp"
             android:layout_height="fill_parent"
             android:layout_weight="1"
-            android:text="@string/local_decrypt"
+            android:text="@string/dropbox_decrypt"
             android:typeface="normal" >
         </Button>
 
         <TableRow android:layout_width="wrap_content" >
 
             <Button
-                android:id="@+id/btnBrowseDecryptedLocal"
+                android:id="@+id/btnBrowseDecryptedDb"
                 android:layout_width="0dp"
                 android:layout_height="fill_parent"
                 android:layout_weight="1"
@@ -42,7 +51,7 @@
             </Button>
 
             <Button
-                android:id="@+id/btnForgetDecryptionLocal"
+                android:id="@+id/btnForgetDecryptionDb"
                 android:layout_width="0dp"
                 android:layout_height="fill_parent"
                 android:layout_weight="1"
@@ -50,10 +59,10 @@
                 android:typeface="normal" >
             </Button>
         </TableRow>
-
+        
         <TableRow android:layout_width="wrap_content" >
             <Button
-                android:id="@+id/btnSaveLoadLocal"
+                android:id="@+id/btnSaveLoadDb"
                 android:layout_width="0dp"
                 android:layout_height="fill_parent"
                 android:layout_weight="1"
@@ -63,7 +72,7 @@
         </TableRow>
         
         <TextView
-            android:id="@+id/tvCreateLocal"
+            android:id="@+id/tvCreateDb"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:text="@string/create_info"
@@ -72,57 +81,16 @@
         </TextView>
 
         <Button
-            android:id="@+id/btnCreateLocal"
+            android:id="@+id/btnCreateDb"
             android:layout_width="0dp"
             android:layout_height="fill_parent"
             android:layout_weight="1"
-            android:text="@string/local_create"
+            android:text="@string/dropbox_create"
             android:typeface="normal" >
         </Button>
 
         <TextView
-            android:id="@+id/tvMountInfo"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/mount_info"
-            android:textStyle="bold"
-            android:typeface="normal" >
-        </TextView>
-
-        <TableRow>
-
-            <Button
-                android:id="@+id/btnMount"
-                android:layout_width="0dp"
-                android:layout_height="fill_parent"
-                android:layout_weight="1"
-                android:text="@string/mount"
-                android:typeface="normal" >
-            </Button>
-
-            <Button
-                android:id="@+id/btnViewMount"
-                android:layout_width="0dp"
-                android:layout_height="fill_parent"
-                android:layout_weight="1"
-                android:text="@string/viewmount"
-                android:typeface="normal" >
-            </Button>
-        </TableRow>
-
-        <TableRow android:layout_width="wrap_content" >
-            <Button
-                android:id="@+id/btnSaveLoadMount"
-                android:layout_width="0dp"
-                android:layout_height="fill_parent"
-                android:layout_weight="1"
-                android:text="@string/save"
-                android:typeface="normal" >
-            </Button>
-       </TableRow>
-        
-        <TextView
-            android:id="@+id/tvVersionLocal"
+            android:id="@+id/tvVersionDb"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:textStyle="bold"

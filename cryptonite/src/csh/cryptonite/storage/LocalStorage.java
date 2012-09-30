@@ -222,6 +222,11 @@ public class LocalStorage extends Storage {
         }
         return true;
     }
+
+    @Override
+    public boolean exists(String plainPath) {
+        return new File(plainPath).exists();
+    }
     
     /** Walks a local file tree, copying decrypted files to a local
      * directory.

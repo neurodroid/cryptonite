@@ -97,6 +97,8 @@ public abstract class Storage {
     abstract public boolean mkDirEncrypted(String encodedPath);
 
     abstract public boolean mkDirPlain(String plainPath);
+    
+    abstract public boolean exists(String plainPath);
 
     public String stripStr(String encFSFilePath, String fileRoot, String srcPath) {
         File srcFile = new File(srcPath);
