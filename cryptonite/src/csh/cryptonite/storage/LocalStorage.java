@@ -28,6 +28,7 @@ import csh.cryptonite.DirectorySettings;
 import csh.cryptonite.R;
 import csh.cryptonite.SelectionMode;
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.util.Log;
 
 public class LocalStorage extends Storage {
@@ -225,9 +226,9 @@ public class LocalStorage extends Storage {
 
     @Override
     public boolean exists(String plainPath) {
-        return new File(plainPath).exists();
+        return new File(Environment.getExternalStorageDirectory().getPath() + "/" + plainPath).exists();
     }
-    
+
     /** Walks a local file tree, copying decrypted files to a local
      * directory.
      * 

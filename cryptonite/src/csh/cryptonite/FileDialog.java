@@ -1218,37 +1218,37 @@ public class FileDialog extends SherlockFragmentActivity {
             public void run() {
                 if (StorageManager.INSTANCE.getEncFSStorage() == null) {
                     alertMsg = getString(R.string.internal_error);
-                } else if (!StorageManager.INSTANCE.getEncFSStorage()
-                        .initEncFS(srcDir, currentRoot)) {
-                    alertMsg = getString(R.string.invalid_encfs);
-                    // StorageManager.INSTANCE.resetEncFSStorage();
                 } else {
-                    DirectorySettings.INSTANCE.currentBrowsePath = currentPath;
-                    switch (selectionMode) {
-                    case SelectionMode.MODE_OPEN_DEFAULT_DB:
-                        DirectorySettings.INSTANCE.currentBrowseStartPath = currentRoot;
-                        break;
-                    default:
-                        DirectorySettings.INSTANCE.currentBrowseStartPath = intentStartPath;
-                    }
-                    try {
-                        StorageManager.INSTANCE.setEncFSPath(currentPath
-                                .substring(intentStartPath.length()));
-                    } catch (StringIndexOutOfBoundsException e) {
-                        alertMsg = getString(R.string.decrypt_failure) + 
-                                " currentPath: " + currentPath + 
-                                " intentStartPath: " + intentStartPath;
-                        Log.v(Cryptonite.TAG, alertMsg);
-                    }
-                    Log.i(Cryptonite.TAG, "Dialog root is " + currentPath);
-                    
-                    SharedPreferences prefs = getBaseContext().getSharedPreferences(Cryptonite.ACCOUNT_PREFS_NAME, 0);
-                    if (Cryptonite.jniInit(srcDir, currentPassword, prefs.getBoolean("cb_anykey", false)) != Cryptonite.jniSuccess()) {
-                        Log.v(Cryptonite.TAG, getString(R.string.browse_failed));
-                        alertMsg = getString(R.string.browse_failed);
+                    if (!StorageManager.INSTANCE.getEncFSStorage()
+                            .initEncFS(srcDir, currentRoot)) {
+                        alertMsg = getString(R.string.invalid_encfs);
                         // StorageManager.INSTANCE.resetEncFSStorage();
                     } else {
-                        Log.v(Cryptonite.TAG, "Decoding succeeded");
+                        DirectorySettings.INSTANCE.currentBrowsePath = currentPath;
+                        String referencePath = intentStartPath;
+                        if (selectionMode == SelectionMode.MODE_OPEN_DEFAULT_DB) {
+                            referencePath = currentRoot;
+                        }
+                        DirectorySettings.INSTANCE.currentBrowseStartPath = referencePath;
+                        try {
+                            StorageManager.INSTANCE.setEncFSPath(currentPath
+                                    .substring(referencePath.length()));
+                        } catch (StringIndexOutOfBoundsException e) {
+                            alertMsg = getString(R.string.decrypt_failure) + 
+                                    " currentPath: " + currentPath + 
+                                    " intentStartPath: " + intentStartPath;
+                            Log.v(Cryptonite.TAG, alertMsg);
+                        }
+                        Log.i(Cryptonite.TAG, "Dialog root is " + currentPath);
+
+                        SharedPreferences prefs = getBaseContext().getSharedPreferences(Cryptonite.ACCOUNT_PREFS_NAME, 0);
+                        if (Cryptonite.jniInit(srcDir, currentPassword, prefs.getBoolean("cb_anykey", false)) != Cryptonite.jniSuccess()) {
+                            Log.v(Cryptonite.TAG, getString(R.string.browse_failed));
+                            alertMsg = getString(R.string.browse_failed);
+                            // StorageManager.INSTANCE.resetEncFSStorage();
+                        } else {
+                            Log.v(Cryptonite.TAG, "Decoding succeeded");
+                        }
                     }
                 }
                 runOnUiThread(new Runnable() {
