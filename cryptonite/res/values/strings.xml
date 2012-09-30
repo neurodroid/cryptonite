@@ -123,6 +123,9 @@
     <string name="default_restore">Restore default</string>
     <string name="default_save">Save as default</string>
     <string name="default_missing">Couldn\'t find default folder</string>
+    <string name="default_searching">Looking for default folder&#8230;</string>
+    <string name="config_notfound">Couldn\'t find EncFS config file</string>
+
     <!-- Terminal -->
     <string name="term_info">Run EncFS and TrueCrypt in terminal</string>
     <string name="term_prompt">Start terminal</string>
@@ -173,6 +176,8 @@
     <string name="select_create_short">Use current folder</string>
     <string name="select_upload">Select file to upload</string>
     <string name="select_upload_short">Upload selected file</string>
+    <string name="select_config">Select config file</string>
+    <string name="select_config_short">Use selected config file</string>
     <string name="encfs_root">EncFS root</string>
     <string name="fb_name">File Browser</string>
     <string name="nnew">New</string>

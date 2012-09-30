@@ -96,6 +96,7 @@ public class Cryptonite extends SherlockFragmentActivity
         SELECTDBEXPORT_MODE=7, DBEXPORT_MODE=8, SELECTLOCALUPLOAD_MODE=9, SELECTDBUPLOAD_MODE=10;
     public static final int RESULT_RETRY = 1;
     public static final int RESULT_ERROR = 2;
+    public static final int RESULT_NOCONFIG = 3;
     
     private static final int DIRPICK_MODE=0;
     public static final int FILEPICK_MODE=1;
@@ -1092,9 +1093,7 @@ public class Cryptonite extends SherlockFragmentActivity
             return downloadDir;
         }*/
     }
-    
 
-    
     public static int hasExtterm(Context context) {
         ComponentName termComp = new ComponentName("jackpal.androidterm", "jackpal.androidterm.Term");
         try {
@@ -1511,7 +1510,8 @@ public class Cryptonite extends SherlockFragmentActivity
     }
 
     public boolean hasDefault(long storType, long virtual) {
-        return mDataSource.getVolume(storType, virtual) != null;
+        boolean ret = mDataSource.getVolume(storType, virtual) != null; 
+        return ret;
     }
 
     /* this is used to load the 'cryptonite' library on application

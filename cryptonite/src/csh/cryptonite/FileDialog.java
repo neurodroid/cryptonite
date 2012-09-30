@@ -57,6 +57,7 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 
 import android.util.Log;
 import android.view.ContextMenu;
@@ -110,6 +111,7 @@ public class FileDialog extends SherlockFragmentActivity {
     private String currentRootLabel = ROOT;
     private String alertMsg = "";
     private boolean alert = false;
+    private int alertCode;
     private List<String> pathList = null;
     private TextView myPath;
     private ArrayList<HashMap<String, Object>> mList;
@@ -150,6 +152,9 @@ public class FileDialog extends SherlockFragmentActivity {
 
         myPath = (TextView) findViewById(R.id.path);
 
+        String label = getIntent().getStringExtra(LABEL);
+        this.setTitle(label);
+        
         inputManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
 
         selectionMode = getIntent().getIntExtra(SELECTION_MODE, SelectionMode.MODE_OPEN_ENCFS);
@@ -226,7 +231,8 @@ public class FileDialog extends SherlockFragmentActivity {
 
         String buttonLabel = getIntent().getStringExtra(BUTTON_LABEL);
         selectButton = (Button) findViewById(R.id.fdButtonSelect);
-        selectButton.setEnabled(selectionMode != SelectionMode.MODE_OPEN_UPLOAD_SOURCE);
+        selectButton.setEnabled(selectionMode != SelectionMode.MODE_OPEN_UPLOAD_SOURCE && 
+                selectionMode != SelectionMode.MODE_OPEN_SELECT_CONFIG);
         selectButton.setText(buttonLabel);
         selectButton.setOnClickListener(new OnClickListener() {
 
@@ -237,7 +243,22 @@ public class FileDialog extends SherlockFragmentActivity {
                     case SelectionMode.MODE_OPEN_DEFAULT:
                     case SelectionMode.MODE_OPEN_DEFAULT_DB:
                     case SelectionMode.MODE_OPEN_ENCFS_MOUNT:
-                        showPasswordDialog();
+                        String configFile = currentPath + "/" + Storage.ENCFS_XML_CURRENT;
+                        if (!new File(configFile).exists()) {
+                            Intent intent = new Intent(getBaseContext(), FileDialog.class);
+                            intent.putExtra(FileDialog.CURRENT_ROOT, Environment.getExternalStorageDirectory().getPath());
+                            intent.putExtra(FileDialog.CURRENT_ROOT_NAME, Environment.getExternalStorageDirectory().getPath());
+                            intent.putExtra(FileDialog.BUTTON_LABEL, getString(R.string.select_config_short));
+                            intent.putExtra(FileDialog.START_PATH, Environment.getExternalStorageDirectory().getPath());
+                            intent.putExtra(FileDialog.CURRENT_UPLOAD_TARGET_PATH, currentUploadTargetPath);
+                            intent.putExtra(FileDialog.CURRENT_EXPORT_PATH_LIST, new String[0]);
+                            intent.putExtra(FileDialog.ENCFS_BROWSE_ROOT, "");
+                            intent.putExtra(FileDialog.LABEL, R.string.select_config);
+                            intent.putExtra(FileDialog.SELECTION_MODE, SelectionMode.MODE_OPEN_SELECT_CONFIG);
+                            startActivityForResult(intent, SelectionMode.MODE_OPEN_SELECT_CONFIG);                            
+                        } else {
+                            showPasswordDialog();
+                        }
                         break;
                     case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
                         if (selectedFile != null && selectedFile.getPath() != null) {
@@ -250,6 +271,20 @@ public class FileDialog extends SherlockFragmentActivity {
                             }
                         }
                         break;
+                    case SelectionMode.MODE_OPEN_SELECT_CONFIG:
+                        if (currentPath != null) {
+                            getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
+                            getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
+                            getIntent().putExtra(RESULT_EXPORT_PATHS, currentPath);
+                            if (selectedFile != null) {
+                                getIntent().putExtra(RESULT_SELECTED_FILE, selectedFile.getPath());
+                            } else {
+                                getIntent().putExtra(RESULT_SELECTED_FILE, (String)null);
+                            }
+                            setResult(RESULT_OK, getIntent());
+                            finish();
+                        }
+                         break;
                     case SelectionMode.MODE_OPEN_CREATE:
                     case SelectionMode.MODE_OPEN_CREATE_DB:
                         if (currentPath != null) {
@@ -292,6 +327,7 @@ public class FileDialog extends SherlockFragmentActivity {
         case SelectionMode.MODE_OPEN_DEFAULT_DB:
         case SelectionMode.MODE_OPEN_ENCFS_MOUNT:
         case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
+        case SelectionMode.MODE_OPEN_SELECT_CONFIG:            
         case SelectionMode.MODE_OPEN_CREATE:
         case SelectionMode.MODE_OPEN_CREATE_DB:
         case SelectionMode.MODE_OPEN_EXPORT_TARGET:
@@ -306,8 +342,6 @@ public class FileDialog extends SherlockFragmentActivity {
         } else {
             getDir(currentRoot, currentRoot, currentRootLabel);
         }
-        String label = getIntent().getStringExtra(LABEL);
-        this.setTitle(label);
         switch (selectionMode) {
         case SelectionMode.MODE_OPEN_MULTISELECT:
         case SelectionMode.MODE_OPEN_MULTISELECT_DB:
@@ -409,6 +443,24 @@ public class FileDialog extends SherlockFragmentActivity {
         super.onPause();
     }
 
+    /** Called upon exit from other activities */
+    public synchronized void onActivityResult(final int requestCode,
+            int resultCode, final Intent data) 
+    {
+
+        switch (requestCode) {
+        case SelectionMode.MODE_OPEN_SELECT_CONFIG:
+            /* file dialog */
+            if (resultCode == Activity.RESULT_OK && data != null) {
+                String configPath = data.getStringExtra(FileDialog.RESULT_SELECTED_FILE);
+                /* TODO: Use config path */
+                if (configPath != null ) {
+                    showPasswordDialog();
+                }
+            }
+        }
+    }
+    
     private void getDir(String dirPath, String rootPath, String rootName) {
 
         boolean useAutoSelection = dirPath.length() < currentPath.length();
@@ -510,6 +562,7 @@ public class FileDialog extends SherlockFragmentActivity {
             case SelectionMode.MODE_OPEN_DEFAULT_DB:
             case SelectionMode.MODE_OPEN_ENCFS_MOUNT:
             case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
+            case SelectionMode.MODE_OPEN_SELECT_CONFIG:
             case SelectionMode.MODE_OPEN_CREATE:
             case SelectionMode.MODE_OPEN_CREATE_DB: 
             case SelectionMode.MODE_OPEN_EXPORT_TARGET:
@@ -728,6 +781,7 @@ public class FileDialog extends SherlockFragmentActivity {
         if (file.isDirectory()) {
             switch (selectionMode) {
             case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
+            case SelectionMode.MODE_OPEN_SELECT_CONFIG:
                 selectButton.setEnabled(false);
                 break;
             default:
@@ -1212,23 +1266,26 @@ public class FileDialog extends SherlockFragmentActivity {
      */
     private void initEncFS(final String srcDir) {
         alertMsg = "";
+        alertCode = Cryptonite.RESULT_OK;
 
         ProgressDialogFragment.showDialog(this, R.string.running_encfs, "initEncFS");
         new Thread(new Runnable() {
             public void run() {
                 if (StorageManager.INSTANCE.getEncFSStorage() == null) {
                     alertMsg = getString(R.string.internal_error);
+                    alertCode = Cryptonite.RESULT_RETRY;
                 } else {
+                    String referencePath = intentStartPath;
+                    if (selectionMode == SelectionMode.MODE_OPEN_DEFAULT_DB) {
+                        referencePath = currentRoot;
+                    }
                     if (!StorageManager.INSTANCE.getEncFSStorage()
                             .initEncFS(srcDir, currentRoot)) {
                         alertMsg = getString(R.string.invalid_encfs);
+                        alertCode = Cryptonite.RESULT_RETRY;
                         // StorageManager.INSTANCE.resetEncFSStorage();
                     } else {
                         DirectorySettings.INSTANCE.currentBrowsePath = currentPath;
-                        String referencePath = intentStartPath;
-                        if (selectionMode == SelectionMode.MODE_OPEN_DEFAULT_DB) {
-                            referencePath = currentRoot;
-                        }
                         DirectorySettings.INSTANCE.currentBrowseStartPath = referencePath;
                         try {
                             StorageManager.INSTANCE.setEncFSPath(currentPath
@@ -1237,6 +1294,7 @@ public class FileDialog extends SherlockFragmentActivity {
                             alertMsg = getString(R.string.decrypt_failure) + 
                                     " currentPath: " + currentPath + 
                                     " intentStartPath: " + intentStartPath;
+                            alertCode = Cryptonite.RESULT_RETRY;
                             Log.v(Cryptonite.TAG, alertMsg);
                         }
                         Log.i(Cryptonite.TAG, "Dialog root is " + currentPath);
@@ -1245,6 +1303,7 @@ public class FileDialog extends SherlockFragmentActivity {
                         if (Cryptonite.jniInit(srcDir, currentPassword, prefs.getBoolean("cb_anykey", false)) != Cryptonite.jniSuccess()) {
                             Log.v(Cryptonite.TAG, getString(R.string.browse_failed));
                             alertMsg = getString(R.string.browse_failed);
+                            alertCode = Cryptonite.RESULT_RETRY;
                             // StorageManager.INSTANCE.resetEncFSStorage();
                         } else {
                             Log.v(Cryptonite.TAG, "Decoding succeeded");
@@ -1255,13 +1314,13 @@ public class FileDialog extends SherlockFragmentActivity {
                     public void run() {
                         ProgressDialogFragment.dismissDialog(FileDialog.this, "initEncFS");
                         nullPassword();
-                        if (alertMsg.length() != 0) {
+                        if (alertCode != Cryptonite.RESULT_OK) {
                             showToast(alertMsg);
                             getIntent().putExtra(RESULT_OPEN_PATH, (String)null);
                             getIntent().putExtra(RESULT_UPLOAD_PATH, (String)null);
                             getIntent().putExtra(RESULT_EXPORT_PATHS, currentPath);
                             getIntent().putExtra(RESULT_SELECTED_FILE, (String)null);
-                            setResult(Cryptonite.RESULT_RETRY, getIntent());
+                            setResult(alertCode, getIntent());
                             finish();            
                         } else {
                             showToast(R.string.encfs_success);

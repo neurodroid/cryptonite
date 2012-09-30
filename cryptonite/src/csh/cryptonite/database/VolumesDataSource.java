@@ -69,13 +69,16 @@ public class VolumesDataSource {
                 allColumns, CryptoniteSQLiteOpenHelper.COLUMN_STORTYPE + " = " + storType
                 + " AND " + CryptoniteSQLiteOpenHelper.COLUMN_MOUNTTYPE + " = " + mountType, null,
                 null, null, null);
-        if (cursor.isAfterLast()) {
-            return null;
-        }
         cursor.moveToFirst();
-        Volume volume = cursorToVolume(cursor);
-        cursor.close();
-        return volume;        
+        int count = cursor.getCount();
+        if (count == 0) {
+            cursor.close();
+            return null;
+        } else {
+            Volume volume = cursorToVolume(cursor);
+            cursor.close();
+            return volume;
+        }
     }
 
     public void deleteVolume(Volume volume) {

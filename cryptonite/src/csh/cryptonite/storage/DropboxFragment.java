@@ -72,13 +72,19 @@ public class DropboxFragment extends StorageFragment {
     public void updateDecryptButtons() {
         super.updateDecryptButtons();
         if (buttonDecrypt != null) {
-            buttonDecrypt.setEnabled(mAct.mLoggedIn);
+            if (buttonDecrypt.isEnabled()) {
+                buttonDecrypt.setEnabled(mAct.mLoggedIn);
+            }
         }
         if (buttonCreate != null) {
-            buttonCreate.setEnabled(mAct.mLoggedIn);
+            if (buttonCreate.isEnabled()) {
+                buttonCreate.setEnabled(mAct.mLoggedIn);
+            }
         }
         if (buttonSaveLoad != null) {
-            buttonSaveLoad.setEnabled(mAct.mLoggedIn);
+            if (buttonSaveLoad.isEnabled()) {
+                buttonSaveLoad.setEnabled(mAct.mLoggedIn);
+            }
         }
         updateLoginButtons();
     }

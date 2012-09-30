@@ -13,6 +13,7 @@ import com.actionbarsherlock.app.SherlockFragment;
 
 import csh.cryptonite.Cryptonite;
 import csh.cryptonite.DirectorySettings;
+import csh.cryptonite.ProgressDialogFragment;
 import csh.cryptonite.R;
 import csh.cryptonite.database.Volume;
 
@@ -81,20 +82,31 @@ public abstract class StorageFragment extends SherlockFragment {
                     if (Cryptonite.jniVolumeLoaded() == Cryptonite.jniSuccess()) {
                         mAct.saveDefault(storageType, Volume.VIRTUAL);
                     } else {
-                        Volume volume = mAct.restoreDefault(storageType, Volume.VIRTUAL);
+                        final Volume volume = mAct.restoreDefault(storageType, Volume.VIRTUAL);
                         StorageManager.INSTANCE.initEncFSStorage(mAct, storageType);
-                        if (!StorageManager.INSTANCE.getEncFSStorage().exists(volume.getSource())) {
-                            Toast.makeText(mAct, 
-                                    getString(R.string.default_missing) + " (" + volume.getSource() + ")", 
-                                    Toast.LENGTH_LONG).show();
-                            return;
-                        }
-                        mAct.opMode = opMode;
-                        mAct.currentDialogLabel = getString(R.string.select_enc);
-                        mAct.currentDialogButtonLabel = getString(
-                                R.string.select_enc_short);
-                        mAct.currentDialogMode = dialogModeDefault;
-                        openEncFSVolumeDefault(volume);
+                        ProgressDialogFragment.showDialog(mAct, R.string.default_searching, "searchDefault");
+                        new Thread(new Runnable(){
+                            public void run(){
+                                final boolean defaultExists = StorageManager.INSTANCE.getEncFSStorage().exists(volume.getSource());
+                                mAct.runOnUiThread(new Runnable(){
+                                    public void run() {
+                                        ProgressDialogFragment.dismissDialog(mAct, "searchDefault");
+                                        if (defaultExists) {
+                                            mAct.opMode = opMode;
+                                            mAct.currentDialogLabel = getString(R.string.select_enc);
+                                            mAct.currentDialogButtonLabel = getString(
+                                                    R.string.select_enc_short);
+                                            mAct.currentDialogMode = dialogModeDefault;
+                                            openEncFSVolumeDefault(volume);
+                                        } else {
+                                            Toast.makeText(mAct, 
+                                                    getString(R.string.default_missing) + " (" + volume.getSource() + ")", 
+                                                    Toast.LENGTH_LONG).show();   
+                                        }
+                                    }
+                                });
+                            }
+                        }).start();                        
                     }
                 }});
 
