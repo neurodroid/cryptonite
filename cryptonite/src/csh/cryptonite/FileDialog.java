@@ -1374,10 +1374,12 @@ public class FileDialog extends SherlockFragmentActivity {
      */
     private void mountEncFS(final String srcDir) {
         if (currentConfigPath == null) {
-            if (Cryptonite.jniIsValidEncFS(srcDir) != Cryptonite.jniSuccess()) {
-                showToast(R.string.invalid_encfs);
-                Log.v(Cryptonite.TAG, "Invalid EncFS");
-                return;
+            if (currentConfigPath.length() > 0) {
+                if (Cryptonite.jniIsValidEncFS(srcDir) != Cryptonite.jniSuccess()) {
+                    showToast(R.string.invalid_encfs);
+                    Log.v(Cryptonite.TAG, "Invalid EncFS");
+                    return;
+                }
             }
         }
         if (!Cryptonite.isValidMntDir(this, new File(DirectorySettings.INSTANCE.mntDir), true)) {
@@ -1394,11 +1396,14 @@ public class FileDialog extends SherlockFragmentActivity {
                 MountManager.INSTANCE.setEncFSPath(currentPath
                         .substring(intentStartPath.length()));
                 String configOverride = "";
+                MountManager.INSTANCE.setEncFSConfigPath("");
                 if (currentConfigPath != null) {
-                    MountManager.INSTANCE.setEncFSConfigPath(currentConfigPath);
-                    configOverride = "--config=" + MountManager.INSTANCE.getEncFSConfigPath();
-                    currentConfigPath = null;
+                    if (currentConfigPath.length() > 0) {
+                        MountManager.INSTANCE.setEncFSConfigPath(currentConfigPath);
+                        configOverride = "--config=" + MountManager.INSTANCE.getEncFSConfigPath();
+                    }
                 }
+                currentConfigPath = null;
                 
                 String[] cmdlist = { DirectorySettings.INSTANCE.encFSBin, configOverride,
                         "--public", prefs.getBoolean("cb_anykey", false) ? "--anykey" : "", "--stdinpass", "\"" + srcDir + "\"",
