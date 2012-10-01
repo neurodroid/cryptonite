@@ -50,7 +50,10 @@ public class DropboxStorage extends Storage {
     }
     
     @Override
-    public boolean initEncFS(String srcDir, String initRoot) {
+    public boolean initEncFS(String srcDir, String initRoot, String configPath) {
+        if (configPath != null) {
+            return true;
+        }
         /* Download encfs*.xml from Dropbox 
          * to browse folder */
         String dbPath = srcDir.substring(initRoot.length());

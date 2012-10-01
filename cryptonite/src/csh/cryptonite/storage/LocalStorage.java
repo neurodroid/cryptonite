@@ -45,7 +45,10 @@ public class LocalStorage extends Storage {
     }
 
     @Override
-    public boolean initEncFS(String srcDir, String initRoot) {
+    public boolean initEncFS(String srcDir, String initRoot, String configPath) {
+        if (configPath != null) {
+            return true;
+        }
         if (Cryptonite.jniIsValidEncFS(srcDir) != Cryptonite.jniSuccess()) {
             handleUIToastRequest(R.string.invalid_encfs);
             Log.e(Cryptonite.TAG, mAppContext.getString(R.string.invalid_encfs));

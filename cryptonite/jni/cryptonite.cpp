@@ -421,13 +421,14 @@ static int exportFiles(const shared_ptr<EncFS_Root> &rootInfo,
     return traverseDirs(rootInfo, volumeDir, destDir, decodedNames);
 }
 
-static RootPtr initRootInfo(const std::string& rootDir, const std::string& password, bool useAnyKey)
+static RootPtr initRootInfo(const std::string& rootDir, const std::string& password, bool useAnyKey, const std::string& configOverride)
 {
     RootPtr result;
     shared_ptr<EncFS_Opts> opts( new EncFS_Opts() );
     opts->createIfNotFound = false;
     opts->checkKey = !useAnyKey;
     opts->password.assign(password);
+    opts->configOverride.assign(configOverride);
     opts->rootDir.assign(rootDir);
     if(checkDir( opts->rootDir )) {
         LOGI((std::string("Initialising file system with root ") + rootDir).c_str());
@@ -466,11 +467,13 @@ extern "C" {
     JNIEXPORT jint JNICALL
     Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv * env, jobject thiz,
                                              jstring srcdir, jstring destdir,
-                                             jstring password, jboolean useAnyKey);
+                                             jstring password, jboolean useAnyKey,
+                                             jstring configOverride);
 
     JNIEXPORT jint JNICALL
     Java_csh_cryptonite_Cryptonite_jniInit(JNIEnv* env, jobject thiz,
-                                           jstring srcdir, jstring password, jboolean useAnyKey);
+                                           jstring srcdir, jstring password, jboolean useAnyKey,
+                                           jstring configOverride);
 
     JNIEXPORT jint JNICALL
     Java_csh_cryptonite_Cryptonite_jniCreate(JNIEnv* env, jobject thiz,
@@ -690,7 +693,7 @@ JNIEXPORT jint JNICALL Java_csh_cryptonite_Cryptonite_jniResetVolume(JNIEnv * en
     return checkGRoot() == EXIT_FAILURE;
 }
 
-int setupRootDir(JNIEnv* env, jstring srcdir, jstring password, jboolean useAnyKey) {
+int setupRootDir(JNIEnv* env, jstring srcdir, jstring password, jboolean useAnyKey, jstring configOverride) {
 
     int pw_len = (int)env->GetStringLength(password);
     if (pw_len  == 0) {
@@ -699,12 +702,15 @@ int setupRootDir(JNIEnv* env, jstring srcdir, jstring password, jboolean useAnyK
 
     jniStringManager msrcdir(env, srcdir);
     jniStringManager mpassword(env, password);
+    jniStringManager mconfigoverride(env, configOverride);
 
-    if (isValidEncFS(msrcdir.str()) != EXIT_SUCCESS) {
+    if (mconfigoverride.str().empty() &&
+        isValidEncFS(msrcdir.str()) != EXIT_SUCCESS)
+    {
         LOGE("EncFS root directory is not valid");
         return EXIT_FAILURE;
     }
-    gRootInfo = initRootInfo(msrcdir.str(), mpassword.str(), useAnyKey);
+    gRootInfo = initRootInfo(msrcdir.str(), mpassword.str(), useAnyKey, mconfigoverride.str());
 
     /* clear password copy */
     mpassword.release();
@@ -713,9 +719,11 @@ int setupRootDir(JNIEnv* env, jstring srcdir, jstring password, jboolean useAnyK
 }
 
 JNIEXPORT jint JNICALL
-Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv* env, jobject thiz, jstring srcdir, jstring destdir, jstring password, jboolean useAnyKey)
+Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv* env, jobject thiz,
+        jstring srcdir, jstring destdir, jstring password,
+        jboolean useAnyKey, jstring configOverride)
 {
-    int res = setupRootDir(env, srcdir, password, useAnyKey);
+    int res = setupRootDir(env, srcdir, password, useAnyKey, configOverride);
     if (res != EXIT_SUCCESS) {
         return res;
     }
@@ -732,11 +740,12 @@ Java_csh_cryptonite_Cryptonite_jniBrowse(JNIEnv* env, jobject thiz, jstring srcd
     return res;
 }
 
-
 JNIEXPORT jint JNICALL
-Java_csh_cryptonite_Cryptonite_jniInit(JNIEnv* env, jobject thiz, jstring srcdir, jstring password, jboolean useAnyKey)
+Java_csh_cryptonite_Cryptonite_jniInit(JNIEnv* env, jobject thiz,
+        jstring srcdir, jstring password,
+        jboolean useAnyKey, jstring configOverride)
 {
-    return setupRootDir(env, srcdir, password, useAnyKey);
+    return setupRootDir(env, srcdir, password, useAnyKey, configOverride);
 }
 
 JNIEXPORT jint JNICALL

@@ -257,6 +257,21 @@ ConfigType readConfig( const string &rootDir, EncfsConfig &config )
   return Config_None;
 }
 
+#ifdef ANDROID
+ConfigType readConfig_override(const shared_ptr<EncFS_Opts> &opts,
+    const boost::shared_ptr<EncFSConfig> &config )
+{
+  ConfigType type = Config_None;
+  if(!opts->configOverride.empty()) {
+    if( fileExists( opts->configOverride.c_str() ) )
+      type = readConfig_load( &ConfigFileMapping[0], opts->configOverride.c_str(), config);
+  } else {
+    type = readConfig( opts->rootDir, config );
+  }
+  return type;
+}
+#endif
+
 // Read a boost::serialization config file using an Xml reader..
 bool readV6Config( const char *configFile, 
     EncfsConfig &cfg, ConfigInfo *info)
@@ -1595,7 +1610,11 @@ RootPtr initFS( EncFS_Context *ctx, const shared_ptr<EncFS_Opts> &opts )
   RootPtr rootInfo;
   EncfsConfig config;
 
+#ifdef ANDROID
+  if(readConfig_override( opts, config ) != Config_None)
+#else
   if(readConfig( opts->rootDir, config ) != Config_None)
+#endif
   {
     if(opts->reverseEncryption)
     {

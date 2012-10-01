@@ -1438,8 +1438,9 @@ public class Cryptonite extends SherlockFragmentActivity
     public static native int     jniIsValidEncFS(String srcDir);
     public static native int jniVolumeLoaded();
     public static native int jniResetVolume();
-    public native int     jniBrowse(String srcDir, String destDir, String password, boolean useAnyKey);
-    public static native int jniInit(String srcDir, String password, boolean useAnyKey);
+    public native int     jniBrowse(String srcDir, String destDir, String password, boolean useAnyKey,
+            String configOverride);
+    public static native int jniInit(String srcDir, String password, boolean useAnyKey, String configOverride);
     public static native int jniCreate(String srcDir, String password, int config);
     public native int     jniExport(String[] exportPaths, String exportRoot, String destDir);
     public static native int jniDecrypt(String encodedName, String destDir, boolean forceReadable);

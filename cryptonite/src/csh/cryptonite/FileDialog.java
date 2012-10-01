@@ -139,6 +139,8 @@ public class FileDialog extends SherlockFragmentActivity {
     private boolean localFilePickerStorage;
 
     private ListView mListView;
+    private boolean delayedPasswordDialog;
+    private String configPath;
 
     /** Called when the activity is first created. */
     @Override
@@ -159,6 +161,9 @@ public class FileDialog extends SherlockFragmentActivity {
 
         selectionMode = getIntent().getIntExtra(SELECTION_MODE, SelectionMode.MODE_OPEN_ENCFS);
 
+        delayedPasswordDialog = false;
+        configPath = null;
+        
         currentRoot = getIntent().getStringExtra(CURRENT_ROOT);
         if (currentRoot == null) {
             currentRoot = ROOT;
@@ -436,6 +441,10 @@ public class FileDialog extends SherlockFragmentActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (delayedPasswordDialog) {
+            delayedPasswordDialog = false;
+            showPasswordDialog();
+        }
     }
 
     @Override
@@ -447,15 +456,14 @@ public class FileDialog extends SherlockFragmentActivity {
     public synchronized void onActivityResult(final int requestCode,
             int resultCode, final Intent data) 
     {
-
         switch (requestCode) {
         case SelectionMode.MODE_OPEN_SELECT_CONFIG:
-            /* file dialog */
             if (resultCode == Activity.RESULT_OK && data != null) {
-                String configPath = data.getStringExtra(FileDialog.RESULT_SELECTED_FILE);
+                configPath = data.getStringExtra(FileDialog.RESULT_SELECTED_FILE);
                 /* TODO: Use config path */
                 if (configPath != null ) {
-                    showPasswordDialog();
+                    /* This will crash if called here; delay until onResume() */
+                    delayedPasswordDialog = true;
                 }
             }
         }
@@ -1280,7 +1288,7 @@ public class FileDialog extends SherlockFragmentActivity {
                         referencePath = currentRoot;
                     }
                     if (!StorageManager.INSTANCE.getEncFSStorage()
-                            .initEncFS(srcDir, currentRoot)) {
+                            .initEncFS(srcDir, currentRoot, configPath)) {
                         alertMsg = getString(R.string.invalid_encfs);
                         alertCode = Cryptonite.RESULT_RETRY;
                         // StorageManager.INSTANCE.resetEncFSStorage();
@@ -1300,7 +1308,11 @@ public class FileDialog extends SherlockFragmentActivity {
                         Log.i(Cryptonite.TAG, "Dialog root is " + currentPath);
 
                         SharedPreferences prefs = getBaseContext().getSharedPreferences(Cryptonite.ACCOUNT_PREFS_NAME, 0);
-                        if (Cryptonite.jniInit(srcDir, currentPassword, prefs.getBoolean("cb_anykey", false)) != Cryptonite.jniSuccess()) {
+                        String configPathArg = "";
+                        if (configPath != null) {
+                            configPathArg = configPath;
+                        }
+                        if (Cryptonite.jniInit(srcDir, currentPassword, prefs.getBoolean("cb_anykey", false), configPathArg) != Cryptonite.jniSuccess()) {
                             Log.v(Cryptonite.TAG, getString(R.string.browse_failed));
                             alertMsg = getString(R.string.browse_failed);
                             alertCode = Cryptonite.RESULT_RETRY;
@@ -1308,6 +1320,7 @@ public class FileDialog extends SherlockFragmentActivity {
                         } else {
                             Log.v(Cryptonite.TAG, "Decoding succeeded");
                         }
+                        configPath = null;
                     }
                 }
                 runOnUiThread(new Runnable() {

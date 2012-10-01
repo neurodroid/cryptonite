@@ -93,7 +93,29 @@
  	else
 --- ./encfs/FileUtils.cpp	2010-11-04 03:28:54.000000000 +0000
 +++ ./encfs/FileUtils.cpp	2012-02-20 19:14:27.000000000 +0000
-@@ -1045,6 +1045,38 @@
+@@ -391,6 +391,21 @@
+     return Config_None;
+ }
+ 
++#ifdef ANDROID
++ConfigType readConfig_override(const shared_ptr<EncFS_Opts> &opts,
++	const boost::shared_ptr<EncFSConfig> &config )
++{
++    ConfigType type = Config_None;
++    if(!opts->configOverride.empty()) {
++	if( fileExists( opts->configOverride.c_str() ) )
++	    type = readConfig_load( &ConfigFileMapping[0], opts->configOverride.c_str(), config);
++    } else {
++        type = readConfig( opts->rootDir, config );
++    }
++    return type;
++}
++#endif
++
+ bool readV6Config( const char *configFile, 
+         const boost::shared_ptr<EncFSConfig> &config,
+ 	ConfigInfo *info)
+@@ -1045,6 +1060,38 @@
  	chainedIV = true;
  	externalIV = true;
          desiredKDFDuration = ParanoiaKDFDuration;
@@ -132,16 +154,7 @@
      } else if(configMode == Config_Standard || answer[0] != 'x')
      {
  	// xgroup(setup)
-@@ -1068,7 +1100,7 @@
- 	    chainedIV = true;
- 	}
-     }
--
-+    
-     if(answer[0] == 'x' || alg.name.empty())
-     {
- 	if(answer[0] != 'x')
-@@ -1178,6 +1210,11 @@
+@@ -1178,6 +1225,11 @@
      // get user key and use it to encode volume key
      CipherKey userKey;
      rDebug( "useStdin: %i", useStdin );
@@ -153,7 +166,20 @@
      if(useStdin)
          userKey = config->getUserKey( useStdin );
      else if(!passwordProgram.empty())
-@@ -1615,6 +1652,11 @@
+@@ -1584,8 +1636,11 @@
+ {
+     RootPtr rootInfo;
+     boost::shared_ptr<EncFSConfig> config(new EncFSConfig);
+-
++#ifdef ANDROID
++    if(readConfig_override( opts, config ) != Config_None)
++#else
+     if(readConfig( opts->rootDir, config ) != Config_None)
++#endif
+     {
+ 	if(opts->reverseEncryption)
+ 	{
+@@ -1615,6 +1670,11 @@
  	// get user key
  	CipherKey userKey;
  
@@ -179,13 +205,14 @@
  };
  
  struct EncFS_Opts
-@@ -72,7 +77,10 @@
+@@ -72,7 +77,11 @@
  
      std::string passwordProgram; // path to password program (or empty)
      bool useStdin; // read password from stdin rather then prompting
 -
 +#ifdef ANDROID
 +    std::string password; // supply password directly if encfs is used as a library
++    std::string configOverride; // override config file location
 +#endif
 +    
      bool ownerCreate; // set owner of new files to caller

@@ -80,6 +80,7 @@ struct EncFS_Opts
   bool useStdin; // read password from stdin rather then prompting
 #ifdef ANDROID
   std::string password; // supply password directly if encfs is used as a library
+  std::string configOverride; // override config file location
 #endif
   bool annotate; // print annotation line prompt to stderr.
 
