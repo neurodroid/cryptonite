@@ -1,5 +1,6 @@
 package csh.cryptonite.database;
 
+import csh.cryptonite.Cryptonite;
 import android.content.Context;
 
 public class Volume {
@@ -19,65 +20,65 @@ public class Volume {
         mContext = context;
     }
 
-    public long getId() {
-      return id;
-    }
-
     public void setId(long id) {
         this.id = id;
     }
 
-    public long getStorType() {
-        return storType;
+    public long getId() {
+      return id;
     }
 
     public void setStorType(long storType) {
         this.storType = storType;
     }
 
-    public long getMountType() {
-        return mountType;
+    public long getStorType() {
+        return storType;
     }
 
     public void setMountType(long mountType) {
         this.mountType = mountType;
     }
 
-    public String getLabel() {
-        return label;
+    public long getMountType() {
+        return mountType;
     }
 
     public void setLabel(String label) {
         this.label = label;
     }
 
-    public String getSource() {
-      return src;
+    public String getLabel() {
+        return Cryptonite.decrypt(label, mContext);
     }
 
     public void setSource(String src) {
-      this.src = src;
+        this.src = src;
     }
 
-    public String getTarget() {
-        return target;
+    public String getSource() {
+      return Cryptonite.decrypt(src, mContext);
     }
 
     public void setTarget(String target) {
         this.target = target;
     }
 
-    public String getEncfsConfig() {
-        return encfsConfig;
+    public String getTarget() {
+        return Cryptonite.decrypt(target, mContext);
     }
 
     public void setEncfsConfig(String encfsConfig) {
         this.encfsConfig = encfsConfig;
     }
 
+    public String getEncfsConfig() {
+        return Cryptonite.decrypt(encfsConfig, mContext);
+    }
+
     // Will be used by the ArrayAdapter in the ListView
     @Override
     public String toString() {
-        return label;
+        return Cryptonite.decrypt(label, mContext);
     }
 }

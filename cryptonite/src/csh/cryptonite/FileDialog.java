@@ -268,7 +268,7 @@ public class FileDialog extends SherlockFragmentActivity {
                             intent.putExtra(FileDialog.CURRENT_UPLOAD_TARGET_PATH, currentUploadTargetPath);
                             intent.putExtra(FileDialog.CURRENT_EXPORT_PATH_LIST, new String[0]);
                             intent.putExtra(FileDialog.ENCFS_BROWSE_ROOT, "");
-                            intent.putExtra(FileDialog.LABEL, R.string.select_config);
+                            intent.putExtra(FileDialog.LABEL, getString(R.string.select_config));
                             intent.putExtra(FileDialog.SELECTION_MODE, SelectionMode.MODE_OPEN_SELECT_CONFIG);
                             startActivityForResult(intent, SelectionMode.MODE_OPEN_SELECT_CONFIG);                            
                         } else {

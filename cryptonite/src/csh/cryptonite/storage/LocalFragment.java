@@ -5,7 +5,6 @@ import java.io.IOException;
 
 import csh.cryptonite.Cryptonite;
 import csh.cryptonite.DirectorySettings;
-import csh.cryptonite.ProgressDialogFragment;
 import csh.cryptonite.R;
 import csh.cryptonite.SelectionMode;
 import csh.cryptonite.ShellUtils;

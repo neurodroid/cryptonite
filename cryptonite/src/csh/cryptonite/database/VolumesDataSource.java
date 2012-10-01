@@ -1,7 +1,6 @@
 package csh.cryptonite.database;
 
-import java.util.ArrayList;
-import java.util.List;
+import csh.cryptonite.Cryptonite;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -37,16 +36,16 @@ public class VolumesDataSource {
         dbHelper.close();
     }
 
-    public Volume createVolume(long storType, long mountType, String label, 
+    public Volume storeVolume(long storType, long mountType, String label, 
             String src, String target, String encfsConfig)
     {
         ContentValues values = new ContentValues();
         values.put(CryptoniteSQLiteOpenHelper.COLUMN_STORTYPE, storType);
         values.put(CryptoniteSQLiteOpenHelper.COLUMN_MOUNTTYPE, mountType);
-        values.put(CryptoniteSQLiteOpenHelper.COLUMN_LABEL, label);
-        values.put(CryptoniteSQLiteOpenHelper.COLUMN_SOURCE, src);
-        values.put(CryptoniteSQLiteOpenHelper.COLUMN_TARGET, target);
-        values.put(CryptoniteSQLiteOpenHelper.COLUMN_ENCFS_CONFIG, encfsConfig);
+        values.put(CryptoniteSQLiteOpenHelper.COLUMN_LABEL, Cryptonite.encrypt(label, mContext));
+        values.put(CryptoniteSQLiteOpenHelper.COLUMN_SOURCE, Cryptonite.encrypt(src, mContext));
+        values.put(CryptoniteSQLiteOpenHelper.COLUMN_TARGET, Cryptonite.encrypt(target, mContext));
+        values.put(CryptoniteSQLiteOpenHelper.COLUMN_ENCFS_CONFIG, Cryptonite.encrypt(encfsConfig, mContext));
         
         /* Delete any existing entries of this type */
         database.delete(CryptoniteSQLiteOpenHelper.TABLE_VOLUMES,
@@ -86,23 +85,6 @@ public class VolumesDataSource {
         System.out.println("Volume deleted with id: " + id);
         database.delete(CryptoniteSQLiteOpenHelper.TABLE_VOLUMES, CryptoniteSQLiteOpenHelper.COLUMN_ID
                 + " = " + id, null);
-    }
-
-    public List<Volume> getAllVolumes() {
-        List<Volume> volumes = new ArrayList<Volume>();
-
-        Cursor cursor = database.query(CryptoniteSQLiteOpenHelper.TABLE_VOLUMES,
-                allColumns, null, null, null, null, null);
-
-        cursor.moveToFirst();
-        while (!cursor.isAfterLast()) {
-            Volume volume = cursorToVolume(cursor);
-            volumes.add(volume);
-            cursor.moveToNext();
-        }
-        // Make sure to close the cursor
-        cursor.close();
-        return volumes;
     }
 
     private Volume cursorToVolume(Cursor cursor) {

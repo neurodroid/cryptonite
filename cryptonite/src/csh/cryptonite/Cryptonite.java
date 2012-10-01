@@ -149,6 +149,7 @@ public class Cryptonite extends SherlockFragmentActivity
     private LocalFragment localFragment;
 
     private VolumesDataSource mDataSource;
+    private boolean updateDecryptDelayed;
 
     // If you'd like to change the access type to the full Dropbox instead of
     // an app folder, change this value.
@@ -181,6 +182,8 @@ public class Cryptonite extends SherlockFragmentActivity
         textOut = encfsVersion + "\n" + opensslVersion;
         Log.v(TAG, encfsVersion + " " + opensslVersion);
 
+        updateDecryptDelayed = false;
+        
         SharedPreferences prefs = getBaseContext().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
         setupReadDirs(prefs.getBoolean("cb_extcache", false));
         StorageManager.INSTANCE.initLocalStorage(this);
@@ -362,6 +365,10 @@ public class Cryptonite extends SherlockFragmentActivity
         if (!hasJni) {
             return;
         }
+        if (updateDecryptDelayed) {
+            updateDecryptDelayed = false;
+            updateDecryptButtons();
+        }
 
         finishAuthentication();   
     }
@@ -440,7 +447,7 @@ public class Cryptonite extends SherlockFragmentActivity
                             StorageManager.INSTANCE.setEncFSPath(currentReturnPath
                                     .substring(currentDialogRoot.length()));
                         }
-                        updateDecryptButtons();
+                        updateDecryptDelayed = true;
                         break;
                     case LOCALEXPORT_MODE:
                     case DBEXPORT_MODE:
@@ -1520,7 +1527,7 @@ public class Cryptonite extends SherlockFragmentActivity
         }
         String label = src;
         String target = "";
-        mDataSource.createVolume(storType, virtual, label, src, target, encfsConfig);
+        mDataSource.storeVolume(storType, virtual, label, src, target, encfsConfig);
         Toast.makeText(this, R.string.default_saved, Toast.LENGTH_LONG).show();
     }
     
