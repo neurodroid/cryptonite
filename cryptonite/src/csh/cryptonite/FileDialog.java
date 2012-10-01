@@ -1322,10 +1322,13 @@ public class FileDialog extends SherlockFragmentActivity {
                         Log.i(Cryptonite.TAG, "Dialog root is " + currentPath);
 
                         SharedPreferences prefs = getBaseContext().getSharedPreferences(Cryptonite.ACCOUNT_PREFS_NAME, 0);
+                        StorageManager.INSTANCE.setEncFSConfigPath("");
                         if (currentConfigPath != null) {
-                            StorageManager.INSTANCE.setEncFSConfigPath(currentConfigPath);
-                            currentConfigPath = null;
+                            if (currentConfigPath.length() > 0) {
+                                StorageManager.INSTANCE.setEncFSConfigPath(currentConfigPath);
+                            }
                         }
+                        currentConfigPath = null;
                         if (Cryptonite.jniInit(srcDir, currentPassword, 
                                 prefs.getBoolean("cb_anykey", false), 
                                 StorageManager.INSTANCE.getEncFSConfigPath()) != Cryptonite.jniSuccess())

@@ -91,7 +91,6 @@ static int isValidEncFS(std::string rootDir) {
 #else
     shared_ptr<EncFSConfig> config(new EncFSConfig);
 #endif
-
     ConfigType type = readConfig( rootDir, config );
 
 #ifdef ENCFS_SVN
