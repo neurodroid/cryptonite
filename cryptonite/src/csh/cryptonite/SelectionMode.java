@@ -14,4 +14,5 @@ public class SelectionMode {
     public static final int MODE_OPEN_DEFAULT = 20;
     public static final int MODE_OPEN_DEFAULT_DB = 21;
     public static final int MODE_OPEN_SELECT_CONFIG = 22;
+    public static final int MODE_OPEN_MOUNT_DEFAULT = 23;
 }

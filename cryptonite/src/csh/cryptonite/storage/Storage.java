@@ -51,6 +51,7 @@ public abstract class Storage {
     protected Context mAppContext;
     protected SherlockFragmentActivity mActivity;
     protected String encFSPath;
+    protected String encFSConfigPath;
     
     private UIHandler uiHandler;
     
@@ -66,6 +67,7 @@ public abstract class Storage {
         waitStringId = 0;
         browsePnt = "";
         encFSPath = "";
+        encFSConfigPath = "";
         Thread uiThread = new HandlerThread("UIHandler");
         uiThread.start();
         uiHandler = new UIHandler(((HandlerThread) uiThread).getLooper());
@@ -235,6 +237,13 @@ public abstract class Storage {
     
     public void setEncFSPath(String value) {
         encFSPath = value;
+    }
+
+    public String getEncFSConfigPath() {
+        return encFSConfigPath;
+    }
+    public void setEncFSConfigPath(String encFSConfigPath) {
+        this.encFSConfigPath = encFSConfigPath;
     }
 
 }

@@ -122,6 +122,7 @@
     <string name="stored_volumes">Stored volumes</string>
     <string name="default_restore">Restore default</string>
     <string name="default_save">Save as default</string>
+    <string name="default_saved">Saved as new default</string>
     <string name="default_missing">Couldn\'t find default folder</string>
     <string name="default_searching">Looking for default folder&#8230;</string>
     <string name="config_notfound">Couldn\'t find EncFS config file</string>

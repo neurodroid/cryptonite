@@ -82,6 +82,7 @@ import csh.cryptonite.database.VolumesDataSource;
 import csh.cryptonite.storage.DropboxInterface;
 import csh.cryptonite.storage.DropboxFragment;
 import csh.cryptonite.storage.LocalFragment;
+import csh.cryptonite.storage.MountManager;
 import csh.cryptonite.storage.Storage;
 import csh.cryptonite.storage.StorageManager;
 import csh.cryptonite.storage.VirtualFile;
@@ -120,6 +121,7 @@ public class Cryptonite extends SherlockFragmentActivity
     public String currentDialogButtonLabel = "OK";
     public String currentDialogRoot = "/";
     public String currentDialogRootName = currentDialogRoot;
+    public String currentConfigFile = "";
     private String currentReturnPath = "/";
     private String currentOpenPath = "/";
     private String currentUploadTargetPath = "/";
@@ -268,6 +270,9 @@ public class Cryptonite extends SherlockFragmentActivity
             if (savedInstanceState.getString("encfsBrowseRoot") != null) {
                 encfsBrowseRoot = savedInstanceState.getString("encfsBrowseRoot");
             }
+            if (savedInstanceState.getString("currentConfigFile") != null) {
+                currentConfigFile = savedInstanceState.getString("currentConfigFile");
+            }
             if (savedInstanceState.getStringArray("currentReturnPathList") != null) {
                 currentReturnPathList = savedInstanceState.getStringArray("currentReturnPathList");
             }
@@ -338,6 +343,7 @@ public class Cryptonite extends SherlockFragmentActivity
         outState.putString("currentOpenPath", currentOpenPath);
         outState.putString("currentUploadTargetPath", currentUploadTargetPath);
         outState.putString("encfsBrowseRoot", encfsBrowseRoot);
+        outState.putString("currentConfigFile", currentConfigFile);
         outState.putStringArray("currentReturnPathList", currentReturnPathList);
         outState.putInt("currentDialogMode", currentDialogMode);
         outState.putBoolean("disclaimerShown", disclaimerShown);
@@ -481,6 +487,7 @@ public class Cryptonite extends SherlockFragmentActivity
                     } else {
                         return;
                     }
+                    currentConfigFile = "";
                     launchBuiltinFileBrowser();
                 } else {
                     currentOpenPath = data
@@ -514,6 +521,7 @@ public class Cryptonite extends SherlockFragmentActivity
                             } else {
                                 return;
                             }
+                            currentConfigFile = "";
                             launchBuiltinFileBrowser();
                         }
                     }
@@ -690,6 +698,7 @@ public class Cryptonite extends SherlockFragmentActivity
                 currentDialogButtonLabel = getString(R.string.export);
                 currentDialogRoot = currentDialogStartPath;
                 encfsBrowseRoot = currentDialogRoot;
+                currentConfigFile = "";
                 currentDialogRootName = getString(R.string.encfs_root);
                 currentDialogMode = StorageManager.INSTANCE.getEncFSStorage().fdSelectionMode;
                 runOnUiThread(new Runnable() {
@@ -839,6 +848,7 @@ public class Cryptonite extends SherlockFragmentActivity
         intent.putExtra(FileDialog.CURRENT_UPLOAD_TARGET_PATH, currentUploadTargetPath);
         intent.putExtra(FileDialog.CURRENT_EXPORT_PATH_LIST, currentReturnPathList);
         intent.putExtra(FileDialog.ENCFS_BROWSE_ROOT, encfsBrowseRoot);
+        intent.putExtra(FileDialog.CURRENT_CONFIG_PATH, currentConfigFile);
         intent.putExtra(FileDialog.LABEL, currentDialogLabel);
         intent.putExtra(FileDialog.SELECTION_MODE, currentDialogMode);
         startActivityForResult(intent, currentDialogMode);
@@ -1499,11 +1509,19 @@ public class Cryptonite extends SherlockFragmentActivity
     }
 
     public void saveDefault(long storType, long virtual) {
-        String src = StorageManager.INSTANCE.getEncFSStorage().getEncFSPath();
+        String src = "";
+        String encfsConfig = "";
+        if (virtual == Volume.VIRTUAL) {
+            src = StorageManager.INSTANCE.getEncFSPath();
+            encfsConfig = StorageManager.INSTANCE.getEncFSConfigPath();
+        } else {
+            src = MountManager.INSTANCE.getEncFSPath();
+            encfsConfig = MountManager.INSTANCE.getEncFSConfigPath();
+        }
         String label = src;
         String target = "";
-        String encfsConfig = "";
         mDataSource.createVolume(storType, virtual, label, src, target, encfsConfig);
+        Toast.makeText(this, R.string.default_saved, Toast.LENGTH_LONG).show();
     }
     
     public Volume restoreDefault(long storType, long virtual) {

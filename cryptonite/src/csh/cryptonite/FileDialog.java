@@ -42,6 +42,7 @@ import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem.OnMenuItemClickListener;
 
 import csh.cryptonite.Cryptonite.DecodedBuffer;
+import csh.cryptonite.storage.MountManager;
 import csh.cryptonite.storage.Storage;
 import csh.cryptonite.storage.StorageManager;
 import csh.cryptonite.storage.VirtualFile;
@@ -106,6 +107,7 @@ public class FileDialog extends SherlockFragmentActivity {
     public static final String CURRENT_UPLOAD_TARGET_PATH = "CURRENT_UPLOAD_TARGET_PATH";
     public static final String ENCFS_BROWSE_ROOT = "ENCFS_BROWSE_ROOT";
     public static final String CURRENT_EXPORT_PATH_LIST = "CURRENT_EXPORT_PATH_LIST";
+    public static final String CURRENT_CONFIG_PATH = "CURRENT_CONFIG_PATH";
 
     private String currentRoot = ROOT;
     private String currentRootLabel = ROOT;
@@ -126,6 +128,7 @@ public class FileDialog extends SherlockFragmentActivity {
     private String intentStartPath;
     private String currentPassword = "\0";
     private String currentUploadTargetPath;
+    private String currentConfigPath;
     private String encfsBrowseRoot;
     private String[] currentExportPathList;
     
@@ -140,7 +143,6 @@ public class FileDialog extends SherlockFragmentActivity {
 
     private ListView mListView;
     private boolean delayedPasswordDialog;
-    private String configPath;
 
     /** Called when the activity is first created. */
     @Override
@@ -155,14 +157,14 @@ public class FileDialog extends SherlockFragmentActivity {
         myPath = (TextView) findViewById(R.id.path);
 
         String label = getIntent().getStringExtra(LABEL);
-        this.setTitle(label);
-        
+        setTitle(label);
+
         inputManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
 
         selectionMode = getIntent().getIntExtra(SELECTION_MODE, SelectionMode.MODE_OPEN_ENCFS);
 
         delayedPasswordDialog = false;
-        configPath = null;
+        currentConfigPath = null;
         
         currentRoot = getIntent().getStringExtra(CURRENT_ROOT);
         if (currentRoot == null) {
@@ -179,6 +181,10 @@ public class FileDialog extends SherlockFragmentActivity {
         String startPath = intentStartPath;
         
         currentUploadTargetPath = getIntent().getStringExtra(CURRENT_UPLOAD_TARGET_PATH);
+        currentConfigPath= getIntent().getStringExtra(CURRENT_CONFIG_PATH);
+        if (currentConfigPath == "") {
+            currentConfigPath = null;
+        }
         encfsBrowseRoot = getIntent().getStringExtra(ENCFS_BROWSE_ROOT);
         currentExportPathList= getIntent().getStringArrayExtra(CURRENT_EXPORT_PATH_LIST);
 
@@ -195,6 +201,9 @@ public class FileDialog extends SherlockFragmentActivity {
             }
             if (savedInstanceState.getString("currentUploadTargetPath") != null) {
                 currentUploadTargetPath = savedInstanceState.getString("currentUploadTargetPath");
+            }
+            if (savedInstanceState.getString("currentConfigPath") != null) {
+                currentConfigPath = savedInstanceState.getString("currentConfigPath");
             }
             if (savedInstanceState.getString("encfsBrowseRoot") != null) {
                 encfsBrowseRoot = savedInstanceState.getString("encfsBrowseRoot");
@@ -248,6 +257,7 @@ public class FileDialog extends SherlockFragmentActivity {
                     case SelectionMode.MODE_OPEN_DEFAULT:
                     case SelectionMode.MODE_OPEN_DEFAULT_DB:
                     case SelectionMode.MODE_OPEN_ENCFS_MOUNT:
+                    case SelectionMode.MODE_OPEN_MOUNT_DEFAULT:
                         String configFile = currentPath + "/" + Storage.ENCFS_XML_CURRENT;
                         if (!new File(configFile).exists()) {
                             Intent intent = new Intent(getBaseContext(), FileDialog.class);
@@ -331,6 +341,7 @@ public class FileDialog extends SherlockFragmentActivity {
         case SelectionMode.MODE_OPEN_DEFAULT:
         case SelectionMode.MODE_OPEN_DEFAULT_DB:
         case SelectionMode.MODE_OPEN_ENCFS_MOUNT:
+        case SelectionMode.MODE_OPEN_MOUNT_DEFAULT:
         case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
         case SelectionMode.MODE_OPEN_SELECT_CONFIG:            
         case SelectionMode.MODE_OPEN_CREATE:
@@ -367,6 +378,7 @@ public class FileDialog extends SherlockFragmentActivity {
         switch (selectionMode) {
         case SelectionMode.MODE_OPEN_DEFAULT:
         case SelectionMode.MODE_OPEN_DEFAULT_DB:
+        case SelectionMode.MODE_OPEN_MOUNT_DEFAULT:
             showPasswordDialog();
             
         }
@@ -425,6 +437,7 @@ public class FileDialog extends SherlockFragmentActivity {
         outState.putStringArrayList("pathList", (ArrayList<String>) pathList);
         outState.putString("currentPath", currentPath);
         outState.putString("currentUploadTargetPath", currentUploadTargetPath);
+        outState.putString("currentConfigPath", currentConfigPath);
         outState.putString("encfsBrowseRoot", encfsBrowseRoot);
         outState.putStringArray("currentExportPathList", currentExportPathList);
         outState.putString("currentRoot", currentRoot);
@@ -459,9 +472,8 @@ public class FileDialog extends SherlockFragmentActivity {
         switch (requestCode) {
         case SelectionMode.MODE_OPEN_SELECT_CONFIG:
             if (resultCode == Activity.RESULT_OK && data != null) {
-                configPath = data.getStringExtra(FileDialog.RESULT_SELECTED_FILE);
-                /* TODO: Use config path */
-                if (configPath != null ) {
+                currentConfigPath = data.getStringExtra(FileDialog.RESULT_SELECTED_FILE);
+                if (currentConfigPath != null ) {
                     /* This will crash if called here; delay until onResume() */
                     delayedPasswordDialog = true;
                 }
@@ -569,6 +581,7 @@ public class FileDialog extends SherlockFragmentActivity {
             case SelectionMode.MODE_OPEN_DEFAULT:
             case SelectionMode.MODE_OPEN_DEFAULT_DB:
             case SelectionMode.MODE_OPEN_ENCFS_MOUNT:
+            case SelectionMode.MODE_OPEN_MOUNT_DEFAULT:
             case SelectionMode.MODE_OPEN_UPLOAD_SOURCE:
             case SelectionMode.MODE_OPEN_SELECT_CONFIG:
             case SelectionMode.MODE_OPEN_CREATE:
@@ -951,6 +964,7 @@ public class FileDialog extends SherlockFragmentActivity {
                         if (((FileDialog)getActivity()).currentPassword.length() > 0) {
                             switch (((FileDialog)getActivity()).selectionMode) {
                              case SelectionMode.MODE_OPEN_ENCFS_MOUNT:
+                             case SelectionMode.MODE_OPEN_MOUNT_DEFAULT:
                                  ((FileDialog)getActivity()).mountEncFS(
                                          ((FileDialog)getActivity()).currentPath);
                                  break;
@@ -1288,7 +1302,7 @@ public class FileDialog extends SherlockFragmentActivity {
                         referencePath = currentRoot;
                     }
                     if (!StorageManager.INSTANCE.getEncFSStorage()
-                            .initEncFS(srcDir, currentRoot, configPath)) {
+                            .initEncFS(srcDir, currentRoot, currentConfigPath)) {
                         alertMsg = getString(R.string.invalid_encfs);
                         alertCode = Cryptonite.RESULT_RETRY;
                         // StorageManager.INSTANCE.resetEncFSStorage();
@@ -1308,11 +1322,14 @@ public class FileDialog extends SherlockFragmentActivity {
                         Log.i(Cryptonite.TAG, "Dialog root is " + currentPath);
 
                         SharedPreferences prefs = getBaseContext().getSharedPreferences(Cryptonite.ACCOUNT_PREFS_NAME, 0);
-                        String configPathArg = "";
-                        if (configPath != null) {
-                            configPathArg = configPath;
+                        if (currentConfigPath != null) {
+                            StorageManager.INSTANCE.setEncFSConfigPath(currentConfigPath);
+                            currentConfigPath = null;
                         }
-                        if (Cryptonite.jniInit(srcDir, currentPassword, prefs.getBoolean("cb_anykey", false), configPathArg) != Cryptonite.jniSuccess()) {
+                        if (Cryptonite.jniInit(srcDir, currentPassword, 
+                                prefs.getBoolean("cb_anykey", false), 
+                                StorageManager.INSTANCE.getEncFSConfigPath()) != Cryptonite.jniSuccess())
+                        {
                             Log.v(Cryptonite.TAG, getString(R.string.browse_failed));
                             alertMsg = getString(R.string.browse_failed);
                             alertCode = Cryptonite.RESULT_RETRY;
@@ -1320,7 +1337,6 @@ public class FileDialog extends SherlockFragmentActivity {
                         } else {
                             Log.v(Cryptonite.TAG, "Decoding succeeded");
                         }
-                        configPath = null;
                     }
                 }
                 runOnUiThread(new Runnable() {
@@ -1354,12 +1370,13 @@ public class FileDialog extends SherlockFragmentActivity {
     /** This will run the shipped encfs binary and spawn a daemon on rooted devices
      */
     private void mountEncFS(final String srcDir) {
-        if (Cryptonite.jniIsValidEncFS(srcDir) != Cryptonite.jniSuccess()) {
-            showToast(R.string.invalid_encfs);
-            Log.v(Cryptonite.TAG, "Invalid EncFS");
-            return;
+        if (currentConfigPath == null) {
+            if (Cryptonite.jniIsValidEncFS(srcDir) != Cryptonite.jniSuccess()) {
+                showToast(R.string.invalid_encfs);
+                Log.v(Cryptonite.TAG, "Invalid EncFS");
+                return;
+            }
         }
-        
         if (!Cryptonite.isValidMntDir(this, new File(DirectorySettings.INSTANCE.mntDir), true)) {
             showToast(R.string.mount_point_invalid);
             return;
@@ -1371,7 +1388,16 @@ public class FileDialog extends SherlockFragmentActivity {
             public void run() {
                 SharedPreferences prefs = getBaseContext().getSharedPreferences(Cryptonite.ACCOUNT_PREFS_NAME, 0);
                 String encfsoutput = "";
-                String[] cmdlist = { DirectorySettings.INSTANCE.encFSBin,
+                MountManager.INSTANCE.setEncFSPath(currentPath
+                        .substring(intentStartPath.length()));
+                String configOverride = "";
+                if (currentConfigPath != null) {
+                    MountManager.INSTANCE.setEncFSConfigPath(currentConfigPath);
+                    configOverride = "--config=" + MountManager.INSTANCE.getEncFSConfigPath();
+                    currentConfigPath = null;
+                }
+                
+                String[] cmdlist = { DirectorySettings.INSTANCE.encFSBin, configOverride,
                         "--public", prefs.getBoolean("cb_anykey", false) ? "--anykey" : "", "--stdinpass", "\"" + srcDir + "\"",
                         "\"" + DirectorySettings.INSTANCE.mntDir + "\"" };
                 try {

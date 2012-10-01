@@ -2,15 +2,13 @@ package csh.cryptonite.storage;
 
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 
-public enum StorageManager {
+public enum MountManager {
     INSTANCE;
 
     private Storage mEncFSStorage;
-    private Storage mLocalStorage;
 
     public void init() {
         mEncFSStorage = null;
-        mLocalStorage = null;
     }
 
     public int getEncFSStorageType() {
@@ -29,26 +27,9 @@ public enum StorageManager {
         return mEncFSStorage;
     }
     
-    public Storage getLocalStorage() {
-        return mLocalStorage;
-    }
-    
-    public void initLocalStorage(SherlockFragmentActivity activity) {
-        if (mLocalStorage == null || mLocalStorage.type != Storage.STOR_LOCAL) {
-            mLocalStorage = new LocalStorage(activity);
-        }
-    }
-    
-    public void initEncFSStorage(SherlockFragmentActivity activity, int storType) {
-        if (mEncFSStorage == null || mEncFSStorage.type != storType) {
-            switch (storType) {
-            case Storage.STOR_DROPBOX:
-                mEncFSStorage = new DropboxStorage(activity);
-                break;
-            case Storage.STOR_LOCAL:
-                mEncFSStorage = new LocalStorage(activity);
-                break;
-            }
+    public void initEncFSStorage(SherlockFragmentActivity activity) {
+        if (mEncFSStorage == null) {
+            mEncFSStorage = new LocalStorage(activity);
         }
     }
 

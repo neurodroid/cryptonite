@@ -104,6 +104,7 @@ public class DropboxFragment extends StorageFragment {
         mAct.currentDialogStartPath = mAct.getPrivateDir(DirectorySettings.BROWSEPNT).getPath() + volume.getSource();
         mAct.currentDialogRoot = mAct.getPrivateDir(DirectorySettings.BROWSEPNT).getPath();
         mAct.currentDialogRootName = getString(R.string.dropbox_root_name);
+        mAct.currentConfigFile = volume.getEncfsConfig();
         if (mAct.mLoggedIn) {
             mAct.launchBuiltinFileBrowser();
         }

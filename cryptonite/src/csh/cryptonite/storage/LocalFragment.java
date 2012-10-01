@@ -1,9 +1,11 @@
 package csh.cryptonite.storage;
 
+import java.io.File;
 import java.io.IOException;
 
 import csh.cryptonite.Cryptonite;
 import csh.cryptonite.DirectorySettings;
+import csh.cryptonite.ProgressDialogFragment;
 import csh.cryptonite.R;
 import csh.cryptonite.SelectionMode;
 import csh.cryptonite.ShellUtils;
@@ -26,7 +28,7 @@ public class LocalFragment extends StorageFragment {
 
     public TextView tvMountInfo;
     
-    private Button buttonMount, buttonViewMount;
+    private Button buttonMount, buttonViewMount, buttonSaveLoadMount;
     
     public LocalFragment() {
         super();
@@ -68,6 +70,8 @@ public class LocalFragment extends StorageFragment {
                     }
                     mAct.currentDialogRoot = "/";
                     mAct.currentDialogRootName = mAct.currentDialogRoot;
+                    
+                    MountManager.INSTANCE.initEncFSStorage(mAct);
                     
                     if (!Cryptonite.externalStorageIsWritable()) {
                         mAct.showAlert(R.string.error, R.string.sdcard_not_writable);
@@ -152,6 +156,31 @@ public class LocalFragment extends StorageFragment {
                     mAct.opMode = mAct.prevMode;
                 }});
 
+        /* Save as default */
+        buttonSaveLoadMount = (Button)mView.findViewById(R.id.btnSaveLoadMount);
+        buttonSaveLoadMount.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    if (ShellUtils.isMounted("fuse.encfs")) {
+                        mAct.saveDefault(storageType, Volume.MOUNT);
+                    } else {
+                        final Volume volume = mAct.restoreDefault(storageType, Volume.MOUNT);
+                        MountManager.INSTANCE.initEncFSStorage(mAct);
+                        boolean defaultExists = new File(Environment.getExternalStorageDirectory().getPath() + volume.getSource()).exists();
+                        if (defaultExists) {
+                            mAct.opMode = opMode;
+                            mAct.currentDialogLabel = getString(R.string.select_enc);
+                            mAct.currentDialogButtonLabel = getString(
+                                    R.string.select_enc_short);
+                            mAct.currentDialogMode = SelectionMode.MODE_OPEN_MOUNT_DEFAULT;
+                            openEncFSVolumeDefault(volume);
+                        } else {
+                            Toast.makeText(mAct, 
+                                    getString(R.string.default_missing) + " (" + volume.getSource() + ")", 
+                                    Toast.LENGTH_LONG).show();   
+                        }
+                    }
+                }});
+
         return mView;
     }
 
@@ -183,6 +212,7 @@ public class LocalFragment extends StorageFragment {
         mAct.currentDialogStartPath = Environment.getExternalStorageDirectory().getPath() + volume.getSource();
         mAct.currentDialogRoot = "/";
         mAct.currentDialogRootName = mAct.currentDialogRoot;
+        mAct.currentConfigFile = volume.getEncfsConfig();
         if (!Cryptonite.externalStorageIsWritable()) {
             mAct.showAlert(R.string.error, R.string.sdcard_not_writable);
         } else {
@@ -196,7 +226,9 @@ public class LocalFragment extends StorageFragment {
         }
         
         boolean ism = ShellUtils.isMounted("fuse.encfs");
-        
+        if (!ism) {
+            MountManager.INSTANCE.resetEncFSStorage();
+        }
         Log.v(Cryptonite.TAG, "EncFS mount state: " + ism + "; FUSE support: " + mAct.hasFuse);
         buttonMount.setEnabled(mAct.hasFuse && DirectorySettings.INSTANCE.hasBin());
         
@@ -207,6 +239,16 @@ public class LocalFragment extends StorageFragment {
         }
         
         buttonViewMount.setEnabled(ism && mAct.hasFuse && DirectorySettings.INSTANCE.hasBin());
+
+        if (ism) {
+            buttonSaveLoadMount.setText(R.string.default_save);
+            buttonSaveLoadMount.setEnabled(true);
+        } else {
+            buttonSaveLoadMount.setText(R.string.default_restore);
+            /* Is there any saved volume at all? */
+            buttonSaveLoadMount.setEnabled(mAct.hasDefault(storageType, Volume.MOUNT) && 
+                    mAct.hasFuse && DirectorySettings.INSTANCE.hasBin());
+        }
     }
 
     @Override

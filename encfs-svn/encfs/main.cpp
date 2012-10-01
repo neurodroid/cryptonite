@@ -135,6 +135,9 @@ void usage(const char *name)
 	<< _("  -v, --verbose\t\t"   "verbose: output encfs debug messages\n"
 	"  -i, --idle=MINUTES\t""Auto unmount after period of inactivity\n"
 	"  --anykey\t\t"        "Do not verify correct key is being used\n"
+#ifdef ANDROID
+        "  --config=PATH\t\t"   "Use specified config file\n"
+#endif             
 	"  --forcedecode\t\t"   "decode data even if an error is detected\n"
 	                  "\t\t\t(for filesystems using MAC block headers)\n")
 	<< _("  --public\t\t"   "act as a typical multi-user filesystem\n"
@@ -213,6 +216,9 @@ bool processArgs(int argc, char *argv[], const shared_ptr<EncFS_Args> &out)
 	{"fuse-help", 0, 0, 'H'}, // fuse_mount usage
 	{"idle", 1, 0, 'i'}, // idle timeout
 	{"anykey", 0, 0, 'k'}, // skip key checks
+#ifdef ANDROID
+	{"config", 1, 0, 'c'}, // external config
+#endif
 	{"no-default-flags", 0, 0, 'N'}, // don't use default fuse flags
 	{"ondemand", 0, 0, 'm'}, // mount on-demand
 	{"public", 0, 0, 'P'}, // public mode
@@ -281,6 +287,11 @@ bool processArgs(int argc, char *argv[], const shared_ptr<EncFS_Args> &out)
 	case 'k':
 	    out->opts->checkKey = false;
 	    break;
+#ifdef ANDROID
+	case 'c':
+	    out->opts->configOverride.assign( optarg );
+	    break;
+#endif
 	case 'D':
 	    out->opts->forceDecode = true;
 	    break;

@@ -314,6 +314,40 @@
      return EXIT_SUCCESS;
  }
  
+--- ./encfs/main.cpp	2009-11-29 22:04:12.000000000 +0000
++++ ./encfs/main.cpp	2012-10-01 14:54:55.000000000 +0100
+@@ -140,6 +140,9 @@
+ 	<< _("  -v, --verbose\t\t"   "verbose: output encfs debug messages\n"
+ 	"  -i, --idle=MINUTES\t""Auto unmount after period of inactivity\n"
+ 	"  --anykey\t\t"        "Do not verify correct key is being used\n"
++#ifdef ANDROID
++        "  --config=PATH\t\t"   "Use specified config file\n"
++#endif             
+ 	"  --forcedecode\t\t"   "decode data even if an error is detected\n"
+ 	                  "\t\t\t(for filesystems using MAC block headers)\n")
+ 	<< _("  --public\t\t"   "act as a typical multi-user filesystem\n"
+@@ -217,6 +220,9 @@
+ 	{"fuse-help", 0, 0, 'H'}, // fuse_mount usage
+ 	{"idle", 1, 0, 'i'}, // idle timeout
+ 	{"anykey", 0, 0, 'k'}, // skip key checks
++#ifdef ANDROID
++	{"config", 1, 0, 'c'}, // external config
++#endif
+ 	{"no-default-flags", 0, 0, 'N'}, // don't use default fuse flags
+ 	{"ondemand", 0, 0, 'm'}, // mount on-demand
+ 	{"public", 0, 0, 'P'}, // public mode
+@@ -281,6 +287,11 @@
+ 	case 'k':
+ 	    out->opts->checkKey = false;
+ 	    break;
++#ifdef ANDROID
++	case 'c':
++	    out->opts->configOverride.assign( optarg );
++	    break;
++#endif
+ 	case 'D':
+ 	    out->opts->forceDecode = true;
+ 	    break;
 --- ./configure.ac	2010-11-18 02:50:51.000000000 +0000
 +++ ./configure.ac	2012-01-10 14:13:29.560437598 +0000
 @@ -83,24 +83,24 @@
