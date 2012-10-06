@@ -126,7 +126,8 @@
     <string name="default_missing">Couldn\'t find default folder</string>
     <string name="default_searching">Looking for default folder&#8230;</string>
     <string name="config_notfound">Couldn\'t find EncFS config file</string>
-
+    <string name="config_use_external">Couldn\'t find an EncFS configuration file in this directory. Do you want to use an external file?</string>
+    
     <!-- Terminal -->
     <string name="term_info">Run EncFS and TrueCrypt in terminal</string>
     <string name="term_prompt">Start terminal</string>

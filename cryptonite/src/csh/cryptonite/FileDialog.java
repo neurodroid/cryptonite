@@ -260,17 +260,7 @@ public class FileDialog extends SherlockFragmentActivity {
                     case SelectionMode.MODE_OPEN_MOUNT_DEFAULT:
                         String configFile = currentPath + "/" + Storage.ENCFS_XML_CURRENT;
                         if (!new File(configFile).exists()) {
-                            Intent intent = new Intent(getBaseContext(), FileDialog.class);
-                            intent.putExtra(FileDialog.CURRENT_ROOT, Environment.getExternalStorageDirectory().getPath());
-                            intent.putExtra(FileDialog.CURRENT_ROOT_NAME, Environment.getExternalStorageDirectory().getPath());
-                            intent.putExtra(FileDialog.BUTTON_LABEL, getString(R.string.select_config_short));
-                            intent.putExtra(FileDialog.START_PATH, Environment.getExternalStorageDirectory().getPath());
-                            intent.putExtra(FileDialog.CURRENT_UPLOAD_TARGET_PATH, currentUploadTargetPath);
-                            intent.putExtra(FileDialog.CURRENT_EXPORT_PATH_LIST, new String[0]);
-                            intent.putExtra(FileDialog.ENCFS_BROWSE_ROOT, "");
-                            intent.putExtra(FileDialog.LABEL, getString(R.string.select_config));
-                            intent.putExtra(FileDialog.SELECTION_MODE, SelectionMode.MODE_OPEN_SELECT_CONFIG);
-                            startActivityForResult(intent, SelectionMode.MODE_OPEN_SELECT_CONFIG);                            
+                            selectExternalConfigFile(SelectionMode.MODE_OPEN_SELECT_CONFIG);
                         } else {
                             showPasswordDialog();
                         }
@@ -1888,6 +1878,35 @@ public class FileDialog extends SherlockFragmentActivity {
                 }
             }).start();
         }
+    }
+    
+    private void selectExternalConfigFile(final int selectionMode) {
+        new AlertDialog.Builder(this)
+        .setIcon(android.R.drawable.ic_dialog_alert)
+        .setTitle(R.string.warning)
+        .setMessage(R.string.config_use_external)
+        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+                Intent intent = new Intent(getBaseContext(), FileDialog.class);
+                intent.putExtra(FileDialog.CURRENT_ROOT, Environment.getExternalStorageDirectory().getPath());
+                intent.putExtra(FileDialog.CURRENT_ROOT_NAME, Environment.getExternalStorageDirectory().getPath());
+                intent.putExtra(FileDialog.BUTTON_LABEL, getString(R.string.select_config_short));
+                intent.putExtra(FileDialog.START_PATH, Environment.getExternalStorageDirectory().getPath());
+                intent.putExtra(FileDialog.CURRENT_UPLOAD_TARGET_PATH, currentUploadTargetPath);
+                intent.putExtra(FileDialog.CURRENT_EXPORT_PATH_LIST, new String[0]);
+                intent.putExtra(FileDialog.ENCFS_BROWSE_ROOT, "");
+                intent.putExtra(FileDialog.LABEL, getString(R.string.select_config));
+                intent.putExtra(FileDialog.SELECTION_MODE, selectionMode);
+                startActivityForResult(intent, selectionMode);
+            }
+        })
+        .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+                return;
+            }
+        })
+        .create().show();
+                              
     }
     
 }
