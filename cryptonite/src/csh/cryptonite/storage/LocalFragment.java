@@ -34,8 +34,8 @@ public class LocalFragment extends StorageFragment {
         idLayout = R.layout.local_tab;
         idTvVersion = R.id.tvVersionLocal;
         idBtnDecrypt = R.id.btnDecryptLocal;
+        idTxtDecrypt = R.string.local_decrypt;
         idBtnBrowseDecrypted = R.id.btnBrowseDecryptedLocal;
-        idBtnForgetDecryption = R.id.btnForgetDecryptionLocal;
         idBtnSaveLoad = R.id.btnSaveLoadLocal;
         idBtnCreate = R.id.btnCreateLocal;
         storageType = Storage.STOR_LOCAL;

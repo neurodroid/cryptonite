@@ -21,32 +21,23 @@
             android:typeface="normal" >
         </TextView>
 
-        <Button
-            android:id="@+id/btnDecryptLocal"
-            android:layout_width="0dp"
-            android:layout_height="fill_parent"
-            android:layout_weight="1"
-            android:text="@string/local_decrypt"
-            android:typeface="normal" >
-        </Button>
-
         <TableRow android:layout_width="wrap_content" >
 
+            <Button
+                android:id="@+id/btnDecryptLocal"
+                android:layout_width="0dp"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+                android:text="@string/local_decrypt"
+                android:typeface="normal" >
+            </Button>
+            
             <Button
                 android:id="@+id/btnBrowseDecryptedLocal"
                 android:layout_width="0dp"
                 android:layout_height="fill_parent"
                 android:layout_weight="1"
                 android:text="@string/browse_decrypted"
-                android:typeface="normal" >
-            </Button>
-
-            <Button
-                android:id="@+id/btnForgetDecryptionLocal"
-                android:layout_width="0dp"
-                android:layout_height="fill_parent"
-                android:layout_weight="1"
-                android:text="@string/forget_decryption"
                 android:typeface="normal" >
             </Button>
         </TableRow>

@@ -30,32 +30,23 @@
             android:typeface="normal" >
         </TextView>
 
-        <Button
-            android:id="@+id/btnDecryptDb"
-            android:layout_width="0dp"
-            android:layout_height="fill_parent"
-            android:layout_weight="1"
-            android:text="@string/dropbox_decrypt"
-            android:typeface="normal" >
-        </Button>
-
         <TableRow android:layout_width="wrap_content" >
 
+            <Button
+                android:id="@+id/btnDecryptDb"
+                android:layout_width="0dp"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+                android:text="@string/dropbox_decrypt"
+                android:typeface="normal" >
+            </Button>
+            
             <Button
                 android:id="@+id/btnBrowseDecryptedDb"
                 android:layout_width="0dp"
                 android:layout_height="fill_parent"
                 android:layout_weight="1"
                 android:text="@string/browse_decrypted"
-                android:typeface="normal" >
-            </Button>
-
-            <Button
-                android:id="@+id/btnForgetDecryptionDb"
-                android:layout_width="0dp"
-                android:layout_height="fill_parent"
-                android:layout_weight="1"
-                android:text="@string/forget_decryption"
                 android:typeface="normal" >
             </Button>
         </TableRow>

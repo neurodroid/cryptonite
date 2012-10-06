@@ -22,10 +22,10 @@ public abstract class StorageFragment extends SherlockFragment {
     public TextView tv;
     
     protected Cryptonite mAct;
-    protected Button buttonDecrypt, buttonBrowseDecrypted,
-        buttonForgetDecryption, buttonCreate, buttonSaveLoad;
-    protected int idLayout, idTvVersion, idBtnDecrypt, idBtnBrowseDecrypted,
-        idBtnForgetDecryption, idBtnSaveLoad, idBtnCreate;
+    protected Button buttonDecryptOrForget, buttonBrowseDecrypted,
+        buttonCreate, buttonSaveLoad;
+    protected int idLayout, idTvVersion, idBtnDecrypt, idTxtDecrypt, idBtnBrowseDecrypted,
+        idBtnSaveLoad, idBtnCreate;
     protected int storageType;
     protected int opMode;
     protected int dialogMode, dialogModeDefault;
@@ -47,16 +47,21 @@ public abstract class StorageFragment extends SherlockFragment {
         tv = (TextView)mView.findViewById(idTvVersion);
         
         /* Decrypt EncFS volume */
-        buttonDecrypt = (Button)mView.findViewById(idBtnDecrypt);
-        buttonDecrypt.setOnClickListener(new OnClickListener() {
+        buttonDecryptOrForget = (Button)mView.findViewById(idBtnDecrypt);
+        buttonDecryptOrForget.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-                    StorageManager.INSTANCE.initEncFSStorage(mAct, storageType);
-                    mAct.opMode = opMode;
-                    mAct.currentDialogLabel = getString(R.string.select_enc);
-                    mAct.currentDialogButtonLabel = getString(
-                            R.string.select_enc_short);
-                    mAct.currentDialogMode = dialogMode;
-                    openEncFSVolume();
+                    if (Cryptonite.jniVolumeLoaded() == Cryptonite.jniSuccess()) {
+                        mAct.cleanUpDecrypted();
+                        updateDecryptButtons();
+                    } else {
+                        StorageManager.INSTANCE.initEncFSStorage(mAct, storageType);
+                        mAct.opMode = opMode;
+                        mAct.currentDialogLabel = getString(R.string.select_enc);
+                        mAct.currentDialogButtonLabel = getString(
+                                R.string.select_enc_short);
+                        mAct.currentDialogMode = dialogMode;
+                        openEncFSVolume();
+                    }
                 }});
 
         /* Browse decrypted volume */
@@ -65,14 +70,6 @@ public abstract class StorageFragment extends SherlockFragment {
                 public void onClick(View v) {
                     mAct.browseEncFS(DirectorySettings.INSTANCE.currentBrowsePath, 
                             DirectorySettings.INSTANCE.currentBrowseStartPath);
-                }});
-        
-        /* Clear decryption information */
-        buttonForgetDecryption = (Button)mView.findViewById(idBtnForgetDecryption);
-        buttonForgetDecryption.setOnClickListener(new OnClickListener() {
-                public void onClick(View v) {
-                    mAct.cleanUpDecrypted();
-                    updateDecryptButtons();
                 }});
         
         /* Save as default */
@@ -141,19 +138,23 @@ public abstract class StorageFragment extends SherlockFragment {
     abstract protected void openEncFSVolumeDefault(Volume volume);
 
     public void updateDecryptButtons() {
-        if (buttonDecrypt == null || buttonBrowseDecrypted == null ||
-                buttonForgetDecryption == null || buttonCreate == null ||
-                buttonSaveLoad == null) 
+        if (buttonDecryptOrForget == null || buttonBrowseDecrypted == null ||
+                buttonCreate == null || buttonSaveLoad == null) 
         {
             return;
         }
 
         boolean volumeLoaded = (Cryptonite.jniVolumeLoaded() == Cryptonite.jniSuccess());
 
-        buttonDecrypt.setEnabled(!volumeLoaded);
+        if (volumeLoaded) {
+            buttonDecryptOrForget.setText(R.string.forget_decryption);
+            buttonDecryptOrForget.setEnabled(true);
+        } else {
+            buttonDecryptOrForget.setText(idTxtDecrypt);
+            buttonDecryptOrForget.setEnabled(true);
+        }
         buttonBrowseDecrypted.setEnabled(volumeLoaded &&
                 StorageManager.INSTANCE.getEncFSStorageType() == storageType);
-        buttonForgetDecryption.setEnabled(volumeLoaded);
         if (volumeLoaded && StorageManager.INSTANCE.getEncFSStorageType() == storageType) {
             buttonSaveLoad.setText(R.string.default_save);
             buttonSaveLoad.setEnabled(true);

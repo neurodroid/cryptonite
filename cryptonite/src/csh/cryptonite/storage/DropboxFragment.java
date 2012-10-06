@@ -21,8 +21,8 @@ public class DropboxFragment extends StorageFragment {
         idLayout = R.layout.dropbox_tab;
         idTvVersion = R.id.tvVersionDb;
         idBtnDecrypt = R.id.btnDecryptDb;
+        idTxtDecrypt = R.string.dropbox_decrypt;
         idBtnBrowseDecrypted = R.id.btnBrowseDecryptedDb;
-        idBtnForgetDecryption = R.id.btnForgetDecryptionDb;
         idBtnSaveLoad = R.id.btnSaveLoadDb;
         idBtnCreate = R.id.btnCreateDb;
         storageType = Storage.STOR_DROPBOX;
@@ -71,9 +71,9 @@ public class DropboxFragment extends StorageFragment {
     @Override
     public void updateDecryptButtons() {
         super.updateDecryptButtons();
-        if (buttonDecrypt != null) {
-            if (buttonDecrypt.isEnabled()) {
-                buttonDecrypt.setEnabled(mAct.mLoggedIn);
+        if (buttonDecryptOrForget != null) {
+            if (buttonDecryptOrForget.isEnabled() && Cryptonite.jniVolumeLoaded() != Cryptonite.jniSuccess()) {
+                buttonDecryptOrForget.setEnabled(mAct.mLoggedIn);
             }
         }
         if (buttonCreate != null) {
@@ -111,7 +111,7 @@ public class DropboxFragment extends StorageFragment {
     }
     
     public void updateLoginButtons() {
-        if (buttonAuth == null || buttonDecrypt == null) {
+        if (buttonAuth == null || buttonDecryptOrForget == null) {
             return;
         }
         
