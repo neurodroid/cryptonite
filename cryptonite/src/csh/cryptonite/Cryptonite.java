@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.SQLException;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -1536,8 +1537,20 @@ public class Cryptonite extends SherlockFragmentActivity
     }
 
     public boolean hasDefault(long storType, long virtual) {
-        boolean ret = mDataSource.getVolume(storType, virtual) != null; 
-        return ret;
+        if (mDataSource != null) {
+            if (mDataSource.isOpen()) {
+                return mDataSource.getVolume(storType, virtual) != null;
+            } else {
+                mDataSource.open();
+                if (mDataSource.isOpen()) {
+                    return mDataSource.getVolume(storType, virtual) != null;
+                } else {
+                    return false;
+                }
+            }
+        } else {
+            return false;
+        }
     }
 
     /* this is used to load the 'cryptonite' library on application

@@ -35,6 +35,14 @@ public class VolumesDataSource {
     public void close() {
         dbHelper.close();
     }
+    
+    public boolean isOpen() {
+        if (database != null) {
+            return database.isOpen();
+        } else {
+            return false;
+        }
+    }
 
     public Volume storeVolume(long storType, long mountType, String label, 
             String src, String target, String encfsConfig)
