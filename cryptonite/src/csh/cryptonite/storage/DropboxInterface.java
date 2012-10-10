@@ -68,7 +68,7 @@ public enum DropboxInterface {
         dbHashMap.remove(dbPath);
     }
     
-    public boolean dbFileExists(String dbPath) throws DropboxException {
+    public boolean dbFileExists(String dbPath) throws DropboxException, NullPointerException {
         Entry dbEntry;
         try {
             /* We need a new metadata call here without hash
@@ -85,6 +85,8 @@ public enum DropboxInterface {
                 return false;
             }
         } catch (DropboxException e) {
+            throw e;
+        } catch (NullPointerException e) {
             throw e;
         }
         return true;

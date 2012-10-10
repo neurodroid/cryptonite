@@ -124,6 +124,9 @@ public class DropboxStorage extends Storage {
         } catch (DropboxException e) {
             handleUIToastRequest(e.toString());
             return "";
+        } catch (NullPointerException e) {
+            handleUIToastRequest(e.toString());
+            return "";
         }
         if (fileExists) {
             /* get next available file name */
@@ -145,6 +148,9 @@ public class DropboxStorage extends Storage {
                 try {
                     nextFileExists = DropboxInterface.INSTANCE.dbFileExists(nextDbPath);
                 } catch (DropboxException e) {
+                    handleUIToastRequest(e.toString());
+                    break;
+                } catch (NullPointerException e) {
                     handleUIToastRequest(e.toString());
                     break;
                 }
@@ -292,6 +298,9 @@ public class DropboxStorage extends Storage {
         } catch (DropboxException e) {
             handleUIToastRequest(mAppContext.getString(R.string.delete_fail) + ": " + e.toString());
             return false;
+        } catch (NullPointerException e) {
+            handleUIToastRequest(e.toString());
+            return false;
         }
         if (fileExists) {
             try {
@@ -329,6 +338,9 @@ public class DropboxStorage extends Storage {
         try {
             fileExists = DropboxInterface.INSTANCE.dbFileExists(dbPath);
         } catch (DropboxException e) {
+            handleUIToastRequest(e.toString());
+            return false;
+        } catch (NullPointerException e) {
             handleUIToastRequest(e.toString());
             return false;
         }
@@ -476,6 +488,9 @@ public class DropboxStorage extends Storage {
         } catch (DropboxException e) {
             handleUIToastRequest(mAppContext.getString(R.string.new_folder_fail) + ": " + e.toString());
             return false;
+        } catch (NullPointerException e) {
+            handleUIToastRequest(mAppContext.getString(R.string.new_folder_fail) + ": " + e.toString());
+            return false;
         }
         if (fileExists) {
             handleUIToastRequest(R.string.new_folder_exists);
@@ -503,6 +518,9 @@ public class DropboxStorage extends Storage {
         } catch (DropboxException e) {
             handleUIToastRequest(mAppContext.getString(R.string.new_folder_fail) + ": " + e.toString());
             return false;
+        } catch (NullPointerException e) {
+            handleUIToastRequest(mAppContext.getString(R.string.new_folder_fail) + ": " + e.toString());
+            return false;
         }
         if (fileExists) {
             handleUIToastRequest(R.string.new_folder_exists);
@@ -525,6 +543,8 @@ public class DropboxStorage extends Storage {
         try {
             fileExists = DropboxInterface.INSTANCE.dbFileExists(plainPath);
         } catch (DropboxException e) {
+            return false;
+        } catch (NullPointerException e) {
             return false;
         }
         return fileExists;
