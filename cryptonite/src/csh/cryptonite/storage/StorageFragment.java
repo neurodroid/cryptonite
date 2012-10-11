@@ -111,7 +111,7 @@ public abstract class StorageFragment extends SherlockFragment {
         buttonCreate = (Button)mView.findViewById(idBtnCreate);
         buttonCreate.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-                    mAct.createEncFS(true);
+                    mAct.createEncFS(storageType == Storage.STOR_DROPBOX);
                 }});
 
         return mView;

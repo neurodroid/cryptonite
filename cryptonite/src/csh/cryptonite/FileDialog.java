@@ -1299,15 +1299,23 @@ public class FileDialog extends SherlockFragmentActivity {
                     } else {
                         DirectorySettings.INSTANCE.currentBrowsePath = currentPath;
                         DirectorySettings.INSTANCE.currentBrowseStartPath = referencePath;
-                        try {
-                            StorageManager.INSTANCE.setEncFSPath(currentPath
-                                    .substring(referencePath.length()));
-                        } catch (StringIndexOutOfBoundsException e) {
-                            alertMsg = getString(R.string.decrypt_failure) + 
-                                    " currentPath: " + currentPath + 
-                                    " intentStartPath: " + intentStartPath;
-                            alertCode = Cryptonite.RESULT_RETRY;
-                            Log.v(Cryptonite.TAG, alertMsg);
+                        switch (selectionMode) {
+                        case SelectionMode.MODE_OPEN_DEFAULT_DB:
+                        case SelectionMode.MODE_OPEN_ENCFS_DB: {
+                            try {
+                                StorageManager.INSTANCE.setEncFSPath(currentPath
+                                        .substring(referencePath.length()));
+                            } catch (StringIndexOutOfBoundsException e) {
+                                alertMsg = getString(R.string.decrypt_failure) + 
+                                        " currentPath: " + currentPath + 
+                                        " intentStartPath: " + intentStartPath;
+                                alertCode = Cryptonite.RESULT_RETRY;
+                                Log.v(Cryptonite.TAG, alertMsg);
+                            }
+                            break;
+                        }
+                        default:
+                            StorageManager.INSTANCE.setEncFSPath(currentPath);
                         }
                         Log.i(Cryptonite.TAG, "Dialog root is " + currentPath);
 
@@ -1888,8 +1896,8 @@ public class FileDialog extends SherlockFragmentActivity {
         .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int whichButton) {
                 Intent intent = new Intent(getBaseContext(), FileDialog.class);
-                intent.putExtra(FileDialog.CURRENT_ROOT, Environment.getExternalStorageDirectory().getPath());
-                intent.putExtra(FileDialog.CURRENT_ROOT_NAME, Environment.getExternalStorageDirectory().getPath());
+                intent.putExtra(FileDialog.CURRENT_ROOT, "/");
+                intent.putExtra(FileDialog.CURRENT_ROOT_NAME, "/");
                 intent.putExtra(FileDialog.BUTTON_LABEL, getString(R.string.select_config_short));
                 intent.putExtra(FileDialog.START_PATH, Environment.getExternalStorageDirectory().getPath());
                 intent.putExtra(FileDialog.CURRENT_UPLOAD_TARGET_PATH, currentUploadTargetPath);
