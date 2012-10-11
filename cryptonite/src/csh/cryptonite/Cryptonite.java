@@ -440,13 +440,14 @@ public class Cryptonite extends SherlockFragmentActivity
                         break;
                     case SELECTLOCALENCFS_MODE:
                     case SELECTDBENCFS_MODE:
+                        /* TODO: This is now handle in FileDialog.java
                         if (requestCode != SelectionMode.MODE_OPEN_DEFAULT_DB) {
                             StorageManager.INSTANCE.setEncFSPath(currentReturnPath
                                     .substring(currentDialogStartPath.length()));
                         } else {
                             StorageManager.INSTANCE.setEncFSPath(currentReturnPath
                                     .substring(currentDialogRoot.length()));
-                        }
+                        }*/
                         updateDecryptDelayed = true;
                         break;
                     case LOCALEXPORT_MODE:

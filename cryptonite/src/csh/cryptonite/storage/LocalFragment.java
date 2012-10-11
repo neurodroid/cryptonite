@@ -208,7 +208,7 @@ public class LocalFragment extends StorageFragment {
      
     @Override
     protected void openEncFSVolumeDefault(Volume volume) {
-        mAct.currentDialogStartPath = Environment.getExternalStorageDirectory().getPath() + volume.getSource();
+        mAct.currentDialogStartPath = volume.getSource();
         mAct.currentDialogRoot = "/";
         mAct.currentDialogRootName = mAct.currentDialogRoot;
         mAct.currentConfigFile = volume.getEncfsConfig();
