@@ -164,7 +164,7 @@ public class LocalFragment extends StorageFragment {
                     } else {
                         final Volume volume = mAct.restoreDefault(storageType, Volume.MOUNT);
                         MountManager.INSTANCE.initEncFSStorage(mAct);
-                        boolean defaultExists = new File(Environment.getExternalStorageDirectory().getPath() + volume.getSource()).exists();
+                        boolean defaultExists = new File(volume.getSource()).exists();
                         if (defaultExists) {
                             mAct.opMode = opMode;
                             mAct.currentDialogLabel = getString(R.string.select_enc);

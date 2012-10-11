@@ -1391,8 +1391,7 @@ public class FileDialog extends SherlockFragmentActivity {
             public void run() {
                 SharedPreferences prefs = getBaseContext().getSharedPreferences(Cryptonite.ACCOUNT_PREFS_NAME, 0);
                 String encfsoutput = "";
-                MountManager.INSTANCE.setEncFSPath(currentPath
-                        .substring(intentStartPath.length()));
+                MountManager.INSTANCE.setEncFSPath(currentPath);
                 String configOverride = "";
                 MountManager.INSTANCE.setEncFSConfigPath("");
                 if (currentConfigPath != null) {
