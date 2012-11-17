@@ -52,7 +52,7 @@ for arch in archs:
     elif arch == "armeabi-v7a":
         arch_subdir = "armv7-a/"
     cpfile("%s/arm-linux-androideabi/lib/%slibstdc++.a" % (toolchain, arch_subdir), target_dir)
-    cpfile("%s/lib/gcc/arm-linux-androideabi/4.6.x-google/%slibgcc.a" % (toolchain, arch_subdir), target_dir)
+    cpfile("%s/lib/gcc/arm-linux-androideabi/4.6/%slibgcc.a" % (toolchain, arch_subdir), target_dir)
 
 arch = "armeabi"
 
