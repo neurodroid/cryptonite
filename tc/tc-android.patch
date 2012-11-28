@@ -1,7 +1,39 @@
 diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*~' -x '*.d' -ur a/Core/Unix/CoreUnix.cpp b/Core/Unix/CoreUnix.cpp
 --- a/Core/Unix/CoreUnix.cpp	2012-02-07 10:36:48.000000000 +0000
 +++ b/Core/Unix/CoreUnix.cpp	2012-07-20 10:47:07.974481751 +0100
-@@ -326,8 +326,12 @@
+@@ -74,7 +74,15 @@
+ 		args.push_back ("--");
+ 		args.push_back (mountPoint);
+ 
++#ifndef TC_ANDROID
+ 		Process::Execute ("umount", args);
++#else
++		if( access( "/system/xbin/umount", F_OK ) != -1 ) {
++			Process::Execute ("/system/xbin/umount", args);
++                } else {
++			Process::Execute ("umount", args);
++                }
++#endif
+ 	}
+ 
+ 	shared_ptr <VolumeInfo> CoreUnix::DismountVolume (shared_ptr <VolumeInfo> mountedVolume, bool ignoreOpenFiles, bool syncVolumeInfo)
+@@ -120,7 +128,15 @@
+ 		{
+ 			try
+ 			{
++#ifndef TC_ANDROID
+ 				Process::Execute ("umount", args);
++#else
++				if( access( "/system/xbin/umount", F_OK ) != -1 ) {
++					Process::Execute ("/system/xbin/umount", args);
++		                } else {
++					Process::Execute ("umount", args);
++		                }
++#endif
+ 				break;
+ 			}
+ 			catch (ExecutedProcessFailed&)
+@@ -326,8 +342,12 @@
  	
  	string CoreUnix::GetTempDirectory () const
  	{
@@ -14,7 +46,23 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  	}
  
  	bool CoreUnix::IsMountPointAvailable (const DirectoryPath &mountPoint) const
-@@ -533,14 +537,18 @@
+@@ -373,7 +393,15 @@
+ 		args.push_back (devicePath);
+ 		args.push_back (mountPoint);
+ 
++#ifndef TC_ANDROID
+ 		Process::Execute ("mount", args);
++#else
++		if( access( "/system/xbin/mount", F_OK ) != -1 ) {
++			Process::Execute ("/system/xbin/mount", args);
++                } else {
++			Process::Execute ("mount", args);
++                }
++#endif
+ 	}
+ 
+ 	VolumeSlotNumber CoreUnix::MountPointToSlotNumber (const DirectoryPath &mountPoint) const
+@@ -533,14 +561,18 @@
  
  			try
  			{
@@ -33,7 +81,7 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  			}
  			catch (...)
  			{
-@@ -553,6 +561,9 @@
+@@ -553,6 +585,9 @@
  		{
  			try
  			{
