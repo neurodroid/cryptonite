@@ -73,3 +73,50 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.1' -x 'bld*' -x '*~' -ur a/src/common/fi
  
          return true;
      }
+diff -x '*.in' -x '*.o' -x '*.lo' -x '*.1' -x 'bld*' -x '*~' -ur /Users/cs/wxWidgets-2.8.12/src/common/intl.cpp ./wxWidgets-2.8.12/src/common/intl.cpp
+--- a/src/common/intl.cpp	2011-03-22 11:59:41.000000000 +0000
++++ b/src/common/intl.cpp	2012-11-28 00:53:23.000000000 +0000
+@@ -2956,11 +2956,21 @@
+             switch (index)
+             {
+                 case wxLOCALE_THOUSANDS_SEP:
++#ifdef ANDROID
++                    return wxString(",",
++                                    *wxConvCurrent);
++#else
+                     return wxString(locale_info->thousands_sep,
+                                     *wxConvCurrent);
++#endif
+                 case wxLOCALE_DECIMAL_POINT:
++#ifdef ANDROID
++                    return wxString(".",
++                                    *wxConvCurrent);
++#else
+                     return wxString(locale_info->decimal_point,
+                                     *wxConvCurrent);
++#endif
+                 default:
+                     return wxEmptyString;
+             }
+@@ -2968,11 +2978,21 @@
+             switch (index)
+             {
+                 case wxLOCALE_THOUSANDS_SEP:
++#ifdef ANDROID
++                    return wxString(",",
++                                    *wxConvCurrent);
++#else
+                     return wxString(locale_info->mon_thousands_sep,
+                                     *wxConvCurrent);
++#endif
+                 case wxLOCALE_DECIMAL_POINT:
++#ifdef ANDROID
++                    return wxString(",",
++                                    *wxConvCurrent);
++#else
+                     return wxString(locale_info->mon_decimal_point,
+                                     *wxConvCurrent);
++#endif
+                 default:
+                     return wxEmptyString;
+             }

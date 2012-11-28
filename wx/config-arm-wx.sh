@@ -16,7 +16,8 @@
 
 # Copyright (c) 2012, Christoph Schmidt-Hieber
 
-TOOLCHAIN=${HOME}/android-toolchain-crystax
+CRYSTAX=""
+TOOLCHAIN=${HOME}/android-toolchain${CRYSTAX}
 SYSROOT=${TOOLCHAIN}/sysroot
 MYAR=${TOOLCHAIN}/bin/arm-linux-androideabi-ar
 MYRANLIB=${TOOLCHAIN}/bin/arm-linux-androideabi-ranlib
@@ -24,10 +25,10 @@ MYNM=${TOOLCHAIN}/bin/arm-linux-androideabi-nm
 MYSTRIP=${TOOLCHAIN}/bin/arm-linux-androideabi-strip
 
 if test -n "$1"; then
-    MYAGCC=agcc-vfp-crystax
+    MYAGCC=agcc-vfp${CRYSTAX}
     ARCH=armeabi-v7a
 else
-    MYAGCC=agcc-crystax
+    MYAGCC=agcc${CRYSTAX}
     ARCH=armeabi
 fi
 
@@ -35,8 +36,14 @@ fi
 # LIBSTDCXXLIB="-L${NDKDIR}/sources/cxx-stl/gnu-libstdc++/libs/${ARCH} -lgnustl_static"
 # LIBSTDCXXINC="-I${NDKDIR}/sources/cxx-stl/stlport/stlport"
 # LIBSTDCXXLIB="-L${NDKDIR}/sources/cxx-stl/stlport/libs/${ARCH} -lstlport_static"
-LIBSTDCXXINC=""
-LIBSTDCXXLIB="-L${TOOLCHAIN}/arm-linux-androideabi/lib/${ARCH} -lcrystax"
+
+if [ -n "${CRYSTAX}" ]; then
+    LIBSTDCXXINC=""
+    LIBSTDCXXLIB="-L${TOOLCHAIN}/arm-linux-androideabi/lib/${ARCH} -lcrystax"
+else
+    LIBSTDCXXINC="-I${TOOLCHAIN}/arm-linux-androideabi/include/c++/4.6 -I${TOOLCHAIN}/arm-linux-androideabi/include/c++/4.6/arm-linux-androideabi"
+    LIBSTDCXXLIB="-lstdc++"
+fi
 
 TARGET=`pwd`/${ARCH}
 
