@@ -292,7 +292,7 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  ifeq "$(TC_BUILD_CONFIG)" "Release"
  ifndef NOSTRIP
 -	strip $(APPNAME)
-+	$(HOME)/android-toolchain/bin/arm-linux-androideabi-strip $(APPNAME)
++	$(HOME)/android-toolchain-crystax/bin/arm-linux-androideabi-strip $(APPNAME)
  endif
  
  ifndef NOTEST

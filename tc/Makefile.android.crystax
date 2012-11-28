@@ -25,27 +25,20 @@
 
 #------ Build configuration ------
 
-CRYSTAX=
 ARCH=armeabi
 # LIBSTDCXXINC=-I${NDKDIR}/sources/cxx-stl/gnu-libstdc++/include/ -I${NDKDIR}/sources/cxx-stl/gnu-libstdc++/libs/${ARCH}/include
-ifeq "$(CRYSTAX)" ""
-    LIBSTDCXXINC=-I${HOME}/android-toolchain/arm-linux-androideabi/include/c++/4.6 -I${TOOLCHAIN}/arm-linux-androideabi/include/c++/4.6/arm-linux-androideabi
-    export LIBSTDCXXLIB=-L${HOME}/android-toolchain/arm-linux-androideabi/lib/${ARCH} -lstdc++
-else
-    LIBSTDCXXINC=-I${HOME}/android-toolchain-crystax/sysroot/usr/include
-    export LIBSTDCXXLIB=-L${HOME}/android-toolchain-crystax/arm-linux-androideabi/lib/${ARCH} -lcrystax
-endif
-
+LIBSTDCXXINC=-I${HOME}/android-toolchain-crystax/sysroot/usr/include
+export LIBSTDCXXLIB=-L${HOME}/android-toolchain-crystax/arm-linux-androideabi/lib/${ARCH} -lcrystax
 
 export APPNAME := truecrypt
 export BASE_DIR := $(CURDIR)
 export BUILD_INC := $(BASE_DIR)/Build/Include
 
-export AR := $(HOME)/android-toolchain${CRYSTAX}/bin/arm-linux-androideabi-ar
-export CC := agcc${CRYSTAX}
-export CXX := agcc${CRYSTAX}
-export AS := $(HOME)/android-toolchain${CRYSTAX}/bin/arm-linux-androideabi-as
-export RANLIB := $(HOME)/android-toolchain${CRYSTAX}/bin/arm-linux-androideabi-ranlib
+export AR := $(HOME)/android-toolchain-crystax/bin/arm-linux-androideabi-ar
+export CC := agcc-crystax
+export CXX := agcc-crystax
+export AS := $(HOME)/android-toolchain-crystax/bin/arm-linux-androideabi-as
+export RANLIB := $(HOME)/android-toolchain-crystax/bin/arm-linux-androideabi-ranlib
 
 export CFLAGS := -Wall
 export CXXFLAGS := -Wall -Wno-unused-parameter
