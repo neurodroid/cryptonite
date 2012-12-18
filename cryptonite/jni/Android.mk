@@ -43,7 +43,7 @@ LOCAL_C_INCLUDES := \
     ../encfs-1.7.4/encfs-1.7.4 \
     ../encfs-1.7.4/encfs-1.7.4/encfs \
     ../encfs-1.7.4/encfs-1.7.4/intl \
-    ../fuse/jni/include \
+    ../fuse29/jni/include \
     ../rlog/rlog-1.4/$(TARGET_ARCH_ABI)/include \
     ../openssl/openssl-1.0.0j/include \
     $(ENCFS_INCLUDES)
@@ -51,7 +51,7 @@ LOCAL_C_INCLUDES := \
 LOCAL_CPPFLAGS := \
     -D_FILE_OFFSET_BITS=64 \
     -DRLOG_COMPONENT="encfs" \
-    -DFUSE_USE_VERSION=26 \
+    -DFUSE_USE_VERSION=30 \
     -D__STDC_FORMAT_MACROS \
     -D__MULTI_THREAD \
     -DOPENSSL_NO_ENGINE \

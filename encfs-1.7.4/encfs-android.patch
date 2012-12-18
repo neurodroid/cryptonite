@@ -316,7 +316,18 @@
  
 --- ./encfs/main.cpp	2009-11-29 22:04:12.000000000 +0000
 +++ ./encfs/main.cpp	2012-10-01 14:54:55.000000000 +0100
-@@ -140,6 +140,9 @@
+@@ -53,8 +53,10 @@
+ 
+ // Fuse version >= 26 requires another argument to fuse_unmount, which we
+ // don't have.  So use the backward compatible call instead..
++#ifndef ANDROID
+ extern "C" void fuse_unmount_compat22(const char *mountpoint);
+ #    define fuse_unmount fuse_unmount_compat22
++#endif
+ 
+ #include <locale.h>
+ 
+@@ -140,6 +142,9 @@
  	<< _("  -v, --verbose\t\t"   "verbose: output encfs debug messages\n"
  	"  -i, --idle=MINUTES\t""Auto unmount after period of inactivity\n"
  	"  --anykey\t\t"        "Do not verify correct key is being used\n"
@@ -326,7 +337,7 @@
  	"  --forcedecode\t\t"   "decode data even if an error is detected\n"
  	                  "\t\t\t(for filesystems using MAC block headers)\n")
  	<< _("  --public\t\t"   "act as a typical multi-user filesystem\n"
-@@ -217,6 +220,9 @@
+@@ -217,6 +222,9 @@
  	{"fuse-help", 0, 0, 'H'}, // fuse_mount usage
  	{"idle", 1, 0, 'i'}, // idle timeout
  	{"anykey", 0, 0, 'k'}, // skip key checks
@@ -336,7 +347,7 @@
  	{"no-default-flags", 0, 0, 'N'}, // don't use default fuse flags
  	{"ondemand", 0, 0, 'm'}, // mount on-demand
  	{"public", 0, 0, 'P'}, // public mode
-@@ -281,6 +287,11 @@
+@@ -281,6 +289,11 @@
  	case 'k':
  	    out->opts->checkKey = false;
  	    break;
@@ -348,8 +359,29 @@
  	case 'D':
  	    out->opts->forceDecode = true;
  	    break;
+@@ -756,7 +769,11 @@
+ 	// xgroup(diag)
+ 	rWarning(_("Unmounting filesystem %s due to inactivity"),
+ 		arg->mountPoint.c_str());
++#ifndef ANDROID
+ 	fuse_unmount( arg->mountPoint.c_str() );
++#else
++	fuse_unmount( arg->mountPoint.c_str(), NULL );
++#endif
+ 	return true;
+     }
+ }
 --- ./configure.ac	2010-11-18 02:50:51.000000000 +0000
 +++ ./configure.ac	2012-01-10 14:13:29.560437598 +0000
+@@ -52,7 +52,7 @@
+ 
+ dnl Need to include any user specified flags in the tests below, as they might
+ dnl specify required include directories..
+-FUSEFLAGS="-D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26"
++FUSEFLAGS="-D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=30"
+ CPPFLAGS="$CPPFLAGS $USER_INCLUDES $FUSEFLAGS -D__STDC_FORMAT_MACROS"
+ CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS $USER_INCLUDES"
+ LDFLAGS="$LDFLAGS $PTHREAD_LIBS $USER_LDFLAGS"
 @@ -83,24 +83,24 @@
  AC_SUBST(FUSE_LIBS)
  
