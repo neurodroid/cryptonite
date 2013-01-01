@@ -27,7 +27,6 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 
 import android.os.Bundle;
-import android.os.Environment;
 
 import android.preference.CheckBoxPreference;
 import android.preference.Preference;
@@ -146,8 +145,8 @@ public class Preferences extends SherlockPreferenceActivity {
                 int dialogMode = SelectionMode.MODE_OPEN_CREATE;
                 String dialogStartPath = "/";
                 if (Cryptonite.externalStorageIsWritable()) {
-                    dialogStartPath = Environment
-                            .getExternalStorageDirectory()
+                    dialogStartPath = DirectorySettings
+                            .getGlobalExternalStorageDirectory()
                             .getPath();
                 }
                 String dialogRoot = "/";

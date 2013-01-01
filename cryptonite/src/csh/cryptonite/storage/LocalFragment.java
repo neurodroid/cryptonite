@@ -13,7 +13,6 @@ import csh.cryptonite.database.Volume;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -63,7 +62,7 @@ public class LocalFragment extends StorageFragment {
                     mAct.currentDialogButtonLabel = getString(R.string.select_enc_short);
                     mAct.currentDialogMode = SelectionMode.MODE_OPEN_ENCFS_MOUNT;
                     if (Cryptonite.externalStorageIsWritable()) {
-                        mAct.currentDialogStartPath = Environment.getExternalStorageDirectory().getPath();
+                        mAct.currentDialogStartPath = DirectorySettings.getGlobalExternalStorageDirectory().getPath();
                     } else {
                         mAct.currentDialogStartPath = "/";
                     }
@@ -193,7 +192,7 @@ public class LocalFragment extends StorageFragment {
     @Override
     protected void openEncFSVolume() {
         if (Cryptonite.externalStorageIsWritable()) {
-            mAct.currentDialogStartPath = Environment.getExternalStorageDirectory().getPath();
+            mAct.currentDialogStartPath = DirectorySettings.getGlobalExternalStorageDirectory().getPath();
         } else {
             mAct.currentDialogStartPath = "/";
         }

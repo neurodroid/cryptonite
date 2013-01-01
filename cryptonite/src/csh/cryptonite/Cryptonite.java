@@ -412,7 +412,7 @@ public class Cryptonite extends SherlockFragmentActivity
     }
 
     public static String defaultMntDir() {
-        return Environment.getExternalStorageDirectory().getPath() + MNTPNT;
+        return DirectorySettings.getGlobalExternalStorageDirectory().getPath() + MNTPNT;
     }
 
     /** Called upon exit from other activities */
@@ -515,8 +515,8 @@ public class Cryptonite extends SherlockFragmentActivity
                                     .getString(R.string.select_upload_short);
                             currentDialogMode = SelectionMode.MODE_OPEN_UPLOAD_SOURCE;
                             if (externalStorageIsWritable()) {
-                                currentDialogStartPath = Environment
-                                        .getExternalStorageDirectory()
+                                currentDialogStartPath = DirectorySettings
+                                        .getGlobalExternalStorageDirectory()
                                         .getPath();
                             } else {
                                 currentDialogStartPath = "/";

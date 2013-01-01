@@ -58,7 +58,6 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 
 import android.util.Log;
 import android.view.ContextMenu;
@@ -1898,7 +1897,7 @@ public class FileDialog extends SherlockFragmentActivity {
                 intent.putExtra(FileDialog.CURRENT_ROOT, "/");
                 intent.putExtra(FileDialog.CURRENT_ROOT_NAME, "/");
                 intent.putExtra(FileDialog.BUTTON_LABEL, getString(R.string.select_config_short));
-                intent.putExtra(FileDialog.START_PATH, Environment.getExternalStorageDirectory().getPath());
+                intent.putExtra(FileDialog.START_PATH, DirectorySettings.getGlobalExternalStorageDirectory().getPath());
                 intent.putExtra(FileDialog.CURRENT_UPLOAD_TARGET_PATH, currentUploadTargetPath);
                 intent.putExtra(FileDialog.CURRENT_EXPORT_PATH_LIST, new String[0]);
                 intent.putExtra(FileDialog.ENCFS_BROWSE_ROOT, "");

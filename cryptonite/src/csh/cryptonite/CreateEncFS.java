@@ -20,7 +20,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -159,8 +158,8 @@ public class CreateEncFS extends SherlockFragmentActivity {
         switch (mStorage.type) {
         case Storage.STOR_LOCAL:
             if (Cryptonite.externalStorageIsWritable()) {
-                dialogStartPath = Environment
-                        .getExternalStorageDirectory()
+                dialogStartPath = DirectorySettings
+                        .getGlobalExternalStorageDirectory()
                         .getPath();
             } else {
                 dialogStartPath = "/";
