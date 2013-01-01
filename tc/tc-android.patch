@@ -243,7 +243,7 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  
  NAME := Driver
 -
-+FUSEDIR := $(HOME)/cryptonite/fuse
++FUSEDIR := $(HOME)/cryptonite/fuse28
  OBJS :=
  OBJS += FuseService.o
  
@@ -326,7 +326,7 @@ diff -x '*.in' -x '*.o' -x '*.lo' -x '*.a' -x '*.xml.h' -x '*.1' -x 'bld*' -x '*
  #------ FUSE configuration ------
  
 -FUSE_LIBS = $(shell pkg-config fuse --libs)
-+FUSE_LIBS = -L$(HOME)/cryptonite/fuse/obj/local/armeabi -lfuse
++FUSE_LIBS = -L$(HOME)/cryptonite/fuse28/obj/local/armeabi -lfuse
  
  
  #------ Executable ------
