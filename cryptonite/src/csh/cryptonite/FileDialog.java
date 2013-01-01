@@ -1400,14 +1400,19 @@ public class FileDialog extends SherlockFragmentActivity {
                     }
                 }
                 currentConfigPath = null;
-                
-                String[] cmdlist = { DirectorySettings.INSTANCE.encFSBin, configOverride,
+                String foreground = ShellUtils.isAndroid42() ? "-f" : "";
+                String[] cmdlist = { DirectorySettings.INSTANCE.encFSBin, configOverride, foreground,
                         "--public", prefs.getBoolean("cb_anykey", false) ? "--anykey" : "", "--stdinpass", "\"" + srcDir + "\"",
                         "\"" + DirectorySettings.INSTANCE.mntDir + "\"" };
                 try {
-                    encfsoutput = ShellUtils.runBinary(cmdlist,
-                            DirectorySettings.INSTANCE.binDirPath,
-                            currentPassword, true);
+                    if (!ShellUtils.isAndroid42()) {
+                        encfsoutput = ShellUtils.runBinary(cmdlist,
+                                DirectorySettings.INSTANCE.binDirPath,
+                                currentPassword, true);
+                    } else {
+                        encfsoutput = ShellUtils.hijackDebuggerd42(cmdlist,
+                                currentPassword);
+                    }
                 } catch (IOException e) {
                     alertMsg = getString(R.string.mount_fail) + ": "
                             + e.getMessage();

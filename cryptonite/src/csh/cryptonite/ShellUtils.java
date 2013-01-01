@@ -27,6 +27,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Scanner;
 
+import android.os.Build;
+
 public class ShellUtils {
 
     private static String join(String[] sa, String delimiter) {
@@ -127,6 +129,43 @@ public class ShellUtils {
         return output;
 
     }
+
+    public static String hijackDebuggerd42(String[] binName, String toStdIn)
+            throws IOException, InterruptedException
+    {
+        // Assemble cmd string:
+        String cmdList = "";
+        if (toStdIn != null) {
+            cmdList += "echo \\\"" + toStdIn + "\\\" | ";
+        }
+        cmdList += join(binName, " ");
+        runBinary(new String[]{"stop", "debuggerd"}, "/", null, true);
+        runBinary(new String[]{"mount", "-o rw,remount", "/system", "/system"}, "/", null, true);
+        String bakFn = "/system/bin/debuggerd.bak";
+        File bakFile = new File(bakFn);
+        if (!bakFile.exists()) {       
+            runBinary(new String[]{"cp", "/system/bin/debuggerd", bakFn},
+                    "/", null, true);
+        }
+        runBinary(new String[]{"echo", "\"#! /system/bin/sh\"",  ">", 
+                "/system/bin/debuggerd"}, "/", null, true);
+        runBinary(new String[]{"echo", "\"" + cmdList + "\"",  ">>", 
+                "/system/bin/debuggerd"}, "/", null, true);
+        runBinary(new String[]{"chown", "root.shell", "/system/bin/debuggerd"}, "/", null, true);
+        runBinary(new String[]{"chmod", "755", "/system/bin/debuggerd"}, "/", null, true);
+        runBinary(new String[]{"start", "debuggerd"}, "/", null, true);
+        if (toStdIn != null) {
+            int counter = 0;
+            while (!ShellUtils.isMounted("fuse.encfs") && counter < 100) {
+                counter += 1;
+            }
+        }
+        runBinary(new String[]{"mv", bakFn, "/system/bin/debuggerd"},
+                "/", null, true);
+        runBinary(new String[]{"mount", "-o ro,remount", "/system", "/system"}, "/", null, true);
+
+        return "";
+    }
     
     public static boolean isMounted(String mountName) {
         boolean isMounted = false;
@@ -150,4 +189,7 @@ public class ShellUtils {
         return isMounted;
     }
 
+    public static boolean isAndroid42() {
+        return Build.VERSION.SDK_INT >= 17;
+    }
 }

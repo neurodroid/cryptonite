@@ -80,8 +80,11 @@ public class LocalFragment extends StorageFragment {
                 } else {
                     String[] umountlist = {"umount", DirectorySettings.INSTANCE.mntDir};
                     try {
-                        ShellUtils.runBinary(umountlist,
-                                DirectorySettings.INSTANCE.binDirPath, null, true);
+                        if (!ShellUtils.isAndroid42()) {
+                            ShellUtils.runBinary(umountlist, "/", null, true);
+                        } else {
+                            ShellUtils.hijackDebuggerd42(umountlist, null);
+                        }
                     } catch (IOException e) {
                         Toast.makeText(mAct, 
                                 getString(R.string.umount_fail) + ": " + e.getMessage(), 
@@ -90,6 +93,21 @@ public class LocalFragment extends StorageFragment {
                         Toast.makeText(mAct, 
                                 getString(R.string.umount_fail) + ": " + e.getMessage(), 
                                 Toast.LENGTH_LONG).show();
+                    }
+                    if (ShellUtils.isAndroid42()) {
+                        String[] stopDebuggerD = {"stop", "debuggerd"};
+                        try {
+                            ShellUtils.runBinary(stopDebuggerD,
+                                    DirectorySettings.INSTANCE.binDirPath, null, true);
+                        } catch (IOException e) {
+                            Toast.makeText(mAct, 
+                                    getString(R.string.umount_fail) + ": " + e.getMessage(), 
+                                    Toast.LENGTH_LONG).show();
+                        } catch (InterruptedException e) {
+                            Toast.makeText(mAct, 
+                                    getString(R.string.umount_fail) + ": " + e.getMessage(), 
+                                    Toast.LENGTH_LONG).show();
+                        }
                     }
                     
                     /* Still mounted? Offer to kill encfs */
