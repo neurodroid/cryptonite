@@ -1,3 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <lint>
+    <issue id="SdCardPath">
+        <ignore path="src/csh/cryptonite/DirectorySettings.java" />
+    </issue>
 </lint>
