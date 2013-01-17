@@ -414,6 +414,15 @@
  }
 --- ./configure.ac	2010-11-18 02:50:51.000000000 +0000
 +++ ./configure.ac	2012-01-10 14:13:29.560437598 +0000
+@@ -11,7 +11,7 @@
+ 
+ dnl without this order in this file, automake will be confused!
+ dnl
+-AM_CONFIG_HEADER(config.h)
++AC_CONFIG_HEADERS(config.h)
+ 
+ dnl This ksh/zsh feature conflicts with `cd blah ; pwd`
+ unset CDPATH
 @@ -52,7 +52,7 @@
  
  dnl Need to include any user specified flags in the tests below, as they might
