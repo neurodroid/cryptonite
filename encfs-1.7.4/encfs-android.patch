@@ -9,18 +9,25 @@
  #include <sys/fsuid.h>
  #endif
  
-@@ -580,20 +580,23 @@
-     rLog( Info, "mkdir on %s", cyName.c_str() );
- 
+@@ -582,17 +582,34 @@
      // if uid or gid are set, then that should be the directory owner
-+#ifndef ANDROID
      int olduid = -1;
      int oldgid = -1;
++#ifndef ANDROID
      if(uid != 0)
  	olduid = setfsuid( uid );
      if(gid != 0)
  	oldgid = setfsgid( gid );
 -
++#else
++    if(uid != 0) {
++	olduid = geteuid();
++        seteuid( uid );
++    }
++    if(gid != 0) {
++	oldgid = getegid();
++        setegid( gid );
++    }
 +#endif
      int res = ::mkdir( cyName.c_str(), mode );
  
@@ -29,12 +36,15 @@
  	setfsuid( olduid );
      if(oldgid >= 0)
  	setfsgid( oldgid );
--
++#else
++    if(olduid >= 0)
++	seteuid( olduid );
++    if(oldgid >= 0)
++	setegid( oldgid );
 +#endif
-+    
+ 
      if(res == -1)
      {
- 	int eno = errno;
 --- ./encfs/FSConfig.h	2010-08-30 07:27:49.000000000 +0100
 +++ ./encfs/FSConfig.h	2012-01-17 00:43:29.000000000 +0000
 @@ -103,7 +103,9 @@
@@ -49,25 +59,41 @@
     
 --- ./encfs/FileNode.cpp	2010-09-06 04:52:12.000000000 +0100
 +++ ./encfs/FileNode.cpp	2012-01-17 00:43:29.000000000 +0000
-@@ -169,6 +169,7 @@
-     int res;
-     int olduid = -1;
+@@ -171,7 +171,12 @@
      int oldgid = -1;
-+#ifndef ANDROID
      if(uid != 0)
      {
++#ifndef ANDROID
  	olduid = setfsuid( uid );
-@@ -187,7 +188,8 @@
++#else
++	olduid = geteuid();
++	seteuid( uid );
++#endif
+         if(olduid == -1)
+         {
+             rInfo("setfsuid error: %s", strerror(errno));
+@@ -180,14 +185,19 @@
+     }
+     if(gid != 0)
+     {
++#ifndef ANDROID
+ 	oldgid = setfsgid( gid );
++#else
++	oldgid = getegid();
++	setegid( gid );
++#endif
+         if(oldgid == -1)
+         {
+             rInfo("setfsgid error: %s", strerror(errno));
              return -EPERM;
          }
      }
 -
-+#endif
 +    
      /*
       * cf. xmp_mknod() in fusexmp.c
       * The regular file stuff could be stripped off if there
-@@ -202,11 +204,13 @@
+@@ -202,11 +212,18 @@
      else
          res = ::mknod( _cname.c_str(), mode, rdev );
  
@@ -77,12 +103,17 @@
      if(oldgid >= 0)
  	setfsgid( oldgid );
 -
++#else
++    if(olduid >= 0)
++	seteuid( olduid );
++    if(oldgid >= 0)
++	setegid( oldgid );
 +#endif
 +    
      if(res == -1)
      {
  	int eno = errno;
-@@ -283,7 +287,7 @@
+@@ -283,7 +300,7 @@
      if(fh >= 0)
      {
  	int res = -EIO;
@@ -255,30 +286,36 @@
  #include <sys/time.h>
  
  #include <sys/types.h>
-@@ -421,6 +425,7 @@
- 
- 	// use setfsuid / setfsgid so that the new link will be owned by the
- 	// uid/gid provided by the fuse_context.
-+#ifndef ANDROID
- 	int olduid = -1;
- 	int oldgid = -1;
+@@ -426,14 +430,28 @@
  	if(ctx->publicFilesystem)
-@@ -429,11 +434,14 @@
+ 	{
+ 	    fuse_context *context = fuse_get_context();
++#ifndef ANDROID
  	    olduid = setfsuid( context->uid );
  	    oldgid = setfsgid( context->gid );
- 	}
++#else
++	    olduid = geteuid();
++	    oldgid = getegid();
++	    seteuid( context->uid );
++	    setegid( context->gid );
 +#endif
+ 	}
  	res = ::symlink( fromCName.c_str(), toCName.c_str() );
 +#ifndef ANDROID
  	if(olduid >= 0)
  	    setfsuid( olduid );
  	if(oldgid >= 0)
  	    setfsgid( oldgid );
++#else
++	if(olduid >= 0)
++	    seteuid( olduid );
++	if(oldgid >= 0)
++	    setegid( oldgid );
 +#endif
  
  	if(res == -1)
  	    res = -errno;
-@@ -544,7 +552,11 @@
+@@ -544,7 +562,11 @@
      tv[1].tv_sec = ts[1].tv_sec;
      tv[1].tv_usec = ts[1].tv_nsec / 1000;
  
@@ -290,7 +327,7 @@
      return (res == -1) ? -errno : ESUCCESS;
  }
  
-@@ -670,6 +682,36 @@
+@@ -670,6 +692,36 @@
  	    make_tuple(buf, size, offset));
  }
  
