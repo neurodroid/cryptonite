@@ -1,6 +1,6 @@
 # Don't attempt a parallel build! (-jN)
 
-OPENSSL_VERSION="1.0.0j"
+OPENSSL_VERSION="1.0.0k"
 
 cp -v Makefile.android openssl-${OPENSSL_VERSION}
 cp -v Makefile.android.armv7 openssl-${OPENSSL_VERSION}

@@ -60,7 +60,7 @@ STATIC_LIBS="
     ${TARGETDIR}/librlog.a 
     ${TARGETDIR}/libboost_filesystem.a 
     ${TARGETDIR}/libboost_system.a 
-    ${TARGETDIR}/libgnustl_static.a 
+    ${TARGETDIR}/libstdc++.a 
     ${TARGETDIR}/libgcc.a"
 SHARED_LIBS="-L../openssl/openssl-android/libs/armeabi/ -lssl -lcrypto"
 

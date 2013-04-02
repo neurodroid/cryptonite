@@ -45,7 +45,7 @@ LOCAL_C_INCLUDES := \
     ../encfs-1.7.4/encfs-1.7.4/intl \
     ../fuse29/jni/include \
     ../rlog/rlog-1.4/$(TARGET_ARCH_ABI)/include \
-    ../openssl/openssl-1.0.0j/include \
+    ../openssl/openssl-1.0.0k/include \
     $(ENCFS_INCLUDES)
 
 LOCAL_CPPFLAGS := \
@@ -66,7 +66,7 @@ LOCAL_LDLIBS := \
     ./obj/local/$(TARGET_ARCH_ABI)/libfuse.a \
     ./obj/local/$(TARGET_ARCH_ABI)/librlog.a \
     $(ENCFS_LDLIBS) \
-    ./obj/local/$(TARGET_ARCH_ABI)/libgnustl_static.a \
+    ./obj/local/$(TARGET_ARCH_ABI)/libstdc++.a \
     ./obj/local/$(TARGET_ARCH_ABI)/libgcc.a \
     ./obj/local/$(TARGET_ARCH_ABI)/libcrypto.a \
     ./obj/local/$(TARGET_ARCH_ABI)/libssl.a \
