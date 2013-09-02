@@ -1402,7 +1402,8 @@ public class FileDialog extends SherlockFragmentActivity {
                 currentConfigPath = null;
                 String foreground = ShellUtils.isAndroid42() ? "-f" : "";
                 String[] cmdlist = { DirectorySettings.INSTANCE.encFSBin, configOverride, foreground,
-                        "--public", prefs.getBoolean("cb_anykey", false) ? "--anykey" : "", "--stdinpass", "\"" + srcDir + "\"",
+                        "--public", "--no-default-flags",
+                        prefs.getBoolean("cb_anykey", false) ? "--anykey" : "", "--stdinpass", "\"" + srcDir + "\"",
                         "\"" + DirectorySettings.INSTANCE.mntDir + "\"" };
                 try {
                     if (!ShellUtils.isAndroid42()) {
