@@ -11,8 +11,8 @@
 #ifndef STANDALONE
 #include <android/log.h>
 #define  LOG_TAG    "cryptonite-key-jni"
-#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
-#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#define  LOGI(...)  __android_log_write(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define  LOGE(...)  __android_log_write(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 #else
 #include <cstring>
 #define  LOGI(x)  std::cout << x << std::endl;
