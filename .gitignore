@@ -143,6 +143,14 @@ cryptonite/tests/libs/*
 cryptonite/tests/obj
 cryptonite/tests/obj/*
 
+# gradle noise
+cryptonite/.gradle
+cryptonite/.idea
+cryptonite/build
+cryptonite/gradle
+cryptonite/gradlew*
+
+
 # various
 
 .DS_Store
