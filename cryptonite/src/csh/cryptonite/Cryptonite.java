@@ -360,7 +360,9 @@ public class Cryptonite extends SherlockFragmentActivity
 
     @Override
     protected void onResume() {
-        mDataSource.open();
+        if (mDataSource != null) {
+            mDataSource.open();
+        }
         super.onResume();
         if (!hasJni) {
             return;
@@ -375,7 +377,9 @@ public class Cryptonite extends SherlockFragmentActivity
 
     @Override
     protected void onPause() {
-        mDataSource.close();
+        if (mDataSource != null) {
+            mDataSource.close();
+        }
         super.onPause();
     }
 
