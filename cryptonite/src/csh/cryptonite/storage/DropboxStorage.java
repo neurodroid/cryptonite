@@ -67,8 +67,9 @@ public class DropboxStorage extends Storage {
                         if (dbEntry.contents.size() > 0) {
                             for (Entry dbChild : dbEntry.contents) {
                                 if (!dbChild.isDir) {
-                                    if (dbChild.fileName().matches(ENCFS_XML_V6_REGEX) ||
-                                            dbChild.fileName().matches(ENCFS_XML_V7_REGEX)) {
+                                    if (dbChild.fileName().matches(ENCFS_XML_VOLD_REGEX) ||
+                                        dbChild.fileName().matches(ENCFS_XML_V6_REGEX) ||
+                                        dbChild.fileName().matches(ENCFS_XML_V7_REGEX)) {
                                         String localEncfsXmlPath = initRoot + dbChild.path;
                                         FileOutputStream fos = new FileOutputStream(localEncfsXmlPath);
                                         DropboxInterface.INSTANCE.getDBApi()
