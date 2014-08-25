@@ -21,7 +21,7 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE    := libcryptonite
 LOCAL_SRC_FILES := cryptonite.cpp android_key.cpp
-ENCFS_VERSION   := 1.7.4
+ENCFS_VERSION   := 1.7.5
 
 ifeq ($(ENCFS_VERSION), svn)
     ENCFS_PATH     := encfs-svn
@@ -40,12 +40,12 @@ else
 endif
 
 LOCAL_C_INCLUDES := \
-    ../encfs-1.7.4/encfs-1.7.4 \
-    ../encfs-1.7.4/encfs-1.7.4/encfs \
-    ../encfs-1.7.4/encfs-1.7.4/intl \
+    ../encfs-1.7.5/encfs-1.7.5 \
+    ../encfs-1.7.5/encfs-1.7.5/encfs \
+    ../encfs-1.7.5/encfs-1.7.5/intl \
     ../fuse29/jni/include \
     ../rlog/rlog-1.4/$(TARGET_ARCH_ABI)/include \
-    ../openssl/openssl-1.0.0k/include \
+    ../openssl/openssl-1.0.0n/include \
     $(ENCFS_INCLUDES)
 
 LOCAL_CPPFLAGS := \

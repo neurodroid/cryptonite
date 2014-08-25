@@ -1,4 +1,4 @@
 #! /bin/bash
 
-wget http://www.openssl.org/source/openssl-1.0.0k.tar.gz
-tar -xzf openssl-1.0.0k.tar.gz
+wget http://www.openssl.org/source/openssl-1.0.0n.tar.gz
+tar -xzf openssl-1.0.0n.tar.gz
