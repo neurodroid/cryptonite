@@ -1,0 +1,523 @@
+--- ./configure.ac	2011-12-29 22:26:28.000000000 +0000
++++ ./configure.ac	2014-08-25 20:38:56.000000000 +0100
+@@ -58,16 +58,16 @@
+ CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS $USER_INCLUDES"
+ LDFLAGS="$LDFLAGS $PTHREAD_LIBS $USER_LDFLAGS $FUSE_LIBS"
+ 
+-dnl Look for fuse headers.
+-AX_EXT_HAVE_HEADER(fuse.h, /usr/include/fuse /usr/local/include/fuse \
+-                   /opt/include/fuse /opt/local/include/fuse \
+-                   /usr/include/osxfuse /usr/local/include/osxfuse)
+-
+-dnl Ensure the necessary paths are added to LDPATH
+-AX_EXT_HAVE_LIB(/usr/lib /usr/local/lib /opt/lib /opt/local/lib, fuse,
+-                fuse_new, [])
+-AX_EXT_HAVE_LIB(/usr/lib /usr/local/lib /opt/lib /opt/local/lib, osxfuse,
+-                fuse_new, [])
++dnl dnl Look for fuse headers.
++dnl AX_EXT_HAVE_HEADER(fuse.h, /usr/include/fuse /usr/local/include/fuse \
++dnl                    /opt/include/fuse /opt/local/include/fuse \
++dnl                    /usr/include/osxfuse /usr/local/include/osxfuse)
++
++dnl dnl Ensure the necessary paths are added to LDPATH
++dnl AX_EXT_HAVE_LIB(/usr/lib /usr/local/lib /opt/lib /opt/local/lib, fuse,
++dnl                 fuse_new, [])
++dnl AX_EXT_HAVE_LIB(/usr/lib /usr/local/lib /opt/lib /opt/local/lib, osxfuse,
++dnl                 fuse_new, [])
+ 
+ if test "$GXX" = "yes"; then
+     CXXFLAGS="-W -Wall -Wpointer-arith -Wwrite-strings $CXXFLAGS"
+@@ -84,25 +84,25 @@
+                  AC_MSG_ERROR([Unable to find libfuse.]))
+ fi
+ 
+-# check for a supported FUSE_MAJOR_VERSION.
+-AC_MSG_CHECKING([For supported FUSE API version])
+-AC_RUN_IFELSE([ 
+-    AC_LANG_PROGRAM([[#include "fuse.h"]],
+-[[
+-    if(FUSE_MAJOR_VERSION == 2 && FUSE_MINOR_VERSION >= 5)
+-    {
+-	return 0;
+-    } else
+-	return -1;
+-]])], 
+-    [AC_MSG_RESULT([yes])],
+-    [AC_MSG_RESULT([no])
+-    AC_MSG_FAILURE([
+-Encfs 1.3 requires FUSE 2.5 or newer.  Please check config.log for errors.  If
+-you cannot determine the problem, mail encfs-users@lists.sourceforge.net
+-and include the config.log file])
+-    ]
+-)
++dnl # check for a supported FUSE_MAJOR_VERSION.
++dnl AC_MSG_CHECKING([For supported FUSE API version])
++dnl AC_RUN_IFELSE([ 
++dnl     AC_LANG_PROGRAM([[#include "fuse.h"]],
++dnl [[
++dnl     if(FUSE_MAJOR_VERSION == 2 && FUSE_MINOR_VERSION >= 5)
++dnl     {
++dnl 	return 0;
++dnl     } else
++dnl 	return -1;
++dnl ]])], 
++dnl     [AC_MSG_RESULT([yes])],
++dnl     [AC_MSG_RESULT([no])
++dnl     AC_MSG_FAILURE([
++dnl Encfs 1.3 requires FUSE 2.5 or newer.  Please check config.log for errors.  If
++dnl you cannot determine the problem, mail encfs-users@lists.sourceforge.net
++dnl and include the config.log file])
++dnl     ]
++dnl )
+ 
+ dnl fuse_operations.setxattr was added 2004-03-31
+ dnl only enable it if setxattr function is found..
+--- ./encfs/DirNode.cpp	2011-12-29 22:26:28.000000000 +0000
++++ ./encfs/DirNode.cpp	2014-08-25 19:57:23.000000000 +0100
+@@ -27,7 +27,7 @@
+ #include <cstdlib>
+ #include <pthread.h>
+ #include <unistd.h>
+-#ifdef linux
++#if defined (linux) || defined (ANDROID)
+ #include <sys/fsuid.h>
+ #endif
+ 
+@@ -582,17 +582,34 @@
+     // if uid or gid are set, then that should be the directory owner
+     int olduid = -1;
+     int oldgid = -1;
++#ifndef ANDROID
+     if(uid != 0)
+ 	olduid = setfsuid( uid );
+     if(gid != 0)
+ 	oldgid = setfsgid( gid );
+-
++#else
++    if(uid != 0) {
++	olduid = geteuid();
++        seteuid( uid );
++    }
++    if(gid != 0) {
++	oldgid = getegid();
++        setegid( gid );
++    }
++#endif
+     int res = ::mkdir( cyName.c_str(), mode );
+ 
++#ifndef ANDROID
+     if(olduid >= 0)
+ 	setfsuid( olduid );
+     if(oldgid >= 0)
+ 	setfsgid( oldgid );
++#else
++    if(olduid >= 0)
++	seteuid( olduid );
++    if(oldgid >= 0)
++	setegid( oldgid );
++#endif
+ 
+     if(res == -1)
+     {
+--- ./encfs/FSConfig.h	2011-12-29 22:26:28.000000000 +0000
++++ ./encfs/FSConfig.h	2014-08-25 19:57:23.000000000 +0100
+@@ -103,7 +103,9 @@
+     unsigned char *getKeyData() const;
+     unsigned char *getSaltData() const;
+ 
++#ifndef ANDROID
+ private:
++#endif    
+     CipherKey makeKey(const char *password, int passwdLen);
+ };
+    
+--- ./encfs/FileNode.cpp	2011-12-29 22:26:28.000000000 +0000
++++ ./encfs/FileNode.cpp	2014-08-25 19:57:23.000000000 +0100
+@@ -171,7 +171,12 @@
+     int oldgid = -1;
+     if(uid != 0)
+     {
++#ifndef ANDROID
+ 	olduid = setfsuid( uid );
++#else
++	olduid = geteuid();
++	seteuid( uid );
++#endif
+         if(olduid == -1)
+         {
+             rInfo("setfsuid error: %s", strerror(errno));
+@@ -180,14 +185,19 @@
+     }
+     if(gid != 0)
+     {
++#ifndef ANDROID
+ 	oldgid = setfsgid( gid );
++#else
++	oldgid = getegid();
++	setegid( gid );
++#endif
+         if(oldgid == -1)
+         {
+             rInfo("setfsgid error: %s", strerror(errno));
+             return -EPERM;
+         }
+     }
+-
++    
+     /*
+      * cf. xmp_mknod() in fusexmp.c
+      * The regular file stuff could be stripped off if there
+@@ -202,11 +212,18 @@
+     else
+         res = ::mknod( _cname.c_str(), mode, rdev );
+ 
++#ifndef ANDROID
+     if(olduid >= 0)
+ 	setfsuid( olduid );
+     if(oldgid >= 0)
+ 	setfsgid( oldgid );
+-
++#else
++    if(olduid >= 0)
++	seteuid( olduid );
++    if(oldgid >= 0)
++	setegid( oldgid );
++#endif
++    
+     if(res == -1)
+     {
+ 	int eno = errno;
+@@ -283,7 +300,7 @@
+     if(fh >= 0)
+     {
+ 	int res = -EIO;
+-#ifdef linux
++#if defined(linux) && !defined (ANDROID)
+ 	if(datasync)
+ 	    res = fdatasync( fh );
+ 	else
+--- ./encfs/FileUtils.cpp	2011-12-29 22:26:28.000000000 +0000
++++ ./encfs/FileUtils.cpp	2014-08-25 19:57:23.000000000 +0100
+@@ -409,6 +409,21 @@
+     return Config_None;
+ }
+ 
++#ifdef ANDROID
++ConfigType readConfig_override(const shared_ptr<EncFS_Opts> &opts,
++	const boost::shared_ptr<EncFSConfig> &config )
++{
++    ConfigType type = Config_None;
++    if(!opts->configOverride.empty()) {
++	if( fileExists( opts->configOverride.c_str() ) )
++	    type = readConfig_load( &ConfigFileMapping[0], opts->configOverride.c_str(), config);
++    } else {
++        type = readConfig( opts->rootDir, config );
++    }
++    return type;
++}
++#endif
++
+ bool readV6Config( const char *configFile, 
+         const boost::shared_ptr<EncFSConfig> &config,
+ 	ConfigInfo *info)
+@@ -1067,6 +1082,38 @@
+ 	chainedIV = true;
+ 	externalIV = true;
+         desiredKDFDuration = ParanoiaKDFDuration;
++#ifdef ANDROID    
++    } else if(configMode == Config_Compatible)
++    {
++	// xgroup(setup)
++	cout << _("Compatible configuration selected.") << "\n";
++	// AES w/ 256 bit key, stream name encoding, no initialization
++        // vectors.
++	keySize = 256;
++	blockSize = DefaultBlockSize;
++	alg = findCipherAlgorithm("AES", keySize);
++	blockMACBytes = 0;
++	blockMACRandBytes = 0;
++	externalIV = false;
++	nameIOIface = StreamNameIO::CurrentInterface();
++        uniqueIV = false;
++        chainedIV = false;
++    } else if(configMode == Config_Quick)
++    {
++	// xgroup(setup)
++	cout << _("Quick configuration selected.") << "\n";
++	// Blowfish w/ 128 bit key, stream name encoding, no
++        // initialization vectors
++	keySize = 128;
++	blockSize = DefaultBlockSize;
++	alg = findCipherAlgorithm("Blowfish", keySize);
++	blockMACBytes = 0;
++	blockMACRandBytes = 0;
++	externalIV = false;
++	nameIOIface = StreamNameIO::CurrentInterface();
++        uniqueIV = false;
++        chainedIV = false;
++#endif
+     } else if(configMode == Config_Standard || answer[0] != 'x')
+     {
+ 	// xgroup(setup)
+@@ -1200,6 +1247,11 @@
+     // get user key and use it to encode volume key
+     CipherKey userKey;
+     rDebug( "useStdin: %i", useStdin );
++#ifdef ANDROID
++    if (!opts->password.empty())
++        userKey = config->makeKey( opts->password.c_str(), opts->password.length() );
++    else
++#endif        
+     if(useStdin)
+     {
+         if (annotate)
+@@ -1523,7 +1575,11 @@
+     if(pid == 0)
+     {
+ 	const char *argv[4];
++#ifdef ANDROID
++	argv[0] = "/system/bin/sh";
++#else
+ 	argv[0] = "/bin/sh";
++#endif
+ 	argv[1] = "-c";
+ 	argv[2] = passProg.c_str();
+ 	argv[3] = 0;
+@@ -1610,8 +1666,11 @@
+ {
+     RootPtr rootInfo;
+     boost::shared_ptr<EncFSConfig> config(new EncFSConfig);
+-
++#ifdef ANDROID
++    if(readConfig_override( opts, config ) != Config_None)
++#else
+     if(readConfig( opts->rootDir, config ) != Config_None)
++#endif
+     {
+ 	if(opts->reverseEncryption)
+ 	{
+@@ -1641,6 +1700,11 @@
+ 	// get user key
+ 	CipherKey userKey;
+ 
++#ifdef ANDROID
++        if(!opts->password.empty())
++            userKey = config->makeKey( opts->password.c_str(), opts->password.length() );
++        else
++#endif
+         if(opts->passwordProgram.empty())
+         {
+             rDebug( "useStdin: %i", opts->useStdin );
+--- ./encfs/FileUtils.h	2011-12-29 22:26:28.000000000 +0000
++++ ./encfs/FileUtils.h	2014-08-25 19:58:58.000000000 +0100
+@@ -59,6 +59,11 @@
+     Config_Prompt,
+     Config_Standard,
+     Config_Paranoia
++#ifdef ANDROID    
++    ,
++    Config_Compatible,
++    Config_Quick
++#endif
+ };
+ 
+ struct EncFS_Opts
+@@ -74,6 +79,10 @@
+     std::string passwordProgram; // path to password program (or empty)
+     bool useStdin; // read password from stdin rather then prompting
+     bool annotate; // print annotation line prompt to stderr.
++#ifdef ANDROID
++    std::string password; // supply password directly if encfs is used as a library
++    std::string configOverride; // override config file location
++#endif
+ 
+     bool ownerCreate; // set owner of new files to caller
+ 
+--- ./encfs/RawFileIO.cpp	2011-12-29 22:26:28.000000000 +0000
++++ ./encfs/RawFileIO.cpp	2014-08-25 19:57:23.000000000 +0100
+@@ -293,7 +293,7 @@
+     if(fd >= 0 && canWrite)
+     {
+ 	res = ::ftruncate( fd, size );
+-#ifndef __FreeBSD__
++#if !defined (__FreeBSD__) && !defined (ANDROID)
+ 	::fdatasync( fd );
+ #endif
+     } else
+--- ./encfs/encfs.cpp	2011-12-29 22:26:28.000000000 +0000
++++ ./encfs/encfs.cpp	2014-08-25 19:57:23.000000000 +0100
+@@ -23,7 +23,11 @@
+ #include <fcntl.h>
+ #include <dirent.h>
+ #include <cerrno>
++#ifndef ANDROID
+ #include <sys/statvfs.h>
++#else
++#include <sys/vfs.h>
++#endif
+ #include <sys/time.h>
+ 
+ #include <sys/types.h>
+@@ -426,14 +430,28 @@
+ 	if(ctx->publicFilesystem)
+ 	{
+ 	    fuse_context *context = fuse_get_context();
++#ifndef ANDROID
+ 	    olduid = setfsuid( context->uid );
+ 	    oldgid = setfsgid( context->gid );
++#else
++	    olduid = geteuid();
++	    oldgid = getegid();
++	    seteuid( context->uid );
++	    setegid( context->gid );
++#endif
+ 	}
+ 	res = ::symlink( fromCName.c_str(), toCName.c_str() );
++#ifndef ANDROID
+ 	if(olduid >= 0)
+ 	    setfsuid( olduid );
+ 	if(oldgid >= 0)
+ 	    setfsgid( oldgid );
++#else
++	if(olduid >= 0)
++	    seteuid( olduid );
++	if(oldgid >= 0)
++	    setegid( oldgid );
++#endif
+ 
+ 	if(res == -1)
+ 	    res = -errno;
+@@ -544,7 +562,11 @@
+     tv[1].tv_sec = ts[1].tv_sec;
+     tv[1].tv_usec = ts[1].tv_nsec / 1000;
+ 
++#ifndef ANDROID
+     int res = lutimes( cyName.c_str(), tv);
++#else
++    int res = utimes( cyName.c_str(), tv);
++#endif    
+     return (res == -1) ? -errno : ESUCCESS;
+ }
+ 
+@@ -670,6 +692,36 @@
+ 	    make_tuple(buf, size, offset));
+ }
+ 
++#ifdef ANDROID
++// statfvfs() equivalent for Android
++int statvfs(const char *path, struct statvfs *st)
++{
++    int res = -EIO;
++    struct statfs buf;
++
++    memset(&buf,0,sizeof(buf));
++    res = statfs(path, &buf);
++
++    if(!res && st!=NULL)
++    {
++        st->f_bsize=buf.f_bsize;
++        st->f_frsize=buf.f_frsize;
++        st->f_blocks=buf.f_blocks;
++        st->f_bfree=buf.f_bfree;
++        st->f_bavail=buf.f_bavail;
++        st->f_files=buf.f_files;
++        st->f_ffree=buf.f_ffree;
++        st->f_favail=buf.f_ffree;
++        st->f_fsid=buf.f_fsid.__val[1];
++        st->f_fsid<<=16;
++        st->f_fsid|=buf.f_fsid.__val[0];
++        st->f_flag=0;
++        st->f_namemax=buf.f_namelen;
++    }
++    return res;
++}
++#endif
++
+ // statfs works even if encfs is detached..
+ int encfs_statfs(const char *path, struct statvfs *st)
+ {
+--- ./encfs/encfsctl.cpp	2011-12-29 22:26:28.000000000 +0000
++++ ./encfs/encfsctl.cpp	2014-08-25 19:57:23.000000000 +0100
+@@ -384,7 +384,11 @@
+ 		fnode->getAttr( &stbuf );
+ 
+ 		struct tm stm;
++#ifdef ANDROID
++		localtime_r( (const time_t*)&stbuf.st_mtime, &stm );
++#else
+ 		localtime_r( &stbuf.st_mtime, &stm );
++#endif
+ 		stm.tm_year += 1900;
+ 		// TODO: when I add "%s" to the end and name.c_str(), I get a
+ 		// seg fault from within strlen.  Why ???
+@@ -686,10 +690,12 @@
+ 
+     int filesFound = showcruft( rootInfo, "/" );
+ 
++#ifndef ANDROID
+     cerr << autosprintf(
+ 	    ngettext("Found %i invalid file.", "Found %i invalid files.", 
+ 		filesFound), filesFound) << "\n";
+-
++#endif
++    
+     return EXIT_SUCCESS;
+ }
+ 
+--- ./encfs/main.cpp	2011-12-29 22:26:28.000000000 +0000
++++ ./encfs/main.cpp	2014-08-25 20:00:37.000000000 +0100
+@@ -57,8 +57,10 @@
+ 
+ // Fuse version >= 26 requires another argument to fuse_unmount, which we
+ // don't have.  So use the backward compatible call instead..
++#ifndef ANDROID
+ extern "C" void fuse_unmount_compat22(const char *mountpoint);
+ #define fuse_unmount fuse_unmount_compat22
++#endif
+ 
+ #ifndef MAX
+ inline static int MAX(int a, int b)
+@@ -141,6 +143,9 @@
+ 	<< _("  -v, --verbose\t\t"   "verbose: output encfs debug messages\n"
+ 	"  -i, --idle=MINUTES\t""Auto unmount after period of inactivity\n"
+ 	"  --anykey\t\t"        "Do not verify correct key is being used\n"
++#ifdef ANDROID
++        "  --config=PATH\t\t"   "Use specified config file\n"
++#endif             
+ 	"  --forcedecode\t\t"   "decode data even if an error is detected\n"
+ 	                  "\t\t\t(for filesystems using MAC block headers)\n")
+ 	<< _("  --public\t\t"   "act as a typical multi-user filesystem\n"
+@@ -219,6 +224,9 @@
+ 	{"fuse-help", 0, 0, 'H'}, // fuse_mount usage
+ 	{"idle", 1, 0, 'i'}, // idle timeout
+ 	{"anykey", 0, 0, 'k'}, // skip key checks
++#ifdef ANDROID
++	{"config", 1, 0, 'c'}, // external config
++#endif
+ 	{"no-default-flags", 0, 0, 'N'}, // don't use default fuse flags
+ 	{"ondemand", 0, 0, 'm'}, // mount on-demand
+ 	{"public", 0, 0, 'P'}, // public mode
+@@ -287,6 +295,11 @@
+ 	case 'k':
+ 	    out->opts->checkKey = false;
+ 	    break;
++#ifdef ANDROID
++	case 'c':
++	    out->opts->configOverride.assign( optarg );
++	    break;
++#endif
+ 	case 'D':
+ 	    out->opts->forceDecode = true;
+ 	    break;
+@@ -770,7 +783,11 @@
+ 	// xgroup(diag)
+ 	rWarning(_("Unmounting filesystem %s due to inactivity"),
+ 		arg->mountPoint.c_str());
++#ifndef ANDROID
+ 	fuse_unmount( arg->mountPoint.c_str() );
++#else
++	fuse_unmount( arg->mountPoint.c_str(), NULL );
++#endif
+ 	return true;
+     }
+ }
