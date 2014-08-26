@@ -35,7 +35,7 @@ import android.widget.Toast;
 public abstract class Storage {
 
     public static final int STOR_UNDEFINED=-1, STOR_LOCAL=0, STOR_DROPBOX=1;
-    public static final String ENCFS_XML_VOLD_REGEX = "\\.encfs\\";
+    public static final String ENCFS_XML_VOLD_REGEX = "\\.encfs";
     public static final String ENCFS_XML_V6_REGEX = "\\.encfs.\\.xml";
     public static final String ENCFS_XML_V7_REGEX = "\\.encfs\\.txt";
     public static final String ENCFS_XML_CURRENT  = ".encfs6.xml";
