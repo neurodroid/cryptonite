@@ -29,13 +29,14 @@ MYSTRIP=${TOOLCHAIN}/bin/arm-linux-androideabi-strip
 if test -n "$1"; then
     MYAGCC=agcc-vfp
     ARCH=armeabi-v7a
+    CXXDIR="armv7-a/"
 else
     MYAGCC=agcc
     ARCH=armeabi
+    CXXDIR=""
 fi
 
-LIBSTDCXXINC="-I${TOOLCHAIN}/arm-linux-androideabi/include/c++/4.6 -I${TOOLCHAIN}/arm-linux-androideabi/include/c++/4.6/arm-linux-androideabi"
-LIBSTDCXXLIB="-lstdc++"
+LIBSTDCXXLIB="${TOOLCHAIN}/arm-linux-androideabi/lib/${CXXDIR}libstdc++.a"
 
 TARGET=`pwd`/${ARCH}
 
@@ -45,7 +46,7 @@ AR=${MYAR} RANLIB=${MYRANLIB} NM=${MYNM} STRIP=${MYSTRIP} CC=${MYAGCC} CXX=${MYA
     OPENSSL_CFLAGS="-DOPENSSL_NO_ENGINE -DHAVE_EVP_AES -DHAVE_EVP_BF -D__STDC_FORMAT_MACROS -I${OPENSSLDIR}/include" \
     OPENSSL_LIBS="${OPENSSLDIR}/${ARCH}/libssl.a ${OPENSSLDIR}/${ARCH}/libcrypto.a -ldl" \
     CPPFLAGS="-DBOOST_FILESYSTEM_VERSION=2 -I${TOOLCHAIN}/sysroot/usr/include -I${FUSEDIR}/jni/include -I${BOOSTDIR} ${RLOG_CFLAGS} ${OPENSSL_CFLAGS}" \
-    CXXFLAGS="${LIBSTDCXXINC} -fexceptions -frtti" \
+    CXXFLAGS="-fexceptions -frtti" \
     LDFLAGS="${LIBSTDCXXLIB} -L${BOOSTDIR}/android/lib -L${FUSEDIR}/obj/local/${ARCH} -lgcc -lfuse ${RLOG_LIBS} ${OPENSSL_LIBS}" \
     ./configure \
          --prefix=${TARGET} \

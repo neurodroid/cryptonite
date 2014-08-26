@@ -66,8 +66,8 @@ LOCAL_LDLIBS := \
     ./obj/local/$(TARGET_ARCH_ABI)/libfuse.a \
     ./obj/local/$(TARGET_ARCH_ABI)/librlog.a \
     $(ENCFS_LDLIBS) \
-    ./obj/local/$(TARGET_ARCH_ABI)/libstdc++.a \
     ./obj/local/$(TARGET_ARCH_ABI)/libgcc.a \
+    ./obj/local/$(TARGET_ARCH_ABI)/libstdc++.a \
     ./obj/local/$(TARGET_ARCH_ABI)/libcrypto.a \
     ./obj/local/$(TARGET_ARCH_ABI)/libssl.a \
     -llog -ldl

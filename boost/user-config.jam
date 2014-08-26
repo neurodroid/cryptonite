@@ -107,11 +107,11 @@ else if [ os.name ] = MACOSX
 }
 modules.poke : NO_BZIP2 : 1 ;
 ANDROID_TOOLCHAIN = ../../../android-toolchain ;
-using gcc : android4.6 :
+using gcc : android4.8 :
 $(ANDROID_TOOLCHAIN)/bin/arm-linux-androideabi-g++ :
 <compileflags>--sysroot=$(ANDROID_TOOLCHAIN)/sysroot
-<compileflags>-I$(ANDROID_TOOLCHAIN)/arm-linux-androideabi/include/c++/4.6
-<compileflags>-I$(ANDROID_TOOLCHAIN)/arm-linux-androideabi/include/c++/4.6/arm-linux-androideabi
+<compileflags>-I$(ANDROID_TOOLCHAIN)/arm-linux-androideabi/include/c++/4.8
+<compileflags>-I$(ANDROID_TOOLCHAIN)/arm-linux-androideabi/include/c++/4.8/arm-linux-androideabi
 <compileflags>-mthumb
 <compileflags>-Os
 <compileflags>-fno-strict-aliasing
