@@ -425,9 +425,32 @@ public class DropboxStorage extends Storage {
                 if (dbEntry.isDir && !dbEntry.isDeleted) {
                     if (dbEntry.contents != null) {
                         if (dbEntry.contents.size()>0) {
+                            /* Work around a bug in the Dropbox API that will transform the
+                             * initial part of a child's path name to lower case
+                             */
+                            String entryPath = dbEntry.path;
+                            String entryParentPath = (new File(entryPath)).getParent();
+                            Entry dbEntryParent = DropboxInterface.INSTANCE.getDBEntry(entryParentPath);
+                            if (!dbEntryParent.path.equals(entryParentPath)) {
+                                dbEntry = DropboxInterface.INSTANCE.getDBEntry(entryPath, false);
+                                entryPath = dbEntryParent.path + "/" + 
+                                        (new File(entryPath)).getName();
+                                dbEntry.path = entryPath;
+                            }
+
                             for (Entry dbChild : dbEntry.contents) {
                                 if (!dbChild.isDeleted) {
-                                    decode(dbChild.path.substring(encFSPath.length()), 
+                                    /* Work around a bug in the Dropbox API that will transform the
+                                     * initial part of a child's path name to lower case
+                                     */
+                                    String childPath = dbChild.path;
+                                    String childParentPath = (new File(childPath)).getParent();
+                                    if (!dbEntry.path.equals(childParentPath)) {
+                                        childPath = dbEntry.path + "/" + 
+                                                (new File(childPath)).getName();
+                                        dbChild.path = childPath;
+                                    }
+                                    decode(childPath.substring(encFSPath.length()), 
                                             rootPath, dbChild.isDir);
                                 }
                             }

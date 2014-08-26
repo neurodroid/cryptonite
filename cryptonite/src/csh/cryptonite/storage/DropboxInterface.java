@@ -30,7 +30,7 @@ public enum DropboxInterface {
         mApi = api;
     }
     
-    public Entry getDBEntry(String dbPath) throws DropboxException {
+    public Entry getDBEntry(String dbPath, boolean useHash) throws DropboxException {
         if (mApi == null) {
             /* This shouldn't happen really */
             throw new DropboxException("mApi == null");
@@ -43,11 +43,15 @@ public enum DropboxInterface {
         
         if (dbHashMap.containsKey(dbPath)) {
             Log.d(Cryptonite.TAG, "Found hash for " + dbPath);
-            hash = dbHashMap.get(dbPath).hash;
+            if (useHash) {
+                hash = dbHashMap.get(dbPath).hash;
+            } else {
+                dbHashMap.remove(dbPath);
+            }
         }
         try {
             Entry dbEntry = mApi.metadata(dbPath, 0, hash, true, null);
-            if (hash == null) {
+            if (hash == null && dbEntry.isDir && useHash) {
                 dbHashMap.put(dbPath, dbEntry);
             }
             return dbEntry;
@@ -60,6 +64,10 @@ public enum DropboxInterface {
         }
     }
     
+    public Entry getDBEntry(String dbPath) throws DropboxException {
+        return getDBEntry(dbPath, true);
+    }
+
     public void clearDBHashMap() {
         dbHashMap.clear();
     }

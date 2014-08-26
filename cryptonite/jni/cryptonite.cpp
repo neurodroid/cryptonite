@@ -52,6 +52,7 @@
 #define  LOG_TAG    "cryptonite-jni"
 #define  LOGI(...)  __android_log_write(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_write(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#define  LOGD(...)  __android_log_write(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
 
 const static int WRITE_BLOCK_SIZE = 512;
 
@@ -868,9 +869,9 @@ Java_csh_cryptonite_Cryptonite_jniDecode(JNIEnv* env, jobject thiz, jstring enco
 
     std::string name = gRootInfo->root->plainPath(mencodedname.c_str());
 
-    /*std::ostringstream info;
+    std::ostringstream info;
     info << "Decoded " << mencodedname.str() << " to " << name;
-    LOGI(info.str().c_str());*/
+    LOGD(info.str().c_str());
 
     return env->NewStringUTF(name.c_str());
 }
