@@ -12,7 +12,7 @@ else:
     platform = 'darwin'
 
 toolchain = "%s/android-toolchain" % os.getenv("HOME")
-openssl_version = "1.0.0n"
+openssl_version = "1.0.0o"
 encfs_version = "1.7.5"
 
 def cpfile(src, target):
