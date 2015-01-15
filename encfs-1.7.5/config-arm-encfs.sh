@@ -18,7 +18,7 @@
 
 TOOLCHAIN=${HOME}/android-toolchain
 FUSEDIR=`pwd`/../../fuse28
-OPENSSLDIR=`pwd`/../../openssl/openssl-1.0.0o
+OPENSSLDIR=`pwd`/../../openssl/openssl-1.0.0q
 BOOSTDIR=`pwd`/../../boost/boost_1_46_1
 RLOGDIR=`pwd`/../../rlog/rlog-1.4
 MYAR=${TOOLCHAIN}/bin/arm-linux-androideabi-ar
