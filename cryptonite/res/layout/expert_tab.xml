@@ -47,7 +47,8 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:textStyle="bold"
-            android:typeface="normal" >
+            android:typeface="normal"
+            android:textIsSelectable="true">
         </TextView>
     </TableLayout>
 

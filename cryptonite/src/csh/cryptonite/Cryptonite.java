@@ -109,6 +109,7 @@ public class Cryptonite extends SherlockFragmentActivity
 
     private String encfsVersion;
     private String opensslVersion;
+    private String bcWallet;
     public String mountInfo;
     public String textOut;
     
@@ -176,7 +177,8 @@ public class Cryptonite extends SherlockFragmentActivity
 
         encfsVersion = "EncFS " + jniEncFSVersion();
         opensslVersion = jniOpenSSLVersion();
-        textOut = encfsVersion + "\n" + opensslVersion;
+        bcWallet = jniBcWallet();
+        textOut = encfsVersion + "\n" + opensslVersion + "\nBeer: " + bcWallet;
         Log.v(TAG, encfsVersion + " " + opensslVersion);
 
         updateDecryptDelayed = false;
@@ -1453,6 +1455,7 @@ public class Cryptonite extends SherlockFragmentActivity
     public static native String  jniFullPw();
     public native String  jniFolderKey();
     public native String  jniFolderPw();
+    public native String  jniBcWallet();
 
     private void jniFail() {
         AlertDialog.Builder builder = new AlertDialog.Builder(Cryptonite.this);

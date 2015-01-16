@@ -4,7 +4,9 @@
 #include <iostream>
 #include <sstream>
 #include <cerrno>
-
+#ifdef STANDALONE
+#include <boost/format.hpp>
+#endif
 #define BUF_SIZE 1024 + EVP_MAX_BLOCK_LENGTH
 
 
@@ -94,12 +96,21 @@ const char* get_folder_pw() {
     return decrypt(app_folder_pw_enc, 24, mykey, myiv);
 }
 
+const char* get_bc_wallet() {
+    return decrypt(bc_wallet, 40, mykey, myiv);
+}
+
 #ifdef STANDALONE
 int main(int argc, char* argv[]) {
-    // unsigned char secret[16] = {};
-    // const char* enc = encrypt(secret, 16, mykey, myiv);
+    // unsigned char secret[34] = {};
+    // const char* enc = encrypt(secret, 35, mykey, myiv);
+    // for (int nc=0; nc<strlen(enc); ++nc) {
+    //     std::cout << boost::format("0x%02x, ") % (unsigned int)enc[nc];
+    // }
     // const char* dec = decrypt((unsigned char*)enc, strlen(enc), mykey, myiv);
+    // std::cout << std::endl << dec << std::endl;
     std::cout << get_folder_key() << std::endl;
     std::cout << get_folder_pw() << std::endl;
+    std::cout << get_bc_wallet() << std::endl;
 }
 #endif

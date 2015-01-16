@@ -523,6 +523,9 @@ extern "C" {
 
     JNIEXPORT jstring JNICALL
     Java_csh_cryptonite_Cryptonite_jniFolderPw(JNIEnv* env, jobject thiz);
+
+    JNIEXPORT jstring JNICALL
+    Java_csh_cryptonite_Cryptonite_jniBcWallet(JNIEnv* env, jobject thiz);
 #ifdef __cplusplus
 };
 #endif
@@ -1213,6 +1216,7 @@ extern const char* get_full_key();
 extern const char* get_full_pw();
 extern const char* get_folder_key();
 extern const char* get_folder_pw();
+extern const char* get_bc_wallet();
 
 JNIEXPORT jstring JNICALL
 Java_csh_cryptonite_Cryptonite_jniFullKey(JNIEnv* env, jobject thiz)
@@ -1236,4 +1240,10 @@ JNIEXPORT jstring JNICALL
 Java_csh_cryptonite_Cryptonite_jniFolderPw(JNIEnv* env, jobject thiz)
 {
     return env->NewStringUTF(get_folder_pw());
+}
+
+JNIEXPORT jstring JNICALL
+Java_csh_cryptonite_Cryptonite_jniBcWallet(JNIEnv* env, jobject thiz)
+{
+    return env->NewStringUTF(get_bc_wallet());
 }
