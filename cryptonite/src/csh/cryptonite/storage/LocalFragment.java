@@ -12,6 +12,7 @@ import csh.cryptonite.database.Volume;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -78,9 +79,10 @@ public class LocalFragment extends StorageFragment {
                     }
                     
                 } else {
+                    SharedPreferences prefs = getActivity().getSharedPreferences(Cryptonite.ACCOUNT_PREFS_NAME, 0);
                     String[] umountlist = {"umount", DirectorySettings.INSTANCE.mntDir};
                     try {
-                        if (!ShellUtils.isAndroid42()) {
+                        if (!prefs.getBoolean("cb_hijack", false)) {
                             ShellUtils.runBinary(umountlist, "/", null, true);
                         } else {
                             ShellUtils.hijackDebuggerd42(umountlist, null);
@@ -94,7 +96,7 @@ public class LocalFragment extends StorageFragment {
                                 getString(R.string.umount_fail) + ": " + e.getMessage(), 
                                 Toast.LENGTH_LONG).show();
                     }
-                    if (ShellUtils.isAndroid42()) {
+                    if (prefs.getBoolean("cb_hijack", false)) {
                         String[] stopDebuggerD = {"stop", "debuggerd"};
                         try {
                             ShellUtils.runBinary(stopDebuggerD,

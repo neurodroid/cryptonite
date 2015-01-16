@@ -37,4 +37,10 @@
         android:title="@string/txt_clearcache_title"
         android:summary="@string/txt_clearcache_summary"/>
 
+    <CheckBoxPreference
+        android:key="cb_hijack"
+        android:title="@string/cb_hijack_title"
+        android:summary="@string/cb_hijack_summary"
+        android:defaultValue="false"/>
+
 </PreferenceScreen>

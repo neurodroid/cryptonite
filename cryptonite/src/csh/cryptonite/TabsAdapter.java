@@ -80,7 +80,7 @@ public class TabsAdapter extends FragmentPagerAdapter
         mTabs.add(info);
         mTabHost.addTab(tabSpec);
         int totalTabs = mTabHost.getTabWidget().getChildCount();
-        mTabHost.getTabWidget().getChildAt(totalTabs-1).getLayoutParams().height = 56;
+        mTabHost.getTabWidget().getChildAt(totalTabs-1).getLayoutParams().height = 80;
         notifyDataSetChanged();
     }
 

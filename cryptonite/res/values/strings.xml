@@ -40,6 +40,10 @@
     <string name="txt_clearcache_title">Clear cache</string>
     <string name="txt_clearcache_summary">Delete temporary files</string>
     <string name="txt_clearcache_enabled">Temporary files have been deleted</string>
+    <string name="cb_hijack_title">Hijack system process for mounting</string>
+    <string name="cb_hijack_summary">Masks the encfs binary as a system process to force mounting. Ugly, insecure and experimental. Use with caution.</string>
+    <string name="cb_hijack_enabled">Hijacking system process</string>
+    <string name="cb_hijack_disabled">Stopped hijacking system process</string>
 
     <string name="sdcard_not_writable">Can\'t write to SD card</string>
     <string name="title_password">EncFS password</string>

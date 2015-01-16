@@ -1273,7 +1273,6 @@ public class FileDialog extends SherlockFragmentActivity {
      * root information
      * 
      * @param srcDir Path to EncFS volume
-     * @param pwd password
      */
     private void initEncFS(final String srcDir) {
         alertMsg = "";
@@ -1400,13 +1399,13 @@ public class FileDialog extends SherlockFragmentActivity {
                     }
                 }
                 currentConfigPath = null;
-                String foreground = ShellUtils.isAndroid42() ? "-f" : "";
+                String foreground = prefs.getBoolean("cb_hijack", false) ? "-f" : "";
                 String[] cmdlist = { DirectorySettings.INSTANCE.encFSBin, configOverride, foreground,
                         "--public", "--no-default-flags",
                         prefs.getBoolean("cb_anykey", false) ? "--anykey" : "", "--stdinpass", "\"" + srcDir + "\"",
                         "\"" + DirectorySettings.INSTANCE.mntDir + "\"" };
                 try {
-                    if (!ShellUtils.isAndroid42()) {
+                    if (!prefs.getBoolean("cb_hijack", false)) {
                         encfsoutput = ShellUtils.runBinary(cmdlist,
                                 DirectorySettings.INSTANCE.binDirPath,
                                 currentPassword, true);

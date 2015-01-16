@@ -42,6 +42,7 @@ public class Preferences extends SherlockPreferenceActivity {
     private CheckBoxPreference chkExtCache;
     private CheckBoxPreference chkAppFolder;
     private CheckBoxPreference chkAnyKey;
+    private CheckBoxPreference chkHijackDebuggerd42;
     
     private Preference txtMntPoint;
     private Preference clearCache;
@@ -157,11 +158,6 @@ public class Preferences extends SherlockPreferenceActivity {
                 return false;
             }
         });
-        String encfsBin = getFilesDir().getParentFile().getPath() + "/encfs";        
-        if (!ShellUtils.supportsFuse() || !new File(encfsBin).exists()) {
-            txtMntPoint.setEnabled(false);
-            txtMntPoint.setSummary(R.string.mount_info_unsupported);
-        }
 
         clearCache = getPreferenceScreen().findPreference("txt_clearcache");
         clearCache.setOnPreferenceClickListener(new OnPreferenceClickListener() {
@@ -171,7 +167,26 @@ public class Preferences extends SherlockPreferenceActivity {
                 return true;
             }
         });
-        
+
+        chkHijackDebuggerd42 = (CheckBoxPreference)getPreferenceScreen().findPreference("cb_hijack");
+        chkHijackDebuggerd42.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+            public boolean onPreferenceClick(Preference preference) {
+                if (chkHijackDebuggerd42.isChecked()) {
+                    Toast.makeText(Preferences.this, getString(R.string.cb_hijack_enabled), Toast.LENGTH_SHORT).show();
+                    return true;
+                } else {
+                    Toast.makeText(Preferences.this, getString(R.string.cb_hijack_disabled), Toast.LENGTH_SHORT).show();
+                    return false;
+                }
+            }});
+
+        String encfsBin = getFilesDir().getParentFile().getPath() + "/encfs";
+        if (!ShellUtils.supportsFuse() || !new File(encfsBin).exists()) {
+            txtMntPoint.setEnabled(false);
+            txtMntPoint.setSummary(R.string.mount_info_unsupported);
+            chkHijackDebuggerd42.setEnabled(false);
+            chkHijackDebuggerd42.setSummary(R.string.mount_info_unsupported);
+        }
 
     }
 
