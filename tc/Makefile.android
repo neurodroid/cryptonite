@@ -47,11 +47,11 @@ export CXX := agcc${CRYSTAX}
 export AS := $(HOME)/android-toolchain${CRYSTAX}/bin/arm-linux-androideabi-as
 export RANLIB := $(HOME)/android-toolchain${CRYSTAX}/bin/arm-linux-androideabi-ranlib
 
-export CFLAGS := -Wall -fPIE
-export CXXFLAGS := -Wall -Wno-unused-parameter -fPIE
+export CFLAGS := -Wall
+export CXXFLAGS := -Wall -Wno-unused-parameter
 C_CXX_FLAGS := -MMD -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -I$(BASE_DIR) -I$(BASE_DIR)/Crypto ${LIBSTDCXXINC} -fexceptions -frtti -DUNICODE
 export ASFLAGS := -Ox -D __GNUC__
-export LFLAGS := -fPIE -pie
+export LFLAGS :=
 
 export PKG_CONFIG_PATH ?= /usr/local/lib/pkgconfig
 
