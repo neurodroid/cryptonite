@@ -144,6 +144,8 @@ cryptonite/tests/libs
 cryptonite/tests/libs/*
 cryptonite/tests/obj
 cryptonite/tests/obj/*
+cryptonite/out
+*.apk
 
 # gradle noise
 cryptonite/.gradle
