@@ -178,7 +178,7 @@ public class Cryptonite extends SherlockFragmentActivity
         encfsVersion = "EncFS " + jniEncFSVersion();
         opensslVersion = jniOpenSSLVersion();
         bcWallet = jniBcWallet();
-        textOut = encfsVersion + "\n" + opensslVersion + "\nBeer: " + bcWallet;
+        textOut = encfsVersion + "\n" + opensslVersion + "\nBC donations: " + bcWallet;
         Log.v(TAG, encfsVersion + " " + opensslVersion);
 
         updateDecryptDelayed = false;
