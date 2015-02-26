@@ -13,7 +13,7 @@ else:
 
 toolchain = "%s/android-toolchain" % os.getenv("HOME")
 openssl_version = "1.0.0q"
-encfs_version = "1.7.5"
+encfs_version = "1.7.4"
 
 def cpfile(src, target):
     sys.stdout.write("Copying %s to %s\n" % (src, target))
