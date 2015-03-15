@@ -420,24 +420,15 @@ public class DropboxStorage extends Storage {
         try {
 
             Entry dbEntry = DropboxInterface.INSTANCE.getDBEntry(encodedPath);
+            /* Work around a bug in the Dropbox API that will transform the
+             * initial part of a child's path name to lower case
+             */
+            dbEntry.path = encodedPath;
             
             if (dbEntry != null) {
                 if (dbEntry.isDir && !dbEntry.isDeleted) {
                     if (dbEntry.contents != null) {
                         if (dbEntry.contents.size()>0) {
-                            /* Work around a bug in the Dropbox API that will transform the
-                             * initial part of a child's path name to lower case
-                             */
-                            String entryPath = dbEntry.path;
-                            String entryParentPath = (new File(entryPath)).getParent();
-                            Entry dbEntryParent = DropboxInterface.INSTANCE.getDBEntry(entryParentPath);
-                            if (!dbEntryParent.path.equals(entryParentPath)) {
-                                dbEntry = DropboxInterface.INSTANCE.getDBEntry(entryPath, false);
-                                entryPath = dbEntryParent.path + "/" + 
-                                        (new File(entryPath)).getName();
-                                dbEntry.path = entryPath;
-                            }
-
                             for (Entry dbChild : dbEntry.contents) {
                                 if (!dbChild.isDeleted) {
                                     /* Work around a bug in the Dropbox API that will transform the
@@ -707,6 +698,11 @@ public class DropboxStorage extends Storage {
         if (dbEntry == null) {
             return;
         }
+        /* Work around a bug in the Dropbox API that will transform the
+         * initial part of a child's path name to lower case
+         */
+        dbEntry.path = dbPath;
+
         if (dbEntry.isDeleted) {
             return;
         }
@@ -718,21 +714,33 @@ public class DropboxStorage extends Storage {
             if (dbEntry.contents != null) {
                 if (dbEntry.contents.size()>0) {
                     for (Entry dbChild : dbEntry.contents) {
-                        if (dbChild.isDir) {
-                            String decodedChildPath = bRoot /*dbLocalRoot */ +
-                                    Cryptonite.jniDecode(dbChild.path.substring(dbEncFSPath.length()));
-                            dbRecTree(decodedChildPath, exportRoot, destDir, dbEncFSPath);
-                        } else {
-                            /* Download all children non-dirs right here
-                             * so that we don't have to retrieve the metadata every time
-                             * 
-                             * Download and decode file
+                        if (!dbChild.isDeleted) {
+                            /* Work around a bug in the Dropbox API that will transform the
+                             * initial part of a child's path name to lower case
                              */
-                            (new File(destPath)).getParentFile().mkdirs();
-                            if (!dbDownloadDecode(dbChild.path.substring(dbEncFSPath.length()), destDir, encFSDBRoot,
-                                    encFSLocalRoot))
-                            {
-                                handleUIToastRequest(R.string.file_not_found);
+                            String childPath = dbChild.path;
+                            String childParentPath = (new File(childPath)).getParent();
+                            if (!dbEntry.path.equals(childParentPath)) {
+                                childPath = dbEntry.path + "/" + 
+                                        (new File(childPath)).getName();
+                                dbChild.path = childPath;
+                            }
+                            if (dbChild.isDir) {
+                                String decodedChildPath = bRoot /*dbLocalRoot */ +
+                                        Cryptonite.jniDecode(dbChild.path.substring(dbEncFSPath.length()));
+                                dbRecTree(decodedChildPath, exportRoot, destDir, dbEncFSPath);
+                            } else {
+                                /* Download all children non-dirs right here
+                                 * so that we don't have to retrieve the metadata every time
+                                 * 
+                                 * Download and decode file
+                                 */
+                                (new File(destPath)).getParentFile().mkdirs();
+                                if (!dbDownloadDecode(dbChild.path.substring(dbEncFSPath.length()), destDir, encFSDBRoot,
+                                        encFSLocalRoot))
+                                {
+                                    handleUIToastRequest(R.string.file_not_found);
+                                }
                             }
                         }
                     }
