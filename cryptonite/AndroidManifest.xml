@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest 
     xmlns:android="http://schemas.android.com/apk/res/android" package="csh.cryptonite"
-    android:versionCode="85"
-    android:versionName="0.7.16" xmlns:tools="http://schemas.android.com/tools">
+    android:versionCode="86"
+    android:versionName="0.7.17" xmlns:tools="http://schemas.android.com/tools">
   <uses-sdk android:minSdkVersion="16" android:targetSdkVersion="21" />
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
   <uses-permission android:name="android.permission.INTERNET" />
@@ -20,6 +20,7 @@
         android:name="Cryptonite"
         android:label="@string/app_name"
         android:configChanges="orientation|keyboard"
+        android:screenOrientation="portrait"
         android:launchMode="singleTop">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
@@ -31,6 +32,7 @@
         android:name="FileDialog"
         android:label="@string/fb_name"
         android:configChanges="orientation|keyboard"
+        android:screenOrientation="portrait"
         android:launchMode="singleTop">
     </activity>
 
@@ -38,6 +40,7 @@
         android:name="CreateEncFS"
         android:label="@string/create_name"
         android:configChanges="orientation|keyboard"
+        android:screenOrientation="portrait"
         android:launchMode="singleTop">
     </activity>
 
@@ -45,6 +48,7 @@
         android:name="Preferences"
         android:label="@string/pref_name"
         android:configChanges="orientation|keyboard"
+        android:screenOrientation="portrait"
         android:launchMode="singleTop">
     </activity>
 
@@ -52,12 +56,14 @@
         android:name="TextPreview"
         android:label="@string/preview_name"
         android:configChanges="orientation|keyboard"
+        android:screenOrientation="portrait"
         android:launchMode="singleTop">
     </activity>
    
    <activity
         android:name="com.dropbox.client2.android.AuthActivity"
         android:configChanges="orientation|keyboard"
+        android:screenOrientation="portrait"
         android:launchMode="singleTask" >
       <intent-filter>
 
@@ -74,6 +80,7 @@
     <activity
         android:name="com.dropbox.client2.android.AuthActivity"
         android:configChanges="orientation|keyboard"
+        android:screenOrientation="portrait"
         android:launchMode="singleTask" tools:ignore="DuplicateActivity">
       <intent-filter>
 
