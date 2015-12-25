@@ -1,23 +1,17 @@
 # Don't attempt a parallel build! (-jN)
 
-OPENSSL_VERSION="1.0.0q"
+OPENSSL_VERSION="1.0.2e"
 
-cp -v Makefile.android openssl-${OPENSSL_VERSION}
-cp -v Makefile.android.armv7 openssl-${OPENSSL_VERSION}
 cd openssl-${OPENSSL_VERSION}
 
-rm -rf libcrypto.a libssl.a armeabi
+./Configure no-hw no-asm android-armv7
 
-make -f Makefile.android clean
-make -f Makefile.android
-mkdir -p armeabi
-mv libssl.a armeabi
-mv libcrypto.a armeabi
+cp -v ../Makefile.android ./
 
 rm -rf libcrypto.a libssl.a armeabi-v7a
 
-make -f Makefile.android.armv7 clean
-make -f Makefile.android.armv7
+make -f Makefile.android clean
+make -f Makefile.android
 mkdir -p armeabi-v7a
 mv libssl.a armeabi-v7a
 mv libcrypto.a armeabi-v7a
