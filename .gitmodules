@@ -1,0 +1,3 @@
+[submodule "fuse293/jni"]
+	path = fuse293/jni
+	url = https://github.com/neurodroid/android-platform-external-libfuse.git
