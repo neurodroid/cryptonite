@@ -21,7 +21,7 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE    := libcryptonite
 LOCAL_SRC_FILES := cryptonite.cpp android_key.cpp
-ENCFS_VERSION   := 1.7.4
+ENCFS_VERSION   := 1.8.1
 
 ifeq ($(ENCFS_VERSION), svn)
     ENCFS_PATH     := encfs-svn
@@ -33,7 +33,7 @@ ifeq ($(ENCFS_VERSION), svn)
 else
     ENCFS_PATH  := encfs-$(ENCFS_VERSION)/encfs-$(ENCFS_VERSION)
     ENCFS_INCLUDES := ../boost/boost_1_46_1
-    ENCFS_CPPFLAGS := -DBOOST_FILESYSTEM_VERSION=2
+    ENCFS_CPPFLAGS := -DBOOST_FILESYSTEM_VERSION=2 -std=gnu++11
     ENCFS_LDLIBS   := ./obj/local/armeabi/libboost_serialization.a \
                       ./obj/local/armeabi/libboost_filesystem.a \
                       ./obj/local/armeabi/libboost_system.a
@@ -43,9 +43,9 @@ LOCAL_C_INCLUDES := \
     ../encfs-$(ENCFS_VERSION)/encfs-$(ENCFS_VERSION) \
     ../encfs-$(ENCFS_VERSION)/encfs-$(ENCFS_VERSION)/encfs \
     ../encfs-$(ENCFS_VERSION)/encfs-$(ENCFS_VERSION)/intl \
-    ../fuse29/jni/include \
+    ../fuse293/jni/include \
     ../rlog/rlog-1.4/$(TARGET_ARCH_ABI)/include \
-    ../openssl/openssl-1.0.0q/include \
+    ../openssl/openssl-1.0.2e/include \
     $(ENCFS_INCLUDES)
 
 LOCAL_CPPFLAGS := \

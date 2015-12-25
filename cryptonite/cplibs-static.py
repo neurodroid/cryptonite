@@ -12,14 +12,14 @@ else:
     platform = 'darwin'
 
 toolchain = "%s/android-toolchain" % os.getenv("HOME")
-openssl_version = "1.0.0q"
-encfs_version = "1.7.4"
+openssl_version = "1.0.2e"
+encfs_version = "1.8.1"
 
 def cpfile(src, target):
     sys.stdout.write("Copying %s to %s\n" % (src, target))
     shutil.copy(src, target)
 
-archs = ["armeabi","armeabi-v7a"]
+archs = ["armeabi-v7a"]
 
 if encfs_version != "svn":
     encfs_dir = "encfs-%s/encfs-%s" % (encfs_version, encfs_version)
