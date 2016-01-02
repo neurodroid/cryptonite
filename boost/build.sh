@@ -23,7 +23,6 @@ cd boost_1_60_0
  --without-python \
  --without-random \
  --without-regex \
- --without-serialization \
  --without-signals \
  --without-system \
  --without-test \
