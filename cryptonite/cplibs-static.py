@@ -14,6 +14,7 @@ else:
 toolchain = "%s/android-toolchain" % os.getenv("HOME")
 openssl_version = "1.0.2e"
 encfs_version = "1.8.1"
+boost_version = "1_60_0"
 
 def cpfile(src, target):
     sys.stdout.write("Copying %s to %s\n" % (src, target))
@@ -35,9 +36,8 @@ for arch in archs:
     target_dir = "./obj/local/%s/" % arch
 
     if encfs_version != "svn":
-        cpfile("../boost/boost_1_46_1/android/lib/libboost_filesystem.a", target_dir)
-        cpfile("../boost/boost_1_46_1/android/lib/libboost_serialization.a", target_dir)
-        cpfile("../boost/boost_1_46_1/android/lib/libboost_system.a", target_dir)
+        cpfile("../boost/boost_%s/android/lib/libboost_serialization.a" %
+               boost_version, target_dir)
     else:
         cpfile("../protobuf/protobuf-2.4.1/%s/lib/libprotobuf.a" % arch, target_dir)
         cpfile("../tinyxml/tinyxml/%s/libtinyxml.a" % arch, target_dir)

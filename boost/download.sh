@@ -1,14 +1,18 @@
 #! /bin/bash
 
-if [ ! -f ./boost_1_46_1.tar.bz2 ]
+BOOST_DIR="1.60.0"
+BOOST_VERSION="1_60_0"
+
+if [ ! -f ./boost_${BOOST_VERSION}.tar.bz2 ]
 then
-    wget http://downloads.sourceforge.net/project/boost/boost/1.46.1/boost_1_46_1.tar.bz2
+    wget http://downloads.sourceforge.net/project/boost/boost/${BOOST_DIR}/boost_${BOOST_VERSION}.tar.bz2
 fi
-if [ ! -d ./boost_1_46_1 ]
+if [ ! -d ./boost_${BOOST_VERSION} ]
 then
-    tar -xvjf boost_1_46_1.tar.bz2
-    cd boost_1_46_1
+    tar -xvjf boost_${BOOST_VERSION}.tar.bz2
+    cd boost_${BOOST_VERSION}
     patch -p1 < ../boost-libs-android.patch
-    cp -v ../user-config.jam ./tools/build/v2/
+    ./bootstrap.sh
+    cp -v ../user-config.jam ./
     cd ..
 fi

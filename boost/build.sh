@@ -1,6 +1,41 @@
 #! /bin/bash
 
-cd boost_1_46_1
-cp -v ../user-config.jam ./tools/build/v2/
-bjam -j12 --without-python --disable-filesystem3 toolset=gcc-android4.8 link=static runtime-link=static target-os=linux --stagedir=android --user-config=./tools/build/v2/user-config.jam
+cd boost_1_60_0
+./bjam -j12 \
+ --without-python \
+ --without-atomic \
+ --without-chrono \
+ --without-container \
+ --without-context \
+ --without-coroutine \
+ --without-coroutine2 \
+ --without-date_time \
+ --without-exception \
+ --without-filesystem \
+ --without-graph \
+ --without-graph_parallel \
+ --without-iostreams \
+ --without-locale \
+ --without-log \
+ --without-math \
+ --without-mpi \
+ --without-program_options \
+ --without-python \
+ --without-random \
+ --without-regex \
+ --without-serialization \
+ --without-signals \
+ --without-system \
+ --without-test \
+ --without-thread \
+ --without-timer \
+ --without-type_erasure \
+ --without-wave \
+ --disable-wserialization \
+ toolset=gcc-android4.8 \
+ link=static \
+ runtime-link=static \
+ target-os=linux \
+ --stagedir=android \
+ --user-config=./user-config.jam
 cd ..

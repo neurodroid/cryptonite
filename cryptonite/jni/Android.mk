@@ -32,11 +32,9 @@ ifeq ($(ENCFS_VERSION), svn)
                       ./obj/local/$(TARGET_ARCH_ABI)/libtinyxml.a
 else
     ENCFS_PATH  := encfs-$(ENCFS_VERSION)/encfs-$(ENCFS_VERSION)
-    ENCFS_INCLUDES := ../boost/boost_1_46_1
+    ENCFS_INCLUDES := ../boost/boost_1_60_0
     ENCFS_CPPFLAGS := -DBOOST_FILESYSTEM_VERSION=2 -std=gnu++11
-    ENCFS_LDLIBS   := ./obj/local/armeabi/libboost_serialization.a \
-                      ./obj/local/armeabi/libboost_filesystem.a \
-                      ./obj/local/armeabi/libboost_system.a
+    ENCFS_LDLIBS   := ./obj/local/armeabi/libboost_serialization.a
 endif
 
 LOCAL_C_INCLUDES := \
