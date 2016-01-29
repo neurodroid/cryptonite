@@ -4,3 +4,4 @@
 [submodule "encfs-1.8.1/encfs"]
 	path = encfs-1.8.1/encfs
 	url = git://github.com/neurodroid/encfs.git
+	branch = v1.8.1-android
