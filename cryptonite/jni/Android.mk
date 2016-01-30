@@ -43,7 +43,7 @@ LOCAL_C_INCLUDES := \
     ../encfs-$(ENCFS_VERSION)/encfs-$(ENCFS_VERSION)/intl \
     ../fuse293/jni/include \
     ../rlog/rlog-1.4/$(TARGET_ARCH_ABI)/include \
-    ../openssl/openssl-1.0.2e/include \
+    ../openssl/openssl-1.0.2f/include \
     $(ENCFS_INCLUDES)
 
 LOCAL_CPPFLAGS := \

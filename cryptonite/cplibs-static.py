@@ -12,7 +12,7 @@ else:
     platform = 'darwin'
 
 toolchain = "%s/android-toolchain" % os.getenv("HOME")
-openssl_version = "1.0.2e"
+openssl_version = "1.0.2f"
 encfs_version = "1.8.1"
 boost_version = "1_60_0"
 

@@ -1,6 +1,6 @@
 # Don't attempt a parallel build! (-jN)
 
-OPENSSL_VERSION="1.0.2e"
+OPENSSL_VERSION="1.0.2f"
 
 cd openssl-${OPENSSL_VERSION}
 
