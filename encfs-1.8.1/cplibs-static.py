@@ -6,7 +6,6 @@ import sys
 import subprocess
 import os
 
-ENCFS_VERSION = "1.8.1"
 
 def cpfile(src, target):
     sys.stdout.write("Copying %s to %s\n" % (src, target))
@@ -25,11 +24,11 @@ for arch in archs:
 
     # encfs
     p = subprocess.Popen("/usr/bin/split -b 1m encfs encfs.split", 
-                         cwd="./encfs-%s/%s/bin" % (ENCFS_VERSION, arch), 
+                         cwd="./encfs/%s/bin" % (arch), 
                          shell=True)
     p.wait()
 
-    splitfiles = glob.glob("./encfs-%s/%s/bin/encfs.split*" % (ENCFS_VERSION, arch))
+    splitfiles = glob.glob("./encfs/%s/bin/encfs.split*" % (arch))
     print splitfiles
     for splitfile in splitfiles:
         cpfile(splitfile, "../cryptonite/assets/%s/" % (arch))

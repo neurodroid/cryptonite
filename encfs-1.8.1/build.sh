@@ -2,10 +2,19 @@
 
 TOOLCHAIN=${HOME}/android-toolchain
 MYSTRIP=${TOOLCHAIN}/bin/arm-linux-androideabi-strip
+GLIBTOOLIZE=`which glibtoolize`
+if [ "${GLIBTOOLIZE}" = "" ]
+then
+    GLIBTOOLIZE=`which libtoolize`
+fi
 
-cd encfs-1.8.1
-cp ../config-arm-encfs.sh ./
+cd encfs
 
+mkdir -p build-aux
+touch build-aux/config.rpath
+touch build-aux/ltmain.sh
+AUTOMAKE="automake --add-missing" autoreconf --force
+${GLIBTOOLIZE}
 rm -rf armeabi-v7a
 ./config-arm-encfs.sh 1
 make clean
