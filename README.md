@@ -31,6 +31,14 @@ This is simple and straightforward. The default packages should work just fine. 
 ```bash
 sudo port install encfs
 ```
+
+If you use homebrew:
+
+```
+brew cask install osxfuse
+brew install homebrew/fuse/encfs
+```
+
 To make your decrypted folder look a bit prettier, use
 ```bash
 encfs -ovolname=Dropbox -ovolicon=${ICONFOLDER}/dropbox.icns ${ENCRYPTEDDIR} ${DECRYPTEDDIR}
@@ -39,3 +47,7 @@ Let me know if you need a hi-res icons file.
 
 ###Windows###
 [encfs4win](http://members.ferrara.linux.it/freddy77/encfs.html) works fine for me.
+
+###Windows & OS X###
+
+You can also use the cross-platform frontend [encfsmp](http://encfsmp.sourceforge.net/), if you don't want to use command-line tools.
