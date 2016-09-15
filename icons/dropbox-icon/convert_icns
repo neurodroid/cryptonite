@@ -1,0 +1,1 @@
+sips -s format icns ./dropbox.png --out /Users/cs/dropbox-icon/dropbox.icns/
