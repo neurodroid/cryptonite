@@ -22,11 +22,11 @@ Want to build your own apk? See [build instructions](https://github.com/neurodro
 
 Want to see Cryptonite on F-Droid? [Vote here](http://f-droid.org/forums/topic/cryptonite/).
 
-##Encrypt your Dropbox with EncFS##
-###GNU/Linux###
+## Encrypt your Dropbox with EncFS
+### GNU/Linux
 This is simple and straightforward. The default packages should work just fine. There's a nice tutorial on [Webupd8](http://www.webupd8.org/2011/06/encrypt-your-private-dropbox-data-with.html).
 
-###OS X###
+### OS X
 [MacPorts](http://www.macports.org) provides EncFS and works just fine on all OS Xen that I've tested (10.6, 10.7 and 10.8). The MacPorts installation takes some time, but it's definitely worth it. Once installed, simply do:
 ```bash
 sudo port install encfs
@@ -45,9 +45,9 @@ encfs -ovolname=Dropbox -ovolicon=${ICONFOLDER}/dropbox.icns ${ENCRYPTEDDIR} ${D
 ```
 Let me know if you need a hi-res icons file.
 
-###Windows###
+### Windows
 [encfs4win](http://members.ferrara.linux.it/freddy77/encfs.html) works fine for me.
 
-###Windows & OS X###
+### Windows & OS X
 
 You can also use the cross-platform frontend [encfsmp](http://encfsmp.sourceforge.net/), if you don't want to use command-line tools.
