@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Cryptonite brings [EncFS](http://www.arg0.net/encfs EncFS) and [TrueCrypt](http://www.truecrypt.org/) to Android. You can browse, export and open EncFS-encrypted directories and files on your Dropbox and on your phone. On rooted phones that support [FUSE](http://fuse.sourceforge.net/) (e.g. [CyanogenMod](http://www.cyanogenmod.com/)) you can also mount EncFS and TrueCrypt volumes. TrueCrypt is only available as a command-line version at this time.
+Cryptonite brings [EncFS](http://www.arg0.net/encfs) and [TrueCrypt](http://www.truecrypt.org/) to Android. You can browse, export and open EncFS-encrypted directories and files on your Dropbox and on your phone. On rooted phones that support [FUSE](http://fuse.sourceforge.net/) (e.g. [CyanogenMod](http://www.cyanogenmod.com/)) you can also mount EncFS and TrueCrypt volumes. TrueCrypt is only available as a command-line version at this time.
 
 [I haven't had any backdoor requests yet](http://www.theguardian.com/technology/2013/sep/09/nsa-sabotage-dead-mans-switch). [Watch closely for the removal of the previous sentence](http://www.librarian.net/technicality.html).
 
